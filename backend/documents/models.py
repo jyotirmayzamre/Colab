@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import uuid
+from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
 import jsonpickle
 
@@ -9,23 +10,19 @@ class DocumentManager(models.Manager):
     - Add user to list of auhtors
     - Create 'owner' access level for this doc + user
     '''
-    def create_document(self, title: str, userId: str) -> 'Document':
-        if not title:
-            title = 'Untitled Document'
-        
+    def create_document(self, userId: int, title: str='Untitled Document') -> 'Document':
         try:
             user = User.objects.get(pk=userId)
         except ObjectDoesNotExist:
             raise ValueError('User with this id does not exist')
         
         doc = self.create(title=title)
-        doc.authors.add(user)
         DocumentAccess.objects.create_access(docId=doc.id, userId=userId, level='owner')
 
         return doc
     
 
-    def delete_document(self, docId: str):
+    def delete_document(self, docId: UUID):
         try:
             document = self.get(pk=docId)
         except self.model.DoesNotExist:
@@ -35,12 +32,14 @@ class DocumentManager(models.Manager):
         return
         
 
+def default_state():
+    return jsonpickle.encode('')
 
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     title = models.CharField(max_length=50)
     authors = models.ManyToManyField(User, related_name='documents')
-    state = models.JSONField(default=lambda: jsonpickle.encode(''))
+    state = models.JSONField(default=default_state)
 
     objects: 'DocumentManager' = DocumentManager()
 
@@ -52,7 +51,7 @@ class DocumentAccessManager(models.Manager):
     '''
     Anytime an access object is created, the user is added to the document's list of authors
     '''
-    def create_access(self, docId: str, userId: str, level: str) -> 'DocumentAccess':
+    def create_access(self, docId: UUID, userId: int, level: str) -> 'DocumentAccess':
         try:
             document = Document.objects.get(pk=docId)
         except ObjectDoesNotExist:
@@ -78,7 +77,7 @@ class DocumentAccessManager(models.Manager):
         return docAccess
     
     
-    def update_access(self, docId: str, userId: str, level: str) -> 'DocumentAccess':
+    def update_access(self, docId: UUID, userId: int, level: str) -> 'DocumentAccess':
         if level not in dict(DocumentAccess.ACCESS):
             raise ValueError('Invalid access level label')
         
@@ -87,12 +86,15 @@ class DocumentAccessManager(models.Manager):
         except DocumentAccess.DoesNotExist:
             raise ValueError('No existing access for this particular user and document')
         
+        if access.level == 'owner':
+            raise ValueError('Cannot edit access level of an owner')
+
         access.level = level
         access.save(update_fields=['level'])
         return access
     
 
-    def delete_access(self, docId: str, userId: str):
+    def delete_access(self, docId: UUID, userId: int):
         try:
             document = Document.objects.get(pk=docId)
         except ObjectDoesNotExist:
@@ -104,9 +106,12 @@ class DocumentAccessManager(models.Manager):
             raise ValueError(f"User with this id doesn't exist")
         
         try:
-            access = self.get(document=document, user_id=userId)
+            access = self.get(document=document, user=user)
         except DocumentAccess.DoesNotExist:
             raise ValueError('No existing access for this particular user and document')
+        
+        if access.level == 'owner':
+            raise ValueError('Cannot delete owner access through this method')
         
         if user in document.authors.all():
             document.authors.remove(user)

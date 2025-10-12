@@ -1,7 +1,7 @@
 from .models import User
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
-import utils
+from .utils import validate_email as check_valid_email
 
 '''
 Read-only serializer for returning user to frontend
@@ -9,8 +9,7 @@ Read-only serializer for returning user to frontend
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username', 'email', 'is_active', 'created', 'updated'] 
-        read_only_fields = ['is_active', 'created', 'updated']
+        fields = ['id', 'first_name', 'last_name', 'username', 'email'] 
 
 
 '''
@@ -29,7 +28,7 @@ class RegisterSerializer(serializers.ModelSerializer[User]):
         ]
     
     def validate_email(self, value: str):
-        valid, message = utils.validate_email(value)
+        valid, message = check_valid_email(value)
 
         if not valid:
             raise serializers.ValidationError(message)

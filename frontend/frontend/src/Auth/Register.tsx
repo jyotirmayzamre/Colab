@@ -1,6 +1,7 @@
 import { type JSX } from "react";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import FormInput from "./FormInput";
+import axios from 'axios';
 
 type FormFields = {
     username: string;
@@ -17,8 +18,25 @@ function RegisterForm(): JSX.Element {
             formState: { errors, isSubmitting },
             getValues } = useForm<FormFields>();
 
-    const onSubmit: SubmitHandler<FormFields> = (data) => {
-        console.log(data)
+    const onSubmit: SubmitHandler<FormFields> = async (data) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { confirm_password, ...payload } = data; 
+        try {
+            const response = await axios.post('http://127.0.0.1:8000/api/accounts/signup/', 
+                payload,
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            console.log('Response:', response.data)
+        } catch(error: unknown){
+            if(error instanceof Error){
+                console.error(error.message)
+            }
+        }
+        
     };
 
     return (

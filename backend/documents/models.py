@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from auth.models import User
 import uuid
 from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,7 +10,7 @@ class DocumentManager(models.Manager):
     - Add user to list of auhtors
     - Create 'owner' access level for this doc + user
     '''
-    def create_document(self, userId: int, title: str='Untitled Document') -> 'Document':
+    def create_document(self, userId: UUID, title: str='Untitled Document') -> 'Document':
         try:
             user = User.objects.get(pk=userId)
         except ObjectDoesNotExist:
@@ -51,7 +51,7 @@ class DocumentAccessManager(models.Manager):
     '''
     Anytime an access object is created, the user is added to the document's list of authors
     '''
-    def create_access(self, docId: UUID, userId: int, level: str) -> 'DocumentAccess':
+    def create_access(self, docId: UUID, userId: UUID, level: str) -> 'DocumentAccess':
         try:
             document = Document.objects.get(pk=docId)
         except ObjectDoesNotExist:
@@ -77,7 +77,7 @@ class DocumentAccessManager(models.Manager):
         return docAccess
     
     
-    def update_access(self, docId: UUID, userId: int, level: str) -> 'DocumentAccess':
+    def update_access(self, docId: UUID, userId: UUID, level: str) -> 'DocumentAccess':
         if level not in dict(DocumentAccess.ACCESS):
             raise ValueError('Invalid access level label')
         
@@ -94,7 +94,7 @@ class DocumentAccessManager(models.Manager):
         return access
     
 
-    def delete_access(self, docId: UUID, userId: int):
+    def delete_access(self, docId: UUID, userId: UUID):
         try:
             document = Document.objects.get(pk=docId)
         except ObjectDoesNotExist:

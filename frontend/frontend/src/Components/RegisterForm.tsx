@@ -2,6 +2,7 @@ import { type JSX } from "react";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import FormInput from "./FormInput";
 import axios from 'axios';
+import { Link } from "react-router-dom";
 
 type FormFields = {
     username: string;
@@ -133,7 +134,7 @@ function RegisterForm(): JSX.Element {
                         disabled={isSubmitting} type='submit'>
                         {isSubmitting ? 'Loading' : 'Create Account'}
                     </button>
-                    <p>Already have an account?</p>
+                    <p>Already have an account? <Link to={'/auth/login'}>Login</Link></p>
                 </div>
             </div>
         </form>

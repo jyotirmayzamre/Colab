@@ -23,7 +23,7 @@ class DocumentTests(TestCase):
 
         #Test invalid user
         with self.assertRaises(ValueError):
-            Document.objects.create_document(123, title='My Doc')
+            Document.objects.create_document(uuid.uuid4(), title='My Doc')
 
         #Test without title
         doc2 = Document.objects.create_document(userId=self.user.id) # type: ignore
@@ -67,7 +67,7 @@ class DocumentTests(TestCase):
 
         #Test invalid user
         with self.assertRaises(ValueError):
-            access = DocumentAccess.objects.create_access(doc.id, 123, 'view')
+            access = DocumentAccess.objects.create_access(doc.id, uuid.uuid4(), 'view')
 
     
     def test_update_access(self):
@@ -94,7 +94,7 @@ class DocumentTests(TestCase):
 
         #Test access level not existing
         with self.assertRaises(ValueError):
-            DocumentAccess.objects.update_access(uuid.uuid4(), 123, 'edit')
+            DocumentAccess.objects.update_access(uuid.uuid4(), uuid.uuid4(), 'edit')
 
     def test_delete_access(self):
         doc = Document.objects.create_document(userId=self.user.id, title='My Doc') # type: ignore

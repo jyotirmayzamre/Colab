@@ -1,5 +1,5 @@
 from django.db import models
-from auth.models import User
+from accounts.models import User
 import uuid
 from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist

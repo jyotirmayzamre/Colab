@@ -82,11 +82,9 @@ class LoginSerializer(serializers.Serializer):
         token_serializer.is_valid(raise_exception=True)
         tokens = token_serializer.validated_data
         
-        user_data = dict(UserSerializer(user).data)
         return {
             'access': tokens['access'], #type: ignore
             'refresh': tokens['refresh'], #type: ignore
-            **user_data
         }
 
         

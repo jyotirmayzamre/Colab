@@ -1,8 +1,8 @@
 import FormInput from './FormInput';
 import { type JSX } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../Auth/useAuth';
 
 
 type FormFields = {
@@ -16,22 +16,10 @@ function LoginForm(): JSX.Element {
         formState: { errors, isSubmitting }
     } = useForm<FormFields>();
 
+    const { login } = useAuth(); 
+
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
-        try {
-            const response = await axios.post('http://127.0.0.1:8000/api/accounts/login/',
-                data,
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            console.log('Response: ', response.data)
-        } catch(error: unknown){
-            if(error instanceof Error){
-                console.error(error.message)
-            }
-        }
+        await login(data.username, data.password);
     }
 
     return (

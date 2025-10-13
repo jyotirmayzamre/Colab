@@ -1,12 +1,12 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from accounts.models import User
 from .models import Document, DocumentAccess
 import uuid
 
 class DocumentTests(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='password123')
+        self.user = User.objects.create_user(username='testuser', password='password123', email='test@test.com')
 
     
     def test_create_document(self):

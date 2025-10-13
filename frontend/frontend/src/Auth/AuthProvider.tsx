@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { loginHelper } from './authUtility';
+import { loginHelper, logoutHelper } from './authUtility';
 import { AuthContext } from './useAuth';
 import { jwtDecode } from 'jwt-decode';
 import type { User } from './types';
@@ -24,10 +24,11 @@ export const AuthProvider = ({ children }: Props) => {
         localStorage.setItem('refreshToken', refresh);
     }
 
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
         setUser(null);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        await logoutHelper();
     }, []);
 
     const refreshTokens = useCallback((access: string, refresh: string) => {

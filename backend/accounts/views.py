@@ -4,6 +4,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 '''
 Endpoint for registration of users
@@ -36,6 +38,19 @@ class LoginAPIView(APIView):
         
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
     
+
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated)
+
+    def post(self, request):
+        try:
+            refreshToken = request.data.get('refresh')
+            token = RefreshToken(refreshToken)
+            token.blacklist()
+            return Response({'message': 'Logout successful'}, status=status.HTTP_204_NO_CONTENT)
+        except TokenError:
+            return Response({"message": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class MeAPIView(APIView):
     permission_classes = (IsAuthenticated)

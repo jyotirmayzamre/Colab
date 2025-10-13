@@ -6,6 +6,7 @@ import type { User } from './types';
 import { logoutHandler, registerTokenRefreshHandler } from './api';
 
 
+
 interface Props {
     children: ReactNode;
 }
@@ -15,15 +16,12 @@ export const AuthProvider = ({ children }: Props) => {
         const token = localStorage.getItem('accessToken');
         return token ? jwtDecode(token) : null;
     })
-    
 
     const login = async (username: string, password: string) => {
         const { access, refresh } = await loginHelper(username, password);
         setUser(jwtDecode(access));
         localStorage.setItem('accessToken', access);
         localStorage.setItem('refreshToken', refresh);
-
-        //redirect to home page
     }
 
     const logout = useCallback(() => {

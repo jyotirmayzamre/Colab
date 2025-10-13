@@ -1,7 +1,7 @@
 import FormInput from './FormInput';
 import { type JSX } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Auth/useAuth';
 
 
@@ -13,13 +13,26 @@ type FormFields = {
 function LoginForm(): JSX.Element {
     const { register,
         handleSubmit,
+        setError,
         formState: { errors, isSubmitting }
     } = useForm<FormFields>();
+
+    const navigate = useNavigate();
 
     const { login } = useAuth(); 
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
-        await login(data.username, data.password);
+        try{
+            await login(data.username, data.password);
+            navigate('/');
+        } catch(error){
+            if(error instanceof Error){
+                setError('root', {
+                    message: error.message
+                })
+            }
+        }
+        
     }
 
     return (
@@ -29,6 +42,9 @@ function LoginForm(): JSX.Element {
                 <h2 className="text-3xl m-1">Login To Your Account</h2>
                 <p className="text-gray-600">Join Colab</p>
             </div>
+            {errors.root && (
+                <div className="text-red-500 text-xs m-0 p-0">{errors.root.message}</div>
+            )}
             <FormInput 
                 label='Username'
                 id='username'
@@ -52,7 +68,7 @@ function LoginForm(): JSX.Element {
                             transition active:scale-95
                         "
                         disabled={isSubmitting} type='submit'>
-                        {isSubmitting ? 'Loading' : 'Login'}
+                        {isSubmitting ? 'Loading...' : 'Login'}
                     </button>
                     <p>Don't have an account? <Link to={'/auth/signup'}>Register</Link></p>
                 </div>

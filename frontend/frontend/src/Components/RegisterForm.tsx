@@ -15,7 +15,8 @@ type FormFields = {
 
 function RegisterForm(): JSX.Element {
     const { register, 
-            handleSubmit, 
+            handleSubmit,
+            setError, 
             formState: { errors, isSubmitting },
             getValues } = useForm<FormFields>();
 
@@ -34,7 +35,9 @@ function RegisterForm(): JSX.Element {
             console.log('Response:', response.data)
         } catch(error: unknown){
             if(error instanceof Error){
-                console.error(error.message)
+                setError('root', {
+                    message: error.message
+                })
             }
         }
         
@@ -48,6 +51,9 @@ function RegisterForm(): JSX.Element {
                 <h2 className="text-3xl m-1">Create Your Account</h2>
                 <p className="text-gray-600">Join Colab</p>
             </div>
+            {errors.root && (
+                <div className="text-red-500 text-xs m-0 p-0">{errors.root.message}</div>
+            )}
             <div>
                 <div className="flex">
                     <FormInput 
@@ -132,7 +138,7 @@ function RegisterForm(): JSX.Element {
                             transition active:scale-95
                         "
                         disabled={isSubmitting} type='submit'>
-                        {isSubmitting ? 'Loading' : 'Create Account'}
+                        {isSubmitting ? 'Loading...' : 'Create Account'}
                     </button>
                     <p>Already have an account? <Link to={'/auth/login'}>Login</Link></p>
                 </div>

@@ -42,7 +42,8 @@ api.interceptors.response.use(
                 const response = await axios.post('http://localhost:8000/api/accounts/token/refresh/', {
                     rT
                 });
-                const { accessToken, refreshToken } = response.data;
+                const accessToken = response.data['access'];
+                const refreshToken = response.data['refresh'];
                 onTokenRefresh?.(accessToken, refreshToken);
 
                 api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`

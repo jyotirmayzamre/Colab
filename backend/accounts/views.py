@@ -33,21 +33,20 @@ class LoginAPIView(APIView):
         serializer = self.serializer_class(data=request.data)
 
         if not serializer.is_valid():
-            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
     
 
-class LogoutView(APIView):
-    permission_classes = (IsAuthenticated)
+class LogoutAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         try:
             refreshToken = request.data.get('refresh')
             token = RefreshToken(refreshToken)
             token.blacklist()
-            return Response({'message': 'Logout successful'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': 'Logout successful'}, status=status.HTTP_205_RESET_CONTENT)
         except TokenError:
             return Response({"message": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -56,6 +55,6 @@ class MeAPIView(APIView):
     permission_classes = (IsAuthenticated)
 
     def get(self, request: Request) -> Response:
-        serializer = UserSerializer(request.user);
+        serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

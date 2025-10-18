@@ -78,7 +78,7 @@ class LoginSerializer(serializers.Serializer):
         if user is None:
             raise ValidationError('Incorrect credentials')
         
-        token_serializer = TokenObtainPairSerializer(data={'username': username, 'password': password})
+        token_serializer = MyTokenObtainPairSerializer(data={'username': username, 'password': password})
         token_serializer.is_valid(raise_exception=True)
         tokens = token_serializer.validated_data
         
@@ -89,4 +89,9 @@ class LoginSerializer(serializers.Serializer):
 
         
         
-
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['username'] = user.username
+        return token

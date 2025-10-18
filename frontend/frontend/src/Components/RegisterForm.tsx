@@ -2,7 +2,7 @@ import { type JSX } from "react";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import FormInput from "./FormInput";
 import axios from 'axios';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 type FormFields = {
     username: string;
@@ -20,6 +20,8 @@ function RegisterForm(): JSX.Element {
             formState: { errors, isSubmitting },
             getValues } = useForm<FormFields>();
 
+    const navigate = useNavigate();
+
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirm_password, ...payload } = data; 
@@ -32,7 +34,8 @@ function RegisterForm(): JSX.Element {
                     }
                 }
             );
-            console.log('Response:', response.data)
+            navigate('/auth/login')
+            
         } catch(error: unknown){
             if(error instanceof Error){
                 setError('root', {
@@ -140,7 +143,7 @@ function RegisterForm(): JSX.Element {
                         disabled={isSubmitting} type='submit'>
                         {isSubmitting ? 'Loading...' : 'Create Account'}
                     </button>
-                    <p>Already have an account? <Link to={'/auth/login'}>Login</Link></p>
+                    <p>Already have an account? <Link className='text-blue-500 hover:underline' to={'/auth/login'}>Login</Link></p>
                 </div>
             </div>
         </form>

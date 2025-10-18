@@ -40,6 +40,8 @@ class Document(models.Model):
     title = models.CharField(max_length=50)
     authors = models.ManyToManyField(User, related_name='documents')
     state = models.JSONField(default=default_state)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     objects: 'DocumentManager' = DocumentManager()
 

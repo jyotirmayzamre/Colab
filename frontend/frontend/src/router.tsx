@@ -4,11 +4,12 @@ import AuthPage from "./Pages/AuthPage";
 import LoginForm from "./Components/LoginForm";
 import RegisterForm from "./Components/RegisterForm";
 import ProtectedRoute from "./Auth/ProtectedRoute";
+import Home from "./Pages/HomePage";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <ProtectedRoute><App /></ProtectedRoute>,
+    element: <App />,
   },
   {
     path: "auth",
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
       { path: "login", element: <LoginForm /> },
     ],
   },
+  {
+    path: 'home/:userId',
+    element: <ProtectedRoute><Home /></ProtectedRoute>,
+  }
 ]);
 
 export default router;

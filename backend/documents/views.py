@@ -1,3 +1,37 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from .serializers import DocumentSerializer
+from .models import Document, DocumentAccess
+from rest_framework.pagination import LimitOffsetPagination
+from django.db.models import Prefetch
 
-# Create your views here.
+
+class DocumentPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 10
+
+class DocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = DocumentSerializer
+    permission_classes=(IsAuthenticated,)
+    pagination_class = DocumentPagination
+    
+    def get_queryset(self):
+        user = self.request.user
+        return (Document.objects
+                .filter(authors=user)
+                .prefetch_related(
+                    Prefetch(
+                        'accesses',
+                        queryset=DocumentAccess.objects.filter(user=user),
+                        to_attr='user_access'
+                    )
+                )
+                .order_by('-updated_at'))
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['user_id'] = self.request.user.id #type: ignore
+        return context
+        
+    def perform_destroy(self, instance):
+        Document.objects.delete_document(docId=instance.id)

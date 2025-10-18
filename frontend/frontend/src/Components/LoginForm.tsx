@@ -19,12 +19,12 @@ function LoginForm(): JSX.Element {
 
     const navigate = useNavigate();
 
-    const { login } = useAuth(); 
+    const { login, user } = useAuth(); 
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try{
             await login(data.username, data.password);
-            navigate('/');
+            navigate(`/home/${user?.user_id}`);
         } catch(error){
             if(error instanceof Error){
                 setError('root', {
@@ -70,7 +70,7 @@ function LoginForm(): JSX.Element {
                         disabled={isSubmitting} type='submit'>
                         {isSubmitting ? 'Loading...' : 'Login'}
                     </button>
-                    <p>Don't have an account? <Link to={'/auth/signup'}>Register</Link></p>
+                    <p>Don't have an account? <Link className='text-blue-500 hover:underline' to={'/auth/signup'}>Register</Link></p>
                 </div>
         </form>
     )

@@ -26,7 +26,7 @@ function RegisterForm(): JSX.Element {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirm_password, ...payload } = data; 
         try {
-            const response = await axios.post('http://127.0.0.1:8000/api/accounts/signup/', 
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/accounts/signup/`, 
                 payload,
                 {
                     headers: {
@@ -48,11 +48,11 @@ function RegisterForm(): JSX.Element {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}
-            className="bg-white text-black p-10"
+            className="bg-white text-gray-900 w-full"
         >
             <div className="m-4">
-                <h2 className="text-3xl m-1">Create Your Account</h2>
-                <p className="text-gray-600">Join Colab</p>
+                <h2 className="text-3xl font-semibold mb-2">Start your journey today</h2>
+                <p className="text-gray-500">Create your account</p>
             </div>
             {errors.root && (
                 <div className="text-red-500 text-xs m-0 p-0">{errors.root.message}</div>
@@ -60,7 +60,7 @@ function RegisterForm(): JSX.Element {
             <div>
                 <div className="flex">
                     <FormInput 
-                    label='First Name'
+                    label='First name'
                     id='first_name'
                     register={register('first_name', {
                         required: 'First name is required',
@@ -73,7 +73,7 @@ function RegisterForm(): JSX.Element {
                     error={errors.first_name}
                 />
                 <FormInput 
-                    label='Last Name'
+                    label='Last name'
                     id='last_name'
                     register={register('last_name', {
                         required: 'Last name is required',
@@ -121,7 +121,7 @@ function RegisterForm(): JSX.Element {
                 />
 
                 <FormInput
-                    label='Confirm Password'
+                    label='Confirm password'
                     id='confirm_password'
                     type="password"
                     register={register('confirm_password', {

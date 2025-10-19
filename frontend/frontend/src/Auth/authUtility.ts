@@ -4,7 +4,7 @@ import axios from 'axios';
 export const loginHelper = async (username: string, password: string) => {
     const data = {'username': username, 'password': password}
     try {
-        const response = await axios.post('http://127.0.0.1:8000/api/accounts/login/',
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/accounts/login/`,
             data,
             {
                 headers: {

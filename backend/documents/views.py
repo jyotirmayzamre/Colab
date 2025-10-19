@@ -21,7 +21,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 .filter(authors=user)
                 .prefetch_related(
                     Prefetch(
-                        'accesses',
+                        'access',
                         queryset=DocumentAccess.objects.filter(user=user),
                         to_attr='user_access'
                     )

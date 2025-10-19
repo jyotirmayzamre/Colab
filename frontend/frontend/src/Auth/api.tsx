@@ -42,7 +42,7 @@ api.interceptors.response.use(
             originalRequest._retry = true;
             try {
                 const rT = localStorage.getItem('refreshToken');
-                const response = await axios.post('http://localhost:8000/api/accounts/token/refresh/', {
+                const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/accounts/token/refresh/`, {
                     rT
                 });
                 const accessToken = response.data['access'];

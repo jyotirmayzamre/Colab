@@ -37,10 +37,10 @@ function LoginForm(): JSX.Element {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}
-            className='bg-white text-black p-10'>
-            <div className="m-4">
-                <h2 className="text-3xl m-1">Login To Your Account</h2>
-                <p className="text-gray-600">Join Colab</p>
+            className='bg-white text-gray-900 w-full'>
+            <div className="mb-8">
+                <h2 className="text-3xl font-semibold mb-2">Welcome back to Colab</h2>
+                <p className="text-gray-500">Please enter your details</p>
             </div>
             {errors.root && (
                 <div className="text-red-500 text-xs m-0 p-0">{errors.root.message}</div>

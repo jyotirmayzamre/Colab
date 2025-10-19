@@ -125,8 +125,8 @@ class DocumentAccessManager(models.Manager):
     
 class DocumentAccess(models.Model):
     ACCESS = [('view', 'View'), ('edit', 'Edit'), ('owner', 'Owner')]
-    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='access')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access')
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='document_access')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_access')
     level = models.CharField(max_length=10, choices=ACCESS)
 
     objects: 'DocumentAccessManager' = DocumentAccessManager()

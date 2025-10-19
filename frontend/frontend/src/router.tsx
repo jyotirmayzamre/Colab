@@ -1,10 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import AuthPage from "./Pages/AuthPage";
-import LoginForm from "./Components/LoginForm";
-import RegisterForm from "./Components/RegisterForm";
+import LoginForm from "./Components/Forms/LoginForm";
+import RegisterForm from "./Components/Forms/RegisterForm";
 import ProtectedRoute from "./Auth/ProtectedRoute";
-import Home from "./Pages/HomePage";
+import HomePage from "./Pages/HomePage";
 
 const router = createBrowserRouter([
   {
@@ -21,7 +21,7 @@ const router = createBrowserRouter([
   },
   {
     path: 'home/:userId',
-    element: <ProtectedRoute><Home /></ProtectedRoute>,
+    element: <ProtectedRoute><HomePage /></ProtectedRoute>,
   }
 ]);
 

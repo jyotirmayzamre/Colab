@@ -19,13 +19,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return (Document.objects
                 .filter(authors=user)
-                .prefetch_related(
-                    Prefetch(
-                        'access',
-                        queryset=DocumentAccess.objects.filter(user=user),
-                        to_attr='user_access'
-                    )
-                )
                 .order_by('-updated_at'))
 
     def get_serializer_context(self):

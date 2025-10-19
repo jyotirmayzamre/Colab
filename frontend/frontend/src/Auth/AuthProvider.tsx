@@ -14,7 +14,21 @@ interface Props {
 export const AuthProvider = ({ children }: Props) => {
     const [user, setUser] = useState<User | null>(() => {
         const token = localStorage.getItem('accessToken');
-        return token ? jwtDecode(token) : null;
+        if (!token) return null;
+        try {
+            const decoded: User = jwtDecode(token);
+            if(decoded.exp * 1000 < Date.now()){
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                return null;
+            }
+            return decoded;
+        } catch(err){
+            console.error('Invalid token', err);
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            return null;
+        }
     })
 
     const login = async (username: string, password: string) => {

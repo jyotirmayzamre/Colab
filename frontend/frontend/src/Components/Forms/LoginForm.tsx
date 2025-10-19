@@ -1,8 +1,8 @@
 import FormInput from './FormInput';
-import { type JSX } from 'react';
+import { useEffect, type JSX } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../Auth/useAuth';
+import { useAuth } from '../../Auth/useAuth';
 
 
 type FormFields = {
@@ -20,6 +20,12 @@ function LoginForm(): JSX.Element {
     const navigate = useNavigate();
 
     const { login, user } = useAuth(); 
+
+    useEffect(() => {
+        if(user){
+            navigate(`/home/${user?.user_id}`)
+        }
+    }, [user, navigate])
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try{

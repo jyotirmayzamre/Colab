@@ -24,7 +24,6 @@ export const loginHelper = async (username: string, password: string) => {
 export const logoutHelper = async () => {
     try {
         await axios.post('http://127.0.0.1:8000/api/accounts/logout/');
-        console.log('Logout successful')
 
     } catch(error: unknown){
         if(error instanceof Error){

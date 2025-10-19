@@ -1,8 +1,9 @@
-import { type JSX } from "react";
+import { type JSX, useEffect } from "react";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import FormInput from "./FormInput";
 import axios from 'axios';
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../Auth/useAuth";
 
 type FormFields = {
     username: string;
@@ -20,7 +21,16 @@ function RegisterForm(): JSX.Element {
             formState: { errors, isSubmitting },
             getValues } = useForm<FormFields>();
 
+            
+
+    const { user } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+            if(user){
+                navigate(`/home/${user?.user_id}`)
+            }
+        }, [user, navigate])
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

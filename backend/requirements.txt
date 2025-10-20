@@ -3,6 +3,7 @@ djangorestframework
 django-cors-headers
 python-dotenv
 psycopg2-binary
-channels
 djangorestframework-simplejwt
 jsonpickle
+'channels[daphne]'
+channels_redis

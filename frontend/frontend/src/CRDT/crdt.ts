@@ -19,12 +19,13 @@ class CRDT {
         return newIndex;
     }
 
-    localInsert(value: string, row: number, col: number): void {
+    localInsert(value: string, row: number, col: number): Char {
         this.clock.tick();
         this.store[row] = this.store[row] ? this.store[row] : [];
         const newPosition = this.generateChar(row, col);
         const newChar: Char = {position: newPosition, lamport: this.clock.counter, value: value};
         this.store[row].splice(col, 0, newChar);
+        return newChar
     }
 
     localDelete(row: number, col: number): Char {
@@ -33,25 +34,19 @@ class CRDT {
         return deletedChar;
     }
 
-    // remoteInsert(inChar: Char){
-    //     this.clock.receive(inChar.lamport);
-    //     const index = binarySearch(this.store, inChar.position);
-    //     if(index){
-    //         this.store.splice(index, 0, inChar);
-    //     } else{
-    //         console.error('No available position for character', inChar);
-    //     }
-    // }
+    remoteInsert(row: number, inChar: Char){
+        this.clock.receive(inChar.lamport);
+        this.store[row] = this.store[row] ? this.store[row] : [];
+        const index = binarySearch(this.store[row], inChar.position);
+        this.store[row].splice(index, 0, inChar);
+        
+    }
 
-    // remoteDelete(delChar: Char){
-    //     this.clock.receive(delChar.lamport);
-    //     const index = binarySearch(this.store, delChar.position);
-    //     if(index){
-    //         this.store.splice(index, 1);
-    //     } else{
-    //         console.error('This character does not exist', delChar);
-    //     }
-    // }
+    remoteDelete(row: number, delChar: Char){
+        this.clock.receive(delChar.lamport);
+        const index = binarySearch(this.store[row], delChar.position);
+        this.store[row].splice(index, 1);
+    }
 }
 
 

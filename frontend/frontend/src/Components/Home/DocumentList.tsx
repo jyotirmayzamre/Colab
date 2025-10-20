@@ -1,9 +1,17 @@
 import type { JSX } from "react";
 import type { Document } from "../../Pages/HomePage";
+import { useNavigate } from "react-router-dom";
+
 
 
 
 function DocumentList({ documents }: { documents: Document[] | null }): JSX.Element {
+    const navigate = useNavigate();
+
+    const handleClick = (docId: string) => {
+        navigate(`/document/${docId}`);
+    }
+
     return (
         <>
             <div className="flex justify-start items-center ml-10">
@@ -14,7 +22,7 @@ function DocumentList({ documents }: { documents: Document[] | null }): JSX.Elem
                 <div key={item.id} className="bg-white flex justify-between items-center rounded-md shadow-sm p-5 w-full hover:cursor-pointer hover:opacity-75">
                     <div className="flex justify-center items-center gap-10">
                         <img src="/images/docs.png" className="h-7 w-7" />
-                        <p>{item.title}</p>
+                        <p onClick={() => handleClick(item.id)}>{item.title}</p>
                     </div>
                     <div className="flex justify-center items-center gap-14">
                         <p>{item.access}</p>

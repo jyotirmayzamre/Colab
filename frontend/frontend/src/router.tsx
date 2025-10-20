@@ -5,6 +5,7 @@ import LoginForm from "./Components/Forms/LoginForm";
 import RegisterForm from "./Components/Forms/RegisterForm";
 import ProtectedRoute from "./Auth/ProtectedRoute";
 import HomePage from "./Pages/HomePage";
+import EditorPage from "./Pages/EditorPage";
 
 const router = createBrowserRouter([
   {
@@ -22,6 +23,10 @@ const router = createBrowserRouter([
   {
     path: 'home/:userId',
     element: <ProtectedRoute><HomePage /></ProtectedRoute>,
+  },
+  {
+    path: 'document/:docId',
+    element: <ProtectedRoute><EditorPage /></ProtectedRoute>
   }
 ]);
 

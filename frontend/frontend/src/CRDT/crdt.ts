@@ -33,6 +33,7 @@ class CRDT {
     }
 
     remoteInsert(inChar: Char){
+        this.clock.receive(inChar.lamport);
         const index = binarySearch(this.store, inChar.position);
         if(index){
             this.store.splice(index, 0, inChar);
@@ -42,6 +43,7 @@ class CRDT {
     }
 
     remoteDelete(delChar: Char){
+        this.clock.receive(delChar.lamport);
         const index = binarySearch(this.store, delChar.position);
         if(index){
             this.store.splice(index, 1);

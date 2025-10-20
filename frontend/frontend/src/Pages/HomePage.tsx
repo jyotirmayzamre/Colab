@@ -28,7 +28,6 @@ function HomePage(): JSX.Element {
         const fetchData = async() => {
             const response = await api.get('/api/documents/');
             setDocuments(response.data.results);
-            console.log(response.data.results);
         }
         fetchData();
     }, []);

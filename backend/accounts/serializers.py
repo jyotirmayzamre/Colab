@@ -11,7 +11,7 @@ Read-only serializer for returning user to frontend
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username', 'email'] 
+        fields = ['id', 'site_id', 'first_name', 'last_name', 'username', 'email'] 
 
 
 '''
@@ -94,4 +94,5 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
         token['username'] = user.username
+        token['site_id'] = user.site_id
         return token

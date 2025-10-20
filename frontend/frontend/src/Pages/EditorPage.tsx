@@ -1,6 +1,8 @@
-import { useCallback, useState, type JSX } from "react";
+import { useCallback, useRef, useState, type JSX } from "react";
 import CodeMirror, { EditorSelection, ViewUpdate } from '@uiw/react-codemirror';
 import { basicLight } from "@uiw/codemirror-theme-basic";
+import CRDT from "../CRDT/crdt";
+import { useAuth } from "../Auth/useAuth";
 
 type Change = {
     oper: 'Insert' | 'Delete';
@@ -13,6 +15,10 @@ type Change = {
 function EditorPage(): JSX.Element {
     const [value, setValue] = useState<string>('');
     const [pos, setPos] = useState({'col': 0, 'row': 0});
+    const { user } = useAuth();
+    const crdt = useRef<CRDT | null>(null);
+
+    if(!crdt.current && user) crdt.current = new CRDT(user.site_id);
 
 
     const setCursorPos = (viewUpdate: ViewUpdate) => {
@@ -33,7 +39,7 @@ function EditorPage(): JSX.Element {
                     const oldLine = oldDoc.lineAt(fromA);
                     const row = oldLine.number - 1;
                     const col = fromA - oldLine.from;
-                    obj = {oper: 'Delete', text: deletedChar, row: row, col: col}
+                    obj = deletedChar !== '\n' ? {oper: 'Delete', text: deletedChar, row: row, col: col} : null;
                 } else {
                     const newLine = newDoc.lineAt(fromB);
                     const row = newLine.number - 1;
@@ -50,8 +56,17 @@ function EditorPage(): JSX.Element {
     const onChange = useCallback((val: string, viewUpdate: ViewUpdate) => {
         setValue(val);
         setCursorPos(viewUpdate);
+        const crdtRef = crdt.current;
+        if(!crdtRef) return;
         const change: Change | null = parseChange(viewUpdate);
-        console.log(change ? change : 'null');
+        if(!change) return;
+
+        if(change?.oper == 'Insert'){
+            crdtRef.localInsert(change.text, change.row, change.col);
+        } else{
+            crdtRef.localDelete(change!.row, change!.col);
+        }
+        console.log(crdtRef.store);
     }, []);
 
 

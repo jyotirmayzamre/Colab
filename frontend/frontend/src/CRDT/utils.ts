@@ -1,24 +1,14 @@
-export class Identifier {
+export type Identifier = {
     digit: number;
-    user: string;
-
-    constructor(digit: number, user: string){
-        this.digit = digit;
-        this.user = user;
-    }
+    site_id: number;
 }
 
-export class Char {
+export type Char = {
     position: Identifier[];
     lamport: number;
     value: string;
-
-    constructor(position: Identifier[], lamport: number, value: string){
-        this.position = position;
-        this.lamport = lamport;
-        this.value = value;
-    }
 }
+
 
 export class LamportClock {
     counter: number;
@@ -41,7 +31,7 @@ export class LamportClock {
 
 function compareIdentifier(id1: Identifier, id2: Identifier): number {
     if(id1.digit != id2.digit) return id1.digit - id2.digit;
-    return id1.user.localeCompare(id2.user);
+    return id1.site_id - id2.site_id;
 }
 
 
@@ -105,6 +95,7 @@ function subtract(num1: number[], num2: number[]): number[] {
 }
 
 
+
 /*
 Works with the assumption that all results will be less than 1 (because adding diff)
 */
@@ -132,12 +123,9 @@ function add(num1: number[], num2: number[]): number[] {
 }
 
 
-
-
 function increment(num: number[], delta: number[]): number[] {
     const firstNonZeroDigit = delta.findIndex(x => x != 0);
     const inc = delta.slice(0, firstNonZeroDigit).concat([0, 1]);
-    console.log(inc);
     const check1 = add(num, inc);
     const check2 = check1[check1.length - 1] === 0 ? add(check1, inc) : check1;
     return check2;
@@ -146,7 +134,7 @@ function increment(num: number[], delta: number[]): number[] {
 
 
 
-function toPosition(n1: number[], before: Identifier[], after: Identifier[], user_id: string): Identifier[]{
+function toPosition(n1: number[], before: Identifier[], after: Identifier[], site_id_id: number): Identifier[]{
     const res: Identifier[] = [];
     const n1Len = n1.length;
     const beforeLen = before.length;
@@ -154,17 +142,21 @@ function toPosition(n1: number[], before: Identifier[], after: Identifier[], use
 
     for(let i = 0; i < n1Len; i++){
         if(i < beforeLen && n1[i] == before[i].digit){
-            res.push(new Identifier(n1[i], before[i].user))
+            res.push({digit: n1[i], site_id: before[i].site_id});
             continue;
         }
 
         if(i < afterLen && n1[i] == after[i].digit){
-            res.push(new Identifier(n1[i], after[i].user))
+            res.push({digit: n1[i], site_id: after[i].site_id});
+            continue;
         }
 
         if(i == n1Len - 1){
-            res.push(new Identifier(n1[i], user_id))
+            res.push({digit: n1[i], site_id: site_id_id});
+            continue;
         }
+
+        res.push({digit: n1[i], site_id: site_id_id});
     }
 
     return res;
@@ -172,28 +164,32 @@ function toPosition(n1: number[], before: Identifier[], after: Identifier[], use
 
 
 
-export function generateCharPosition(before: Identifier[], after: Identifier[], user_id: string): Identifier[] {
-    const head1: Identifier = before[0] || new Identifier(0, user_id);
-    const head2: Identifier = after[0] || new Identifier(1, user_id);
+export function generateCharPosition(before: Identifier[], after: Identifier[], site_id: number): Identifier[] {
+    const head1: Identifier = before[0] || {digit: 0, site_id};
+    const head2: Identifier = after[0] || {digit: 1, site_id};
 
     if(head1.digit !== head2.digit){
         const n1: number[] = toNum(before);
         const n2: number[] = toNum(after);
         const delta = subtract(n1, n2);
         const next = increment(n1, delta);
-        return toPosition(next, before, after, user_id);
+        return toPosition(next, before, after, site_id);
     } else {
-        if (head1.user < head2.user){
-            const middle = generateCharPosition(before.slice(1), [], user_id);
-            return middle.splice(0, 0, head1);
-        } else if (head1.user === head2.user){
-            const middle = generateCharPosition(before.slice(1), after.slice(1), user_id);
-            return middle.splice(0, 0, head1);
+        if (head1.site_id < head2.site_id){
+            const middle = generateCharPosition(before.slice(1), [], site_id);
+            middle.splice(0, 0, head1);
+            return middle;
+        } else if (head1.site_id === head2.site_id){
+            const middle = generateCharPosition(before.slice(1), after.slice(1), site_id);
+            middle.splice(0, 0, head1);
+            return middle;
         } else{
             throw new Error("Invalid ordering");
         }
     }
 }
+
+//console.log(generateCharPosition([new Identifier(0, 'xyz'), new Identifier(1, 'xyz')], [new Identifier(0, 'xyz'), new Identifier(2, 'xyz')], 'xyz'));
 
 export function binarySearch(arr: Char[], item: Identifier[], compare: (p1: Identifier[], p2: Identifier[]) => number = comparePosition){
     function algo(L: number, R: number){

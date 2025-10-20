@@ -4,6 +4,7 @@ export interface User {
     jti: string;
     user_id: string;
     username: string;
+    site_id: number;
 }
 
 export interface AuthContextType {

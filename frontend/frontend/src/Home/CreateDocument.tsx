@@ -1,6 +1,6 @@
 import type { JSX } from "react";
-import api from "../../Auth/api";
-import type { Document } from "../../Pages/HomePage";
+import api from "../Auth/api";
+import type { Document } from "../Home/HomePage";
 
 type createProps = {
     onCreated: (doc: Document) => void;

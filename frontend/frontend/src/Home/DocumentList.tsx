@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Document } from "../../Pages/HomePage";
+import type { Document } from "../Home//HomePage";
 import { useNavigate } from "react-router-dom";
 
 

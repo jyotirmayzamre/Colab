@@ -3,7 +3,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import FormInput from "./FormInput";
 import axios from 'axios';
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../Auth/useAuth";
+import { useAuth } from "../Auth/useAuth";
 
 type FormFields = {
     username: string;

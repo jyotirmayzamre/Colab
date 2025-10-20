@@ -1,8 +1,8 @@
 import { useState,useEffect, type JSX } from "react";
-import CreateDocument from "../Components/Home/CreateDocument";
-import DocumentList from "../Components/Home/DocumentList";
+import CreateDocument from "./CreateDocument";
+import DocumentList from "./DocumentList";
 import api from "../Auth/api";
-import Navbar from "../Components/Home/Navbar";
+import Navbar from "./Navbar";
 
 export type Document = {
     access: string;

@@ -2,7 +2,7 @@ import FormInput from './FormInput';
 import { useEffect, type JSX } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../Auth/useAuth';
+import { useAuth } from '../Auth/useAuth';
 
 
 type FormFields = {

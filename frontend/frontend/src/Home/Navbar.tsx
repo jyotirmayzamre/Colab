@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { useAuth } from "../../Auth/useAuth";
+import { useAuth } from "../Auth/useAuth";
 
 function Navbar(): JSX.Element {
     const { logout } = useAuth();

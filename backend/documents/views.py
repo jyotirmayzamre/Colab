@@ -1,9 +1,10 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .serializers import DocumentSerializer
+from .serializers import DocumentSerializer, DocumentAccessSerializer
 from .models import Document, DocumentAccess
 from rest_framework.pagination import LimitOffsetPagination
-from django.db.models import Prefetch
+
+
 
 
 class DocumentPagination(LimitOffsetPagination):
@@ -28,3 +29,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
         
     def perform_destroy(self, instance):
         Document.objects.delete_document(docId=instance.id)
+
+
+class DocumentAccessViewSet(viewsets.ModelViewSet):
+    serializer_class = DocumentAccessSerializer
+    permission_classes=(IsAuthenticated,)
+    queryset=DocumentAccess.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save()
+        

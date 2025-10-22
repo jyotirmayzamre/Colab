@@ -69,12 +69,9 @@ class DocumentAccessManager(models.Manager):
         
         if self.filter(document=document, user=user).exists():
             raise ValueError('Access already exists for this user and document')
-
-
         
         docAccess = self.create(document_id=docId, user_id=userId, level=level)
-        if user not in document.authors.all():
-            document.authors.add(user)
+        document.authors.add(user)
 
         return docAccess
     
@@ -115,16 +112,15 @@ class DocumentAccessManager(models.Manager):
         if access.level == 'owner':
             raise ValueError('Cannot delete owner access through this method')
         
-        if user in document.authors.all():
-            document.authors.remove(user)
 
+        document.authors.remove(user)
         access.delete()
 
         return
 
     
 class DocumentAccess(models.Model):
-    ACCESS = [('view', 'View'), ('edit', 'Edit'), ('owner', 'Owner')]
+    ACCESS = [('viewer', 'Viewer'), ('editor', 'Editor'), ('owner', 'Owner')]
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='document_access')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_access')
     level = models.CharField(max_length=10, choices=ACCESS)

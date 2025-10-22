@@ -2,6 +2,17 @@ from rest_framework import serializers
 from .models import Document, DocumentAccess
 from django.utils import timezone
 
+class DocumentAccessSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentAccess
+        fields = ['user', 'document', 'level']
+
+    def create(self, validated_data):
+        level = validated_data['level']
+        userId = validated_data['user'].id
+        docId = validated_data['document'].id
+        return DocumentAccess.objects.create_access(docId, userId, level)
+
 class DocumentSerializer(serializers.ModelSerializer):
     access = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField() 

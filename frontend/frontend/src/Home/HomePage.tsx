@@ -26,8 +26,13 @@ function HomePage(): JSX.Element {
 
     useEffect(() => {
         const fetchData = async() => {
-            const response = await api.get('/api/documents/');
-            setDocuments(response.data.results);
+            try{
+                const response = await api.get('/api/documents/');
+                setDocuments(response.data.results);
+            } catch(error){
+                console.error(error);
+            }
+            
         }
         fetchData();
     }, []);

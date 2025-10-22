@@ -53,21 +53,21 @@ class DocumentTests(TestCase):
         doc = Document.objects.create_document(userId=self.user.id, title='My Doc') # type: ignore
         new_user = User.objects.create_user(username='new_user', password='password123')
 
-        access = DocumentAccess.objects.create_access(doc.id, new_user.id, 'view') # type: ignore
+        access = DocumentAccess.objects.create_access(doc.id, new_user.id, 'viewer') # type: ignore
 
         #Test access level
-        self.assertEqual(access.level, 'view')
+        self.assertEqual(access.level, 'viewer')
 
         #Test user in authors
         self.assertIn(new_user, doc.authors.all())
 
         #Test invalid doc
         with self.assertRaises(ValueError):
-            access = DocumentAccess.objects.create_access(uuid.uuid4(), new_user.id, 'view') # type: ignore
+            access = DocumentAccess.objects.create_access(uuid.uuid4(), new_user.id, 'viewer') # type: ignore
 
         #Test invalid user
         with self.assertRaises(ValueError):
-            access = DocumentAccess.objects.create_access(doc.id, uuid.uuid4(), 'view')
+            access = DocumentAccess.objects.create_access(doc.id, uuid.uuid4(), 'viewer')
 
     
     def test_update_access(self):
@@ -75,15 +75,15 @@ class DocumentTests(TestCase):
 
         #Test updating owner
         with self.assertRaises(ValueError):
-            DocumentAccess.objects.update_access(doc.id, self.user.id, 'edit') # type: ignore
+            DocumentAccess.objects.update_access(doc.id, self.user.id, 'editor') # type: ignore
 
 
         new_user = User.objects.create_user(username='new_user', password='password123')
         DocumentAccess.objects.create_access(doc.id, new_user.id, 'view') # type: ignore
-        new_access = DocumentAccess.objects.update_access(doc.id, new_user.id, 'edit') # type: ignore
+        new_access = DocumentAccess.objects.update_access(doc.id, new_user.id, 'editor') # type: ignore
 
         #Test new access level
-        self.assertEqual(new_access.level, 'edit')
+        self.assertEqual(new_access.level, 'editor')
 
         #Test user in authors
         self.assertIn(new_user, doc.authors.all())
@@ -94,7 +94,7 @@ class DocumentTests(TestCase):
 
         #Test access level not existing
         with self.assertRaises(ValueError):
-            DocumentAccess.objects.update_access(uuid.uuid4(), uuid.uuid4(), 'edit')
+            DocumentAccess.objects.update_access(uuid.uuid4(), uuid.uuid4(), 'editor')
 
     def test_delete_access(self):
         doc = Document.objects.create_document(userId=self.user.id, title='My Doc') # type: ignore
@@ -119,6 +119,6 @@ class DocumentTests(TestCase):
              DocumentAccess.objects.delete_access(doc.id, self.user.id) # type: ignore
             
         #Test correct deletion
-        access = DocumentAccess.objects.create_access(doc.id, new_user.id, 'view') # type: ignore
+        access = DocumentAccess.objects.create_access(doc.id, new_user.id, 'viewer') # type: ignore
         DocumentAccess.objects.delete_access(doc.id, new_user.id) # type: ignore
         self.assertNotIn(new_user, doc.authors.all())

@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 import uuid
 from django.contrib.auth.models import UserManager
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class User(AbstractUser):
@@ -11,6 +10,11 @@ class User(AbstractUser):
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(unique=True)
     site_id = models.PositiveSmallIntegerField(unique=True, null=True, blank=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['first_name', 'last_name'])
+        ]
 
     def save(self, *args, **kwargs):
         if self.site_id is None:

@@ -7,6 +7,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.db.models.functions import Concat
+from django.db.models import Value
+from .models import User
 
 '''
 Endpoint for registration of users
@@ -62,3 +65,17 @@ class MeAPIView(APIView):
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+
+
+class SearchUserAPIView(APIView):
+    def get(self, request: Request):
+        query = request.query_params['q']
+        if not query:
+            return Response({'results': []})
+        
+        q = User.objects.annotate(fullname=Concat('first_name', Value(' '), 'last_name'))
+        c = q.filter(fullname__icontains=query).exclude(id=request.user.id)[:5]
+        serializer = UserSerializer(c, many=True)
+
+        return Response({'results': serializer.data})

@@ -7,6 +7,7 @@ import { useParams } from "react-router-dom";
 import type { Char } from "../CRDT/utils";
 import { type Change, getCursorPos, getChangeObj } from "./EditorUtils";
 import { useDocumentWebSocket } from "./DocumentWS";
+import ShareDoc from "./ShareDoc";
 
 
 
@@ -57,6 +58,8 @@ function EditorPage(): JSX.Element {
                 }}
             />
             <p>{pos.row}:{pos.col}</p>
+
+            <ShareDoc />
         </div>
         
     )

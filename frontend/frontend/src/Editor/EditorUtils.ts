@@ -22,20 +22,22 @@ export const getChangeObj = (viewUpdate: ViewUpdate): Change | null => {
     const newDoc = viewUpdate.state.doc;
     let obj: Change | null = null;
     viewUpdate.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-        if(inserted.text.length !== 2){
+        //if(inserted.text.length !== 2){
             if(inserted.length === 0){
                 const deletedChar = oldDoc.sliceString(fromA, toA);
                 const oldLine = oldDoc.lineAt(fromA);
                 const row = oldLine.number - 1;
                 const col = fromA - oldLine.from;
-                obj = deletedChar !== '\n' ? {oper: 'Delete', text: deletedChar, row: row, col: col} : null;
+                obj = {oper: 'Delete', text: deletedChar, row: row, col: col};
             } else {
                 const newLine = newDoc.lineAt(fromB);
                 const row = newLine.number - 1;
                 const col = fromB - newLine.from;
-                obj = {oper: 'Insert', text: inserted.text[0], row: row, col: col};
+                console.log(inserted.text[0]);
+                console.log('\n');
+                obj = {oper: 'Insert', text: inserted.text.length !== 2 ? inserted.text[0] : '\n', row: row, col: col};
             }
-        }
+        //}
         
     }, true);
     return obj;

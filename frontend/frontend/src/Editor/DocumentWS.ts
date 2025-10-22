@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import CRDT from "../CRDT/crdt";
 import type { EditorView } from "@uiw/react-codemirror";
 
+
 export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObject<CRDT | null>, editorRef: RefObject<EditorView | null>) => {
 
     const ws = useRef<WebSocket | null>(null);
@@ -9,7 +10,7 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
     useEffect(() => {
         if(!docId) return;
 
-        const wsURL = `ws://localhost:8000/ws/documents/${docId}/`;
+        const wsURL = `ws://127.0.0.1:8000/ws/documents/${docId}/`;
         ws.current = new WebSocket(wsURL);
 
         ws.current.onopen = () => console.log("Websocket connected");
@@ -17,9 +18,10 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
         ws.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            if(!crdtRef.current) return;
-
-            const line = editorRef.current!.state.doc.line(data.row + 1); 
+            if(!crdtRef.current) return;            
+            
+            const doc = editorRef.current!.state.doc;
+            const line = doc.line(data.row + 1); 
             const pos = line.from + data.col;
 
             if(data.oper == 'Insert'){

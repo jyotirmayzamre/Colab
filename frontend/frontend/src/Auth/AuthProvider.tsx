@@ -3,8 +3,6 @@ import { AuthContext } from './useAuth';
 import type { User } from './types';
 import api from './api';
 
-
-
 interface Props {
     children: ReactNode;
 }

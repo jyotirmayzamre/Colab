@@ -6,58 +6,58 @@ const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL, 
     headers: {
         'Content-Type': 'application/json'
-    }
+    },
+    withCredentials: true
 });
 
 
-let onTokenRefresh: ((access: string, refresh: string) => void) | null = null;
-let onLogout: (() => void) | null = null
+let isRefreshing = false;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let failedQueue: { resolve: (value: unknown) => void; reject: (reason?: any) => void; }[] = [];
 
-export const registerTokenRefreshHandler = (fn: typeof onTokenRefresh) => {
-    onTokenRefresh = fn;
-}
-
-export const logoutHandler = (fn: typeof onLogout) => {
-    onLogout = fn;
-}
-
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('accessToken');
-        if(token){
-            config.headers.Authorization = `Bearer ${token}`
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error)
+const processQueue = (error: unknown, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
     }
-)
+  });
+  
+  failedQueue = [];
+};
+
 
 api.interceptors.response.use(
     response => response,
     async error => {
         const originalRequest = error.config;
         if(error.response.status === 401 && !originalRequest._retry){
-            originalRequest._retry = true;
-            try {
-                const rT = localStorage.getItem('refreshToken');
-                const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/accounts/token/refresh/`, {
-                    rT
-                });
-                const accessToken = response.data['access'];
-                const refreshToken = response.data['refresh'];
-                onTokenRefresh?.(accessToken, refreshToken);
 
-                api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+            if(isRefreshing){
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then(() => api(originalRequest))
+                    .catch(err => Promise.reject(err))
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+    
+            try {
+               
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/accounts/token/refresh/`, {}, {withCredentials: true});
+                processQueue(null);
+                isRefreshing = false;
                 return api(originalRequest);
 
             } catch(refreshError){
-                console.error('Token refresh failed:', refreshError);
-                onLogout?.();
-                window.location.href = '/auth/login';
+                processQueue(refreshError, null);
+                isRefreshing = false;
+                window.dispatchEvent(new Event('auth:logout'));
                 return Promise.reject(refreshError);
-            }
+            } 
         }
         return Promise.reject(error);
     }

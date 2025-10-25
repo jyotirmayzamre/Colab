@@ -8,8 +8,20 @@ interface ProtectedProps {
 
 
 const ProtectedRoute = ({ children }: ProtectedProps) => {
-    const { user } = useAuth();
-    return !user ? <Navigate to='/auth/login' /> : children;
+    const { authenticated, loading } = useAuth();
+    if(loading){
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div>Loading...</div>
+            </div>
+        )
+    }
+
+    if(!authenticated){
+        return <Navigate to='/auth/login' />
+    }
+
+    return children;
 }
 
 export default ProtectedRoute;

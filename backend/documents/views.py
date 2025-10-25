@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import DocumentSerializer, DocumentAccessSerializer
 from .models import Document, DocumentAccess
 from rest_framework.pagination import LimitOffsetPagination
+from accounts.serializers import CookieJWTAuthentication
 
 
 
@@ -14,6 +15,7 @@ class DocumentPagination(LimitOffsetPagination):
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
     permission_classes=(IsAuthenticated,)
+    authentication_classes=[CookieJWTAuthentication]
     pagination_class = DocumentPagination
     
     def get_queryset(self):
@@ -34,6 +36,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 class DocumentAccessViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentAccessSerializer
     permission_classes=(IsAuthenticated,)
+    authentication_classes=[CookieJWTAuthentication]
     queryset=DocumentAccess.objects.all()
 
     def perform_create(self, serializer):

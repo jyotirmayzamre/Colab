@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from .utils import validate_email as check_valid_email
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework import exceptions
 
 '''
 Read-only serializer for returning user to frontend
@@ -80,13 +82,7 @@ class LoginSerializer(serializers.Serializer):
         
         token_serializer = MyTokenObtainPairSerializer(data={'username': username, 'password': password})
         token_serializer.is_valid(raise_exception=True)
-        tokens = token_serializer.validated_data
-        
-        return {
-            'access': tokens['access'], #type: ignore
-            'refresh': tokens['refresh'], #type: ignore
-        }
-
+        return token_serializer.validated_data
         
         
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -96,3 +92,13 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         token['site_id'] = user.site_id
         return token
+    
+
+class CookieJWTAuthentication(JWTAuthentication):
+    def authenticate(self, request):
+        token = request.COOKIES.get('access')
+        if token is None:
+            return None
+        
+        validated_token = self.get_validated_token(token)
+        return self.get_user(validated_token), validated_token

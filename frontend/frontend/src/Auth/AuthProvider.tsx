@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { loginHelper, logoutHelper } from './authUtility';
+import { useEffect,useCallback, useRef, useState, type ReactNode } from 'react';
 import { AuthContext } from './useAuth';
-import { jwtDecode } from 'jwt-decode';
 import type { User } from './types';
-import { logoutHandler, registerTokenRefreshHandler } from './api';
+import api from './api';
 
 
 
@@ -12,56 +10,88 @@ interface Props {
 }
 
 export const AuthProvider = ({ children }: Props) => {
-    const [user, setUser] = useState<User | null>(() => {
-        const token = localStorage.getItem('accessToken');
-        if (!token) return null;
-        try {
-            const decoded: User = jwtDecode(token);
-            if(decoded.exp * 1000 < Date.now()){
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-                return null;
-            }
-            return decoded;
-        } catch(err){
-            console.error('Invalid token', err);
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            return null;
-        }
-    })
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [authenticated, setAuthenticated] = useState(false);
+    const isLoggingOut = useRef(false);
+
 
     const login = async (username: string, password: string) => {
-        const { access, refresh } = await loginHelper(username, password);
-        setUser(jwtDecode(access));
-        localStorage.setItem('accessToken', access);
-        localStorage.setItem('refreshToken', refresh);
+        const data = {'username': username, 'password': password}
+        try {
+            const response = await api.post('/api/accounts/login/', data)
+            await getUser();
+            return response.data;
+        } catch(error){
+            setUser(null);
+            setAuthenticated(false);
+            console.error(error);
+        } 
     }
 
-    const logout = useCallback(async () => {
-        setUser(null);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        await logoutHelper();
+    const getUser = useCallback(async () => {
+        try {
+            const response = await api.get('/api/accounts/me/');
+            const data = response.data;
+            const user: User = { username: data.username, site_id: data.site_id, user_id: data.id }
+            setUser(user);
+            setAuthenticated(true);
+            return response.data;
+        } catch(err){
+            setUser(null);
+            setAuthenticated(false);
+            console.error(err);
+        }  
     }, []);
 
-    const refreshTokens = useCallback((access: string, refresh: string) => {
-        localStorage.setItem('accessToken', access);
-        localStorage.setItem('refreshToken', refresh);
-        setUser(jwtDecode(access));
-    }, []);
+    const logout = async () => {
+        isLoggingOut.current = true;
+        try {
+            await api.post('/api/accounts/logout/');
+
+        } catch(error: unknown){
+            if(error instanceof Error){
+                console.error(error.message)
+            }
+        } finally {
+            setUser(null);
+            setAuthenticated(false);
+            isLoggingOut.current = false;
+        }
+    };
 
 
     useEffect(() => {
-        registerTokenRefreshHandler(refreshTokens)
-        logoutHandler(logout);
+        const checkAuth = async() => {
+            if(isLoggingOut.current) return;
 
-    }, [refreshTokens, logout]);
+            try {
+                await getUser();
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        checkAuth();
 
-   
+        const handleLogout = () => {
+            isLoggingOut.current = true;
+            setUser(null);
+            setAuthenticated(false);
+            isLoggingOut.current = false;
+        };
+
+        window.addEventListener('auth:logout', handleLogout);
+
+        return () => {
+            window.removeEventListener('auth:logout', handleLogout);
+        };
+    }, [getUser]);
+
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, refreshTokens }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, authenticated, getUser }}>
             {children}
         </AuthContext.Provider>
     )

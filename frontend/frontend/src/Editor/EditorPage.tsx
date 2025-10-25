@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import CodeMirror, { EditorSelection, EditorView, ViewUpdate } from '@uiw/react-codemirror';
 import { basicLight } from "@uiw/codemirror-theme-basic";
 import CRDT from "../CRDT/crdt";
@@ -7,20 +7,39 @@ import { useParams } from "react-router-dom";
 import type { Char } from "../CRDT/utils";
 import { type Change, getCursorPos, getChangeObj } from "./EditorUtils";
 import { useDocumentWebSocket } from "./DocumentWS";
-import ShareDoc from "./ShareDoc";
+import EditorNavbar from "./EditorNavbar";
+import api from "../Auth/api";
 
 
 
 function EditorPage(): JSX.Element {
     const params = useParams();
+    const { user } = useAuth();
+
     const [value, setValue] = useState<string>('');
     const [pos, setPos] = useState({'col': 0, 'row': 0});
-    const { user } = useAuth();
+    const [docTitle, setDocTitle] = useState<string>('');
+    
     const crdt = useRef<CRDT | null>(null);
     if(!crdt.current && user) crdt.current = new CRDT(user.site_id);
     const editorViewRef = useRef<EditorView | null>(null);
     const ws = useDocumentWebSocket(params.docId, crdt, editorViewRef);
-    
+
+
+    useEffect(() => {
+        const fetchDoc = async () => {
+            try{
+                const response = await api.get(`/api/documents/${params.docId}/`);
+                setDocTitle(response.data.title);
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        fetchDoc();
+
+
+    }, [params])    
     
 
 
@@ -48,8 +67,9 @@ function EditorPage(): JSX.Element {
     }, [ws]);
 
     return (
-        <div className="flex flex-col justify-center items-center">
-            <CodeMirror value={value} height="500px" width="500px" onChange={onChange} theme={basicLight}
+        <div className="flex flex-col justify-center items-center gap-2">
+            <EditorNavbar docTitle={ docTitle } docId={ params.docId! }/>
+            <CodeMirror value={value} height="600px" width="900px" onChange={onChange} theme={basicLight}
                 basicSetup={ {lineNumbers: true} }
                 selection={EditorSelection.cursor(0)}
                 autoFocus={true}
@@ -58,8 +78,6 @@ function EditorPage(): JSX.Element {
                 }}
             />
             <p>{pos.row}:{pos.col}</p>
-
-            <ShareDoc />
         </div>
         
     )

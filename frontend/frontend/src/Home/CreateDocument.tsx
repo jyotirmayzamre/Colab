@@ -1,17 +1,21 @@
 import type { JSX } from "react";
 import api from "../Auth/api";
 import type { Document } from "../Home/HomePage";
+import { useNavigate } from "react-router-dom";
 
 type createProps = {
-    onCreated: (doc: Document) => void;
+    onCreated: (doc: Document) => Document;
 }
 
 function CreateDocument({ onCreated }: createProps): JSX.Element {
+    const navigate = useNavigate();
 
     const createDoc = async () => {
         try {
             const response = await api.post('/api/documents/');
-            onCreated(response.data);
+            const doc = onCreated(response.data);
+            navigate(`/document/${doc.id}`)
+
         } catch(err){
             console.error(err)
         }

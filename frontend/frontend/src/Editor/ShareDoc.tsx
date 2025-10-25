@@ -124,7 +124,7 @@ function ShareDoc(): JSX.Element {
                 
             </form>
         </dialog>
-        <button onClick={openModal} className="rounded-lg text-white bg-green-800 p-3 hover: cursor-pointer transition active:scale-95" type="button">Share</button>
+        <button onClick={openModal} className="rounded-lg text-white bg-green-800 w-20 p-3 hover: cursor-pointer transition active:scale-95" type="button">Share</button>
         </>
     )
 }

@@ -2,7 +2,7 @@ import { useState,useEffect, type JSX } from "react";
 import CreateDocument from "./CreateDocument";
 import DocumentList from "./DocumentList";
 import api from "../Auth/api";
-import Navbar from "./Navbar";
+import HomeNavbar from "./HomeNavbar";
 
 export type Document = {
     access: string;
@@ -15,13 +15,14 @@ export type Document = {
 function HomePage(): JSX.Element {
     const [documents, setDocuments] = useState<Document[] | null>(null);
 
-    const newDocument = (newDoc: Document) => {
+    const newDocument = (newDoc: Document): Document => {
         if(documents){
             const newState = [...documents, newDoc];
             setDocuments(newState);
         } else{
             setDocuments([newDoc]);
         }
+        return newDoc;
     }
 
     useEffect(() => {
@@ -40,7 +41,7 @@ function HomePage(): JSX.Element {
     return (
         <>
             <header>
-                <Navbar />
+                <HomeNavbar />
             </header>
             <main className="bg-[rgb(241,243,244)] w-full h-full min-h-screen flex flex-col gap-2">
                 <CreateDocument onCreated={ newDocument }/>

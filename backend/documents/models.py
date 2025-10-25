@@ -17,7 +17,7 @@ class DocumentManager(models.Manager):
             raise ValueError('User with this id does not exist')
         
         doc = self.create(title=title)
-        DocumentAccess.objects.create_access(docId=doc.id, userId=userId, level='owner')
+        DocumentAccess.objects.create_or_update_access(docId=doc.id, userId=userId, level='owner')
 
         return doc
     
@@ -53,7 +53,7 @@ class DocumentAccessManager(models.Manager):
     '''
     Anytime an access object is created, the user is added to the document's list of authors
     '''
-    def create_access(self, docId: UUID, userId: UUID, level: str) -> 'DocumentAccess':
+    def create_or_update_access(self, docId: UUID, userId: UUID, level: str) -> tuple['DocumentAccess', bool]:
         try:
             document = Document.objects.get(pk=docId)
         except ObjectDoesNotExist:
@@ -67,31 +67,19 @@ class DocumentAccessManager(models.Manager):
         if level not in dict(DocumentAccess.ACCESS):
             raise ValueError('Invalid access level label')
         
-        if self.filter(document=document, user=user).exists():
-            raise ValueError('Access already exists for this user and document')
-        
-        docAccess = self.create(document_id=docId, user_id=userId, level=level)
-        document.authors.add(user)
-
-        return docAccess
-    
-    
-    def update_access(self, docId: UUID, userId: UUID, level: str) -> 'DocumentAccess':
-        if level not in dict(DocumentAccess.ACCESS):
-            raise ValueError('Invalid access level label')
-        
         try:
-            access = self.get(document_id=docId, user_id=userId)
-        except DocumentAccess.DoesNotExist:
-            raise ValueError('No existing access for this particular user and document')
+            access = self.get(document=document, user=user)
+            if access.level == 'owner':
+                raise ValueError('Cannot edit access level of an owner')
+            
+            access.level = level
+            access.save(update_fields=['level'])
+            return access, False  
         
-        if access.level == 'owner':
-            raise ValueError('Cannot edit access level of an owner')
-
-        access.level = level
-        access.save(update_fields=['level'])
-        return access
-    
+        except DocumentAccess.DoesNotExist:
+            docAccess = self.create(document=document, user=user, level=level)
+            document.authors.add(user)
+            return docAccess, True  
 
     def delete_access(self, docId: UUID, userId: UUID):
         try:

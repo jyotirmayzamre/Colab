@@ -123,6 +123,9 @@ class RefreshTokenView(TokenRefreshView):
         return response
 
 class SearchUserAPIView(APIView):
+    authentication_classes = [CookieJWTAuthentication] 
+    permission_classes = [IsAuthenticated]
+
     def get(self, request: Request):
         query = request.query_params['q']
         if not query:

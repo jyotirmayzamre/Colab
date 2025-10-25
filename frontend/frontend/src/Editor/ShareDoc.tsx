@@ -37,8 +37,8 @@ function ShareDoc(): JSX.Element {
         const payload = { document: docId, user: userId, level: access}
 
         try{
-            const response = await api.post('/api/documentAccess/', payload)
-            console.log(response)
+            await api.post('/api/documentAccess/', payload)
+            dialogRef.current?.close();
         } catch(error){
             console.error(error);
         }

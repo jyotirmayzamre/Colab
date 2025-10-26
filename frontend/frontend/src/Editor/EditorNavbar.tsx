@@ -8,9 +8,10 @@ import api from "../Auth/api";
 type props = {
     docTitle: string;
     docId: string;
+    editable: boolean;
 }
 
-function EditorNavbar({ docTitle, docId }: props): JSX.Element {
+function EditorNavbar({ docTitle, docId, editable }: props): JSX.Element {
     const { user } = useAuth();
     const [value, setValue] = useState<string>(docTitle);
     const navigate = useNavigate();
@@ -55,11 +56,12 @@ function EditorNavbar({ docTitle, docId }: props): JSX.Element {
 
 
     return (
-            <nav className="p-4 flex justify-around items-center w-full">
+            <nav className="p-2 flex justify-between items-center w-screen">
                 <div className="flex justify-center items-center gap-3">
                     <img src="/images/docs.png" className="h-12 w-12 hover:cursor-pointer" onClick={handleClick}/>
-                    <div className="flex flex-col justify-center items-start gap-2">
-                        <input className="text-xl text-gray-600 p-0.5" value={value} onChange={onChangeHandler} type="text"/>
+                    <div className="flex flex-col justify-center items-start gap-1">
+                        <input className="text-xl text-gray-600 p-0.5 border rounded-sm border-transparent hover:border-gray-600 transition-colors" 
+                        value={value} onChange={onChangeHandler} type="text" readOnly={!editable}/>
                         <div className="flex justify-center items-start gap-4 text-sm">
                             <span>File</span>
                             <span>Edit</span>

@@ -50,6 +50,10 @@ function ShareDoc(): JSX.Element {
         dialogRef.current?.showModal();
     }
 
+    const closeModal = (): void => {
+        dialogRef.current?.close();
+    }
+
     
 
 
@@ -81,8 +85,9 @@ function ShareDoc(): JSX.Element {
         <>
         <dialog ref={dialogRef} className="w-11/12 max-w-md p-6 rounded-lg shadow-lg relative m-auto">
             <form method="dialog" onSubmit={handleSubmit(onSubmit)}>
-                <div className="flex mb-4">
+                <div className="flex mb-4 justify-between items-center">
                     <h2 className="text-2xl font-semibold ml-4">Share Document</h2>
+                    <p className="hover:cursor-pointer" onClick={closeModal}>&#10006;</p>
                 </div>
                 <div className="flex justify-center items-start gap-2">
                     <FormInput 
@@ -124,7 +129,9 @@ function ShareDoc(): JSX.Element {
                 
             </form>
         </dialog>
-        <button onClick={openModal} className="rounded-lg text-white bg-green-800 w-20 p-3 hover: cursor-pointer transition active:scale-95" type="button">Share</button>
+        <button onClick={openModal} className=" flex justify-center items-center gap-2 rounded-4xl text-black bg-[rgb(194,231,255)] w-26 p-3 hover:cursor-pointer hover:brightness-90 transition active:scale-95" type="button">
+            <img src='/images/padlock.png' className="h-5 w-5"/>
+            Share</button>
         </>
     )
 }

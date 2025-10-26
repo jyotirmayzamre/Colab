@@ -9,8 +9,8 @@ from accounts.serializers import CookieJWTAuthentication
 
 
 class DocumentPagination(LimitOffsetPagination):
-    default_limit = 10
-    max_limit = 10
+    default_limit = 5
+    max_limit = 5
 
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer

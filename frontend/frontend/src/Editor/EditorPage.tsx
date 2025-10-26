@@ -19,6 +19,7 @@ function EditorPage(): JSX.Element {
     const [value, setValue] = useState<string>('');
     const [pos, setPos] = useState({'col': 0, 'row': 0});
     const [docTitle, setDocTitle] = useState<string>('');
+    const [editable, setEditable] = useState<boolean>(true);
     
     const crdt = useRef<CRDT | null>(null);
     if(!crdt.current && user) crdt.current = new CRDT(user.site_id);
@@ -31,6 +32,7 @@ function EditorPage(): JSX.Element {
             try{
                 const response = await api.get(`/api/documents/${params.docId}/`);
                 setDocTitle(response.data.title);
+                setEditable(response.data.access !== 'viewer')
             } catch(err){
                 console.error(err);
             }
@@ -67,15 +69,17 @@ function EditorPage(): JSX.Element {
     }, [ws]);
 
     return (
-        <div className="flex flex-col justify-center items-center gap-2">
-            <EditorNavbar docTitle={ docTitle } docId={ params.docId! }/>
-            <CodeMirror value={value} height="600px" width="900px" onChange={onChange} theme={basicLight}
+        <div className="flex flex-col justify-baseline h-screen items-center gap-2 bg-[rgb(249,251,253)]">
+            <EditorNavbar docTitle={ docTitle } docId={ params.docId! } editable={ editable }/>
+            <CodeMirror value={value} height="550px" width="900px" onChange={onChange} theme={basicLight}
                 basicSetup={ {lineNumbers: true} }
                 selection={EditorSelection.cursor(0)}
                 autoFocus={true}
                 onCreateEditor={(view) => {
                     editorViewRef.current = view;
                 }}
+                placeholder={'Start typing here!'}
+                editable={editable}
             />
             <p>{pos.row}:{pos.col}</p>
         </div>

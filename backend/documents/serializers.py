@@ -40,4 +40,4 @@ class DocumentSerializer(serializers.ModelSerializer):
     
     def get_updated_at(self, obj):
         time = timezone.localtime(obj.updated_at)
-        return time.strftime("%b %d, %Y %H:%M")
+        return time.strftime("%b %d, %Y")

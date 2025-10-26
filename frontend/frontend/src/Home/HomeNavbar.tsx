@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { type JSX } from "react";
 import { useAuth } from "../Auth/useAuth";
 import { useNavigate } from "react-router-dom";
 
@@ -14,13 +14,14 @@ function HomeNavbar(): JSX.Element {
         <nav className="flex justify-around items-center shadow-md p-4">
             <div className="flex gap-5 justify-center items-center">
                 <img src="/images/docs.png" className="h-12 w-12 hover:cursor-pointer" onClick={handleClick}/>
-                <p className="text-2xl font-semibold">Colab</p>
+                <p className="text-2xl font-medium">Colab</p>
+            </div>
+            <div className="rounded-4xl px-4 py-3 bg-[rgb(240,244,249)] w-xl flex justify-start items-center gap-2 focus-within:bg-white focus-within:shadow-sm transition-colors duration-200">
+                <img src='/images/search.png' className="h-5 w-5" />
+                <input className="border-none outline-none w-full hover:border-none hover:outline-none" type="text" placeholder="Search" />
             </div>
             <div>
-                <input className='border-1 rounded-sm p-2 bg-gray-50 w-lg' type="text" placeholder="Search documents" />
-            </div>
-            <div>
-                <p className="hover:underline hover:cursor-pointer" onClick={logout}>Logout</p>
+                <p className="hover:underline hover:cursor-pointer hover:text-blue-500" onClick={logout}>Logout</p>
             </div>
         </nav>
     )

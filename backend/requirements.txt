@@ -7,3 +7,4 @@ djangorestframework-simplejwt
 jsonpickle
 'channels[daphne]'
 channels_redis
+aioredis

@@ -51,35 +51,6 @@ function DocumentList({ documents, setDocuments }: props): JSX.Element {
         navigate(`/document/${docId}`);
     }
 
-    // useEffect(() => {
-    //     const fetchData = async() => {
-    //         try{
-    //             const response = await api.get('/api/documents/');
-    //             setDocuments(response.data.results);
-    //             setNextUrl(response.data.next);
-    //         } catch(error){
-    //             console.error(error);
-    //         }
-            
-    //     }
-    //     fetchData();
-    // }, [setDocuments]);
-
-
-    // const loadMore = async () => {
-    //     if (!nextUrl) return;
-    //     setLoading(true);
-
-    //     try {
-    //         const response = await api.get(nextUrl);
-    //         setDocuments(prev => [...(prev ?? []), ...response.data.results]);
-    //         setNextUrl(response.data.next);
-    //     } catch(error){
-    //         console.error(error);
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // }
 
     return (
         <div className="flex flex-col bg-white rounded-md shadow-sm p-5 w-full min-h-[calc(100vh-320px)]">

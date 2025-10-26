@@ -20,11 +20,12 @@ function EditorPage(): JSX.Element {
     const [pos, setPos] = useState({'col': 0, 'row': 0});
     const [docTitle, setDocTitle] = useState<string>('');
     const [editable, setEditable] = useState<boolean>(true);
+    const [userCount, setUserCount] = useState<number>(0);
     
     const crdt = useRef<CRDT | null>(null);
     if(!crdt.current && user) crdt.current = new CRDT(user.site_id);
     const editorViewRef = useRef<EditorView | null>(null);
-    const ws = useDocumentWebSocket(params.docId, crdt, editorViewRef);
+    const ws = useDocumentWebSocket(params.docId, crdt, editorViewRef, setUserCount);
 
 
     useEffect(() => {
@@ -82,6 +83,7 @@ function EditorPage(): JSX.Element {
                 editable={editable}
             />
             <p>{pos.row}:{pos.col}</p>
+            <p>Active users: {userCount}</p>
         </div>
         
     )

@@ -33,8 +33,6 @@ export const getChangeObj = (viewUpdate: ViewUpdate): Change | null => {
                 const newLine = newDoc.lineAt(fromB);
                 const row = newLine.number - 1;
                 const col = fromB - newLine.from;
-                console.log(inserted.text[0]);
-                console.log('\n');
                 obj = {oper: 'Insert', text: inserted.text.length !== 2 ? inserted.text[0] : '\n', row: row, col: col};
             }
         //}

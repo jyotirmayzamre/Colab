@@ -25,7 +25,7 @@ function EditorPage(): JSX.Element {
     const crdt = useRef<CRDT | null>(null);
     if(!crdt.current && user) crdt.current = new CRDT(user.site_id);
     const editorViewRef = useRef<EditorView | null>(null);
-    const ws = useDocumentWebSocket(params.docId, crdt, editorViewRef, setUserCount);
+    const ws = useDocumentWebSocket(params.docId, crdt, editorViewRef, setUserCount, setValue);
 
 
     useEffect(() => {

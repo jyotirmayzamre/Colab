@@ -3,7 +3,7 @@ from accounts.models import User
 import uuid
 from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
-import jsonpickle
+import json
 
 class DocumentManager(models.Manager):
     '''
@@ -33,7 +33,7 @@ class DocumentManager(models.Manager):
         
 
 def default_state():
-    return jsonpickle.encode('')
+    return []
 
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)

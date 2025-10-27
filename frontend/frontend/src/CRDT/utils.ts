@@ -189,7 +189,7 @@ export function generateCharPosition(before: Identifier[], after: Identifier[], 
     }
 }
 
-//console.log(generateCharPosition([new Identifier(0, 'xyz'), new Identifier(1, 'xyz')], [new Identifier(0, 'xyz'), new Identifier(2, 'xyz')], 'xyz'));
+
 
 export function binarySearch(arr: Char[], item: Identifier[], compare: (p1: Identifier[], p2: Identifier[]) => number = comparePosition){
     function algo(L: number, R: number){

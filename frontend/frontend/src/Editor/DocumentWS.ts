@@ -3,7 +3,9 @@ import CRDT from "../CRDT/crdt";
 import type { EditorView } from "@uiw/react-codemirror";
 
 
-export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObject<CRDT | null>, editorRef: RefObject<EditorView | null>, setUserCount: React.Dispatch<React.SetStateAction<number>>) => {
+export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObject<CRDT | null>, editorRef: RefObject<EditorView | null>, 
+    setUserCount: React.Dispatch<React.SetStateAction<number>>, setValue: React.Dispatch<React.SetStateAction<string>>
+) => {
 
     const ws = useRef<WebSocket | null>(null);
 
@@ -18,29 +20,37 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
         ws.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
+            //load CRDT
+            if(data.event === 'Load'){
+                crdtRef.current!.state = data.crdt
+                setValue(data.text);
+            }
+
             //User count
             if(data.event === 'userCount_updated'){
                 setUserCount(data.count);
             }
 
-
+            console.log(data.event)
             //CRDT operation
-            if(data.event === 'crdt.Oper'){
-                if(!crdtRef.current) return;            
+            if(data.event === 'crdt.oper'){
+                if(!crdtRef.current) return;
+                
+                const content = data.content;
             
                 const doc = editorRef.current!.state.doc;
-                const line = doc.line(data.row + 1); 
-                const pos = line.from + data.col;
+                const line = doc.line(content.row + 1); 
+                const pos = line.from + content.col;
 
-                if(data.oper == 'Insert'){
-                    crdtRef.current.remoteInsert(data.row, data.char);
+                if(content.oper == 'Insert'){
+                    crdtRef.current.remoteInsert(content.row, content.char);
                     editorRef.current?.dispatch({
-                        changes: {from: pos, insert: data.char.value},
+                        changes: {from: pos, insert: content.char.value},
                         userEvent: 'remote'
                     })
 
                 } else{
-                    crdtRef.current.remoteDelete(data.row, data.char);
+                    crdtRef.current.remoteDelete(content.row, content.char);
                     editorRef.current?.dispatch({
                         changes: {from: pos, to: pos+1},
                         userEvent: 'remote'
@@ -56,7 +66,7 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
         return () => {
             ws.current?.close();
         };
-    }, [docId, crdtRef, editorRef]);
+    }, [docId, crdtRef, editorRef, setUserCount, setValue]);
 
     return ws;
 }

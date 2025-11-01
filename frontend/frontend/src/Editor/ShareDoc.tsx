@@ -123,7 +123,7 @@ function ShareDoc(): JSX.Element {
                     </ul>
                 </div>
                 <div className="flex justify-center items-center">
-                    <button className='rounded-lg p-2 bg-blue-800 text-white w-21 hover:cursor-pointer hover:brightness-125' type="submit" disabled={isSubmitting}>
+                    <button className='rounded-lg py-3 px-5 bg-blue-800 text-white w-21 hover:cursor-pointer hover:brightness-125' type="submit" disabled={isSubmitting}>
                         {isSubmitting ? 'Loading...' : 'Done'}
                     </button>
                 </div>

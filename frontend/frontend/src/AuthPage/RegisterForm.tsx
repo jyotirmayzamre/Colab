@@ -38,8 +38,9 @@ function RegisterForm(): JSX.Element {
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirm_password, ...payload } = data; 
+        const apiUrl = import.meta.env.VITE_API_URL
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/accounts/signup/`, 
+            await axios.post(`${apiUrl}/api/accounts/signup/`, 
                 payload,
                 {
                     headers: {
@@ -79,7 +80,7 @@ function RegisterForm(): JSX.Element {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-0.5 flex justify-center items-center gap-1">
+                <div className="space-y-0.5 flex justify-center items-center gap-2">
                     <FormInput 
                         label='First name'
                         id='first_name'

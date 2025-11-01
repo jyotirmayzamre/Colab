@@ -42,7 +42,6 @@ function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Elem
         queryKey: ["documents", currentUrl],
         queryFn: async () => {
             const res = await api.get(currentUrl);
-            console.log(res);
             return res.data;
         },
     });

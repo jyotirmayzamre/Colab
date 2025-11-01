@@ -70,20 +70,25 @@ function EditorPage(): JSX.Element {
     }, [ws]);
 
     return (
-        <div className="flex flex-col justify-baseline h-screen items-center gap-2 bg-[rgb(249,251,253)]">
-            <EditorNavbar docTitle={ docTitle } docId={ params.docId! } editable={ editable }/>
-            <CodeMirror value={value} height="550px" width="900px" onChange={onChange} theme={basicLight}
-                basicSetup={ {lineNumbers: true} }
-                selection={EditorSelection.cursor(0)}
-                autoFocus={true}
-                onCreateEditor={(view) => {
-                    editorViewRef.current = view;
-                }}
-                placeholder={'Start typing here!'}
-                editable={editable}
-            />
-            <p>{pos.row}:{pos.col}</p>
-            <p>Active users: {userCount}</p>
+        <div className="min-h-screen flex flex-col">
+            <EditorNavbar docTitle={ docTitle } docId={ params.docId! } editable={ editable } userCount={ userCount }/>
+            <div className="flex-1 bg-muted/20">
+                <div className="container max-w-5xl mx-auto py-8 px-4">
+                    <div className="bg-background rounded-lg shadow-lg border border-border min-h-[calc(100vh-12rem)] text-left">
+                        <CodeMirror value={value} height="550px"  onChange={onChange} theme={basicLight}
+                            basicSetup={ {lineNumbers: true} }
+                            selection={EditorSelection.cursor(0)}
+                            autoFocus={true}
+                            onCreateEditor={(view) => {
+                                editorViewRef.current = view;
+                            }}
+                            placeholder={'Start typing here!'}
+                            editable={editable}
+                        />
+                    </div>
+                    <p>{pos.row}:{pos.col}</p>
+                </div>
+            </div>
         </div>
         
     )

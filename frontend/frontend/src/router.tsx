@@ -3,7 +3,7 @@ import AuthPage from "./AuthPage/AuthPage";
 import LoginForm from "./AuthPage/LoginForm";
 import RegisterForm from "./AuthPage/RegisterForm";
 import ProtectedRoute from "./Auth/ProtectedRoute";
-import Dashboard from "./Home/Dashboard";
+import Dashboard from "./Dashboard/Dashboard";
 import EditorPage from "./Editor/EditorPage";
 
 const router = createBrowserRouter([

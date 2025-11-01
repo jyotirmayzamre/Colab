@@ -3,6 +3,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import FormInput from "../AuthPage/FormInput";
 import api from "../Auth/api";
 import { useParams } from "react-router-dom";
+import { Share2 } from "lucide-react";
 
 type FormFields = {
     username: string,
@@ -129,9 +130,7 @@ function ShareDoc(): JSX.Element {
                 
             </form>
         </dialog>
-        <button onClick={openModal} className=" flex justify-center items-center gap-2 rounded-4xl text-black bg-[rgb(194,231,255)] w-26 p-3 hover:cursor-pointer hover:brightness-90 transition active:scale-95" type="button">
-            <img src='/images/padlock.png' className="h-5 w-5"/>
-            Share</button>
+        <Share2 className="h-4 w-4  hover:cursor-pointer" onClick={openModal} />
         </>
     )
 }

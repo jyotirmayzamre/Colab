@@ -33,7 +33,6 @@ function LoginForm(): JSX.Element {
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try{
             await login(data.username, data.password);
-            navigate(`/home/${user?.user_id}`);
         } catch(error){
             if(error instanceof Error){
                 setError('root', {

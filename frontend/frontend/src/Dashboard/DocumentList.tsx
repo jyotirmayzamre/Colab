@@ -3,7 +3,7 @@ import type { Document } from "./Dashboard";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "@/Auth/api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
 import { FileText, Users, Trash2, MoreVertical, ArrowUpRight, ArrowDownIcon } from "lucide-react";
 import {
@@ -34,7 +34,6 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
     const navigate = useNavigate();
     const [currentUrl, setCurrentUrl] = useState<string>('/api/documents/')
     const [nextUrl, setNextUrl] = useState<string | null>(null);
-    const queryClient = useQueryClient();
     
     
 

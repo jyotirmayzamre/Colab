@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import FormInput from "../AuthForms/FormInput";
+import FormInput from "../AuthPage/FormInput";
 import api from "../Auth/api";
 import { useParams } from "react-router-dom";
 

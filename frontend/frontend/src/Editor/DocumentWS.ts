@@ -31,7 +31,6 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
                 setUserCount(data.count);
             }
 
-            console.log(data.event)
             //CRDT operation
             if(data.event === 'crdt.oper'){
                 if(!crdtRef.current) return;

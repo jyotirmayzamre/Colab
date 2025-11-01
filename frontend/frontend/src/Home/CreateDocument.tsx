@@ -1,8 +1,10 @@
 import type { JSX } from "react";
 import api from "../Auth/api";
-import type { Document } from "../Home/HomePage";
+import type { Document } from "./Dashboard";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "../Components/card";
+import { Plus} from "lucide-react";
 
 type props = {
     setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>;
@@ -26,13 +28,19 @@ function CreateDocument({ setDocuments }: props): JSX.Element {
     }
 
     return (
-        <div className="p-10 flex flex-col justify-center items-center gap-5">
-            <h2 className="text-2xl font-light">Start a new document</h2>
-            <div onClick={createDoc} className="flex flex-col gap-2 justify-center items-center hover:cursor-pointer hover:border-1 hover:border-blue-400 w-35 h-45 bg-white rounded-sm shadow-sm">
-                <img className='h-9 w-9' src="/images/plus.png" />
-                <p className="text-xs">Blank document</p>
+        <Card className="mb-8 border-2 border-dashed hover:border-primary transition-smooth cursor-pointer group" onClick={createDoc}>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-smooth">
+                <Plus className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-1">Create New Document</h3>
+                <p className="text-muted-foreground">Start a new collaborative document</p>
+              </div>
             </div>
-        </div>
+          </CardContent>
+        </Card>
     )
 }
 

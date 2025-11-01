@@ -1,28 +1,23 @@
 import { createBrowserRouter } from "react-router-dom";
-import App from "./App";
-import AuthPage from "./Auth/AuthPage";
-import LoginForm from "./AuthForms/LoginForm";
-import RegisterForm from "./AuthForms/RegisterForm";
+import AuthPage from "./AuthPage/AuthPage";
+import LoginForm from "./AuthPage/LoginForm";
+import RegisterForm from "./AuthPage/RegisterForm";
 import ProtectedRoute from "./Auth/ProtectedRoute";
-import HomePage from "./Home/HomePage";
+import Dashboard from "./Home/Dashboard";
 import EditorPage from "./Editor/EditorPage";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <App />,
-  },
-  {
     path: "auth",
     element: <AuthPage />,
     children: [
-      { path: "signup", element: <RegisterForm /> },
+      { path: "register", element: <RegisterForm /> },
       { path: "login", element: <LoginForm /> },
     ],
   },
   {
     path: 'home/:userId',
-    element: <ProtectedRoute><HomePage /></ProtectedRoute>,
+    element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
   },
   {
     path: 'document/:docId',

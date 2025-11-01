@@ -1,14 +1,25 @@
 import type { JSX } from "react";
-import type { Document } from "../Home//HomePage";
+import type { Document } from "./Dashboard";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import api from "../Auth/api";
+import api from "@/Auth/api";
 import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
+import { FileText, Users, Trash2, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/Components/dropdown";
+import { Button } from "@/Components/button";
 
 
 type props = {
     documents: Document[] | null;
-    setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>
+    setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>,
+    searchQuery: string;
 }
 
 interface DocumentPage {
@@ -20,16 +31,18 @@ interface DocumentPage {
 
 
 
-function DocumentList({ documents, setDocuments }: props): JSX.Element {
+function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Element {
     const navigate = useNavigate();
     const [currentUrl, setCurrentUrl] = useState<string>('/api/documents/')
     const [nextUrl, setNextUrl] = useState<string | null>(null);
+    
     
 
     const { data, isLoading } = useQuery<DocumentPage>({
         queryKey: ["documents", currentUrl],
         queryFn: async () => {
             const res = await api.get(currentUrl);
+            console.log(res);
             return res.data;
         },
     });
@@ -45,59 +58,81 @@ function DocumentList({ documents, setDocuments }: props): JSX.Element {
         if(!data) return;
         setDocuments(prev => [...(prev ?? []), ...data.results]);
         setNextUrl(data.next);
-    }, [data, setDocuments])
+    }, [data, setDocuments]);
 
-    const handleClick = (docId: string) => {
-        navigate(`/document/${docId}`);
-    }
+    const filteredDocuments = documents ? documents.filter((doc) =>
+        doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ) : [];
 
 
     return (
-        <div className="flex flex-col bg-white rounded-md shadow-sm p-5 w-full min-h-[calc(100vh-320px)]">
-            <div className="flex justify-between items-center w-[90%] px-8 mx-auto">
-                <div className="flex justify-center items-center gap-10">
-                    <div className="w-7" /> 
-                        <h2 className="font-lightbold">Recent Documents</h2>
-                    </div>
-                    <div className="flex font-lightbold justify-center items-center gap-14">
-                        <h2>Access</h2>
-                        <h2>Last Updated</h2>
-                        <h2>More</h2>
-                    </div>
-                </div>
-
-                <div className="flex flex-col justify-center items-center gap-0.5 w-full p-5">
-                    {documents && documents.map((item: Document) => (
-                    <div 
-                        key={item.id} 
-                        onClick={() => handleClick(item.id)}
-                        className="flex justify-between items-center rounded-md w-[90%] p-5 hover:cursor-pointer hover:bg-blue-100">
-                        <div className="flex justify-center items-center gap-10">
-                            <img src="/images/docs.png" className="h-7 w-7" />
-                            <p>{item.title}</p>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredDocuments.map((doc: Document) => (
+                <Card key={doc.id} className="hover:shadow-lg transition-smooth cursor-pointer group">
+                    <CardHeader>
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3 flex-1">
+                                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-smooth">
+                                    <FileText className="h-5 w-5 text-primary" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <CardTitle className="text-lg mb-1 truncate">{doc.title}</CardTitle>
+                                    <CardDescription className="flex items-center gap-4 text-sm">
+                                        <span>{doc.updated_at}</span>
+                                        <span className="flex items-center gap-1">
+                                            <Users className="h-3 w-3" />
+                                            {doc.authors}
+                                        </span>
+                                    </CardDescription> 
+                                </div>
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => navigate(`/document/${doc.id}`)}>
+                                        Open
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>Share</DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
-                        <div className="flex justify-center items-center gap-14 text-gray-600">
-                            <p>{item.access[0].toUpperCase().concat(item.access.slice(1))}</p>
-                            <p>{item.updated_at}</p>
-                            <img 
-                                src="/images/more.png" 
-                                className="h-8 w-8 hover:cursor-pointer rounded-full hover:border hover:border-gray-300 p-1.5"
-                            />
+                    </CardHeader>
+                    <CardContent onClick={() => navigate(`/document/${doc.id}`)}>
+                        <div className="text-sm text-muted-foreground">
+                            Click to open and continue editing
                         </div>
-                    </div>
-                ))}
+                    </CardContent>
+                </Card>
+            ))}
+            {nextUrl && !isLoading && (
+                <div className="w-full flex justify-center items-center">
+                    <img onClick={loadMore}
+                    src='/images/down-arrow.png'
+                    className="w-5 h-5 hover:cursor-pointer"
+                />
                 </div>
-
-                {nextUrl && !isLoading && (
-                    <div className="w-full flex justify-center items-center">
-                        <img onClick={loadMore}
-                        src='/images/down-arrow.png'
-                        className="w-5 h-5 hover:cursor-pointer"
-                    />
-                    </div>
-                    
-                )}
-                {isLoading && <p className="mt-2 text-gray-500">Loading...</p>}
+                
+            )}
+            {isLoading && <p className="mt-2 text-gray-500">Loading...</p>}
+            {filteredDocuments.length === 0 && (
+                <div className="text-center py-12">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No documents found</h3>
+                    <p className="text-muted-foreground">
+                    {searchQuery ? "Try a different search term" : "Create your first document to get started"}
+                    </p>
+                </div>
+            )}
+            
         </div>
     )
 }

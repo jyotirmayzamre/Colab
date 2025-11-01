@@ -5,8 +5,13 @@ import RegisterForm from "./AuthPage/RegisterForm";
 import ProtectedRoute from "./Auth/ProtectedRoute";
 import Dashboard from "./Dashboard/Dashboard";
 import EditorPage from "./Editor/EditorPage";
+import Landing from "./landing";
 
 const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Landing />
+  },
   {
     path: "auth",
     element: <AuthPage />,

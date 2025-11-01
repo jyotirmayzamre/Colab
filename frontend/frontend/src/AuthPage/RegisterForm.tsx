@@ -1,9 +1,8 @@
-import { type JSX, useEffect } from "react";
+import { type JSX } from "react";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import FormInput from "./FormInput";
 import axios from 'axios';
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../Auth/useAuth";
 import { FileText } from "lucide-react";
 import { Button } from "@/Components/button";
 import { Card, CardContent, CardDescription, CardTitle, CardHeader } from "@/Components/card";
@@ -25,15 +24,9 @@ function RegisterForm(): JSX.Element {
             getValues } = useForm<FormFields>();
 
             
-
-    const { user } = useAuth();
     const navigate = useNavigate();
 
-    useEffect(() => {
-            if(user){
-                navigate(`/home/${user?.user_id}`)
-            }
-        }, [user, navigate])
+  
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

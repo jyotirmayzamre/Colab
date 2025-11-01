@@ -3,9 +3,9 @@ import type { Document } from "./Dashboard";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "@/Auth/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
-import { FileText, Users, Trash2, MoreVertical } from "lucide-react";
+import { FileText, Users, Trash2, MoreVertical, ArrowUpRight, ArrowDownIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,6 @@ import { Button } from "@/Components/button";
 type props = {
     documents: Document[] | null;
     setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>,
-    searchQuery: string;
 }
 
 interface DocumentPage {
@@ -31,10 +30,11 @@ interface DocumentPage {
 
 
 
-function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Element {
+function DocumentList({ documents, setDocuments}: props): JSX.Element {
     const navigate = useNavigate();
     const [currentUrl, setCurrentUrl] = useState<string>('/api/documents/')
     const [nextUrl, setNextUrl] = useState<string | null>(null);
+    const queryClient = useQueryClient();
     
     
 
@@ -52,6 +52,15 @@ function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Elem
         }
     }
 
+    const deleteDoc = async (docId: string) => {
+        try{
+            await api.delete(`/api/documents/${docId}/`);
+            setDocuments(prev => prev.filter(doc => doc.id !== docId))
+        } catch(e){
+            console.error(e)
+        }
+    }
+
 
     useEffect(() => {
         if(!data) return;
@@ -59,14 +68,11 @@ function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Elem
         setNextUrl(data.next);
     }, [data, setDocuments]);
 
-    const filteredDocuments = documents ? documents.filter((doc) =>
-        doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ) : [];
-
 
     return (
+        <div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDocuments.map((doc: Document) => (
+            {documents && documents.map((doc: Document) => (
                 <Card key={doc.id} className="hover:shadow-lg transition-smooth cursor-pointer group">
                     <CardHeader>
                         <div className="flex items-start justify-between">
@@ -80,7 +86,7 @@ function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Elem
                                         <span>{doc.updated_at}</span>
                                         <span className="flex items-center gap-1">
                                             <Users className="h-3 w-3" />
-                                            {doc.authors}
+                                            {doc.num_users}
                                         </span>
                                     </CardDescription> 
                                 </div>
@@ -93,11 +99,11 @@ function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Elem
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => navigate(`/document/${doc.id}`)}>
+                                        <ArrowUpRight className="mr-2 h-4 w-4" />
                                         Open
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>Share</DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive">
+                                    <DropdownMenuItem className="text-destructive" onClick={() => deleteDoc(doc.id)}>
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         Delete
                                     </DropdownMenuItem>
@@ -112,26 +118,11 @@ function DocumentList({ documents, setDocuments, searchQuery }: props): JSX.Elem
                     </CardContent>
                 </Card>
             ))}
-            {nextUrl && !isLoading && (
-                <div className="w-full flex justify-center items-center">
-                    <img onClick={loadMore}
-                    src='/images/down-arrow.png'
-                    className="w-5 h-5 hover:cursor-pointer"
-                />
-                </div>
-                
+        </div>
+        {nextUrl && !isLoading && (
+                <ArrowDownIcon onClick={loadMore} className="w-5 h-5 hover:cursor-pointer" />
             )}
-            {isLoading && <p className="mt-2 text-gray-500">Loading...</p>}
-            {filteredDocuments.length === 0 && (
-                <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No documents found</h3>
-                    <p className="text-muted-foreground">
-                    {searchQuery ? "Try a different search term" : "Create your first document to get started"}
-                    </p>
-                </div>
-            )}
-            
+        {isLoading && <p className="mt-2 text-gray-500">Loading...</p>}
         </div>
     )
 }

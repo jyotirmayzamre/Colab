@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Document, DocumentAccess
 from django.utils import timezone
+from django.utils.timesince import timesince
 
 class DocumentAccessSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,10 +21,11 @@ class DocumentAccessSerializer(serializers.ModelSerializer):
 class DocumentSerializer(serializers.ModelSerializer):
     access = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField() 
+    num_users = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
-        fields = ['id', 'access', 'title', 'updated_at']
+        fields = ['id', 'access', 'title', 'updated_at', 'num_users']
         read_only_fields=['id', 'authors', 'created_at', 'updated_at']
 
     def create(self, validated_data):
@@ -39,5 +41,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         return access.level
     
     def get_updated_at(self, obj):
-        time = timezone.localtime(obj.updated_at)
-        return time.strftime("%b %d, %Y")
+        now = timezone.now()
+        diff = timesince(obj.updated_at, now)
+        return f"{diff.split(', ')[0]} ago"
+    
+    def get_num_users(self, obj):
+        return obj.authors.count()

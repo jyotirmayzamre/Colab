@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
 from .serializers import DocumentSerializer, DocumentAccessSerializer
 from .models import Document, DocumentAccess
@@ -9,14 +9,16 @@ from accounts.serializers import CookieJWTAuthentication
 
 
 class DocumentPagination(LimitOffsetPagination):
-    default_limit = 5
-    max_limit = 5
+    default_limit = 10
+    max_limit = 10
 
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
     permission_classes=(IsAuthenticated,)
     authentication_classes=[CookieJWTAuthentication]
     pagination_class = DocumentPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title']
     
     def get_queryset(self):
         user = self.request.user

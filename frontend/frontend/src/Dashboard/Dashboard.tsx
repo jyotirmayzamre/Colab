@@ -9,12 +9,12 @@ export type Document = {
     authors: string[];
     id: string;
     title: string;
-    updated_at: string
+    updated_at: string;
+    num_users: number;
 }
 
 function Dashboard(): JSX.Element {
     const [documents, setDocuments] = useState<Document[] | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
 
     return (
         <div className="min-h-screen bg-gradient-subtle">
@@ -25,8 +25,8 @@ function Dashboard(): JSX.Element {
                     <p className="text-muted-foreground text-lg">Welcome back! Continue working on your projects.</p>
                 </div>
                 <CreateDocument setDocuments={setDocuments} />
-                <SearchDocument searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-                <DocumentList documents={ documents } setDocuments={setDocuments} searchQuery={searchQuery}  />
+                <SearchDocument  />
+                <DocumentList documents={ documents } setDocuments={setDocuments} />
                 
             </div>
         </div>

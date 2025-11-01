@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import api from "../Auth/api";
 import { Button } from "@/Components/button";
 import { ArrowLeft, FileText, Clock, Users, Download, MoreVertical } from "lucide-react";
-import { DropdownMenu, DropdownMenuTrigger,  DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem} from "@radix-ui/react-dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger,  DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem} from "@/Components/dropdown";
 import { Input } from "@/Components/input";
 
 type props = {
@@ -35,6 +35,10 @@ function EditorNavbar({ docTitle, docId, editable, userCount }: props): JSX.Elem
             console.error(e);
         }
     }, [docId]);
+
+    const handleDownload = () => {
+      console.log('Downloaded')
+    }
 
 
 
@@ -98,7 +102,7 @@ function EditorNavbar({ docTitle, docId, editable, userCount }: props): JSX.Elem
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>Document Options</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownload}>
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </DropdownMenuItem>

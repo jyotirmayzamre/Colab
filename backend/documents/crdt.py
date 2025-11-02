@@ -20,7 +20,7 @@ def compareIdentifier(id1: Identifier, id2: Identifier) -> int:
 def comparePosition(p1: List[Identifier], p2: List[Identifier]) -> int:
     l1 = len(p1)
     l2 = len(p2)
-    for i in range(max(l1, l2)):
+    for i in range(min(l1, l2)):
         res = compareIdentifier(p1[i], p2[i])
         if(res != 0):
             return res

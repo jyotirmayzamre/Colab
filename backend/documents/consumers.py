@@ -8,7 +8,6 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         self.doc_id = self.scope.get("url_route", {}).get("kwargs", {}).get("document_id")
         self.group_name = f"document_{self.doc_id}"
 
-
         await self.channel_layer.group_add(
             self.group_name, self.channel_name
         )
@@ -16,7 +15,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         
         await self.accept()
 
-        await increment_user_count(self.doc_id)
+        await add_user(self.doc_id, self.channel_name)
         current_count = await get_user_count(self.doc_id)
 
         state = await loadCRDT(self.doc_id)
@@ -35,7 +34,9 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
             self.group_name, self.channel_name
         )
 
-        remaining_count = await decrement_user_count(self.doc_id)
+        await remove_user(self.doc_id, self.channel_name) 
+
+        remaining_count = await get_user_count(self.doc_id)
 
         if(remaining_count > 0):
 

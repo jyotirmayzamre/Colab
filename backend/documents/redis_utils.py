@@ -5,7 +5,7 @@ from asgiref.sync import sync_to_async
 from .models import Document
 from .crdt import remoteDelete, remoteInsert
 
-client = redis.from_url('redis://localhost:6379')
+client: redis.Redis = redis.Redis(host='localhost', port=6379, db=0)
 
 async def loadCRDT(docId):
     state_json = await client.get(f'crdt:{docId}')
@@ -36,20 +36,16 @@ async def remote_operation(docId, content):
 
     await client.set(f'crdt:{docId}', json.dumps(newState))
 
+async def add_user(docId, userId):
+    await client.sadd(f'users:{docId}', userId) #type: ignore
 
-async def increment_user_count(docId):
-    await client.incr(f'users:{docId}')
-
-async def decrement_user_count(docId):
-    count = await client.decr(f'users:{docId}')
-    if count <= 0:
-        await client.delete(f'users:{docId}')
-        return 0
-    return count
+async def remove_user(docId, userId):
+    await client.srem(f'users:{docId}', userId) #type: ignore
 
 async def get_user_count(docId):
-    count = await client.get(f'users:{docId}')
-    return int(count) if count else 0
+    count = await client.scard(f'users:{docId}') #type: ignore
+    return int(count)
+
 
 
 async def flush_to_db(docId):

@@ -34,9 +34,9 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
             self.group_name, self.channel_name
         )
 
-        await remove_user(self.doc_id, self.channel_name) 
-
         remaining_count = await get_user_count(self.doc_id)
+
+        await remove_user(self.doc_id, self.channel_name) 
 
         if(remaining_count > 0):
 

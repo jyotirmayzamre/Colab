@@ -3,7 +3,7 @@ import type { Document } from "./Dashboard";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "@/Auth/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
 import { FileText, Users, Trash2, MoreVertical, ArrowUpRight, ArrowDownIcon } from "lucide-react";
 import {
@@ -32,39 +32,35 @@ interface DocumentPage {
 
 function DocumentList({ documents, setDocuments}: props): JSX.Element {
     const navigate = useNavigate();
-    const [currentUrl, setCurrentUrl] = useState<string>('/api/documents/')
-    const [nextUrl, setNextUrl] = useState<string | null>(null);
-    
-    
-
-    const { data, isLoading } = useQuery<DocumentPage>({
-        queryKey: ["documents", currentUrl],
-        queryFn: async () => {
-            const res = await api.get(currentUrl);
+ 
+      const { 
+        data, 
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage
+    } = useInfiniteQuery<DocumentPage>({
+        queryKey: ["documents"],
+        queryFn: async ({ pageParam = '/api/documents/' }) => {
+            const res = await api.get(pageParam);
             return res.data;
         },
+        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        initialPageParam: '/api/documents/'
     });
 
-    const loadMore = () => {
-        if(nextUrl){
-            setCurrentUrl(nextUrl);
-        }
-    }
-
     const deleteDoc = async (docId: string) => {
-        try{
+        try {
             await api.delete(`/api/documents/${docId}/`);
-            setDocuments(prev => prev.filter(doc => doc.id !== docId))
-        } catch(e){
-            console.error(e)
+            setDocuments(prev => prev.filter(doc => doc.id !== docId));
+        } catch (e) {
+            console.error(e);
         }
-    }
-
+    };
 
     useEffect(() => {
-        if(!data) return;
-        setDocuments(prev => [...(prev ?? []), ...data.results]);
-        setNextUrl(data.next);
+        if (!data) return;
+        const allDocs = data.pages.flatMap(page => page.results);
+        setDocuments(allDocs);
     }, [data, setDocuments]);
 
 
@@ -118,10 +114,15 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
                 </Card>
             ))}
         </div>
-        {nextUrl && !isLoading && (
-                <ArrowDownIcon onClick={loadMore} className="w-5 h-5 hover:cursor-pointer" />
+        {hasNextPage && (
+                <button 
+                    onClick={() => fetchNextPage()} 
+                    disabled={isFetchingNextPage}
+                    className="w-full flex justify-center items-center"
+                >
+                    {isFetchingNextPage ? 'Loading...' : <ArrowDownIcon className="w-5 h-5 hover:cursor-pointer" />}
+                </button>
             )}
-        {isLoading && <p className="mt-2 text-gray-500">Loading...</p>}
         </div>
     )
 }

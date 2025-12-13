@@ -64,7 +64,7 @@ function EditorPage(): JSX.Element {
 
     return (
         <div className="min-h-screen flex flex-col">
-            <EditorNavbar docTitle={title} docId={ params.docId! } editable={isEditable} userCount={ userCount }/>
+            <EditorNavbar docTitle={title} docId={params.docId!} editable={isEditable} userCount={userCount} value={value}/>
             <div className="flex-1 bg-muted/20">
                 <div className="container max-w-5xl mx-auto py-8 px-4">
                     <div className="bg-background rounded-lg shadow-lg border border-border min-h-[calc(100vh-12rem)] text-left">

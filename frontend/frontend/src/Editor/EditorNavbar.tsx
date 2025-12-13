@@ -14,9 +14,10 @@ type props = {
     docId: string;
     editable: boolean;
     userCount: number;
+    value: string;
 }
 
-function EditorNavbar({ docTitle, docId, editable, userCount }: props): JSX.Element {
+function EditorNavbar({ docTitle, docId, editable, userCount, value }: props): JSX.Element {
     const { user } = useAuth();
     const [documentTitle, setDocumentTitle] = useState<string>(docTitle);
     const navigate = useNavigate();
@@ -36,8 +37,12 @@ function EditorNavbar({ docTitle, docId, editable, userCount }: props): JSX.Elem
         }
     }, [docId]);
 
+
     const handleDownload = () => {
-      console.log('Downloaded')
+      const link = document.createElement('a');
+      link.setAttribute('download', 'download.doc');
+      link.setAttribute('href', 'data:' + 'text/doc' + ';charset=utf-8,' + encodeURIComponent(value));
+      link.click();
     }
 
 

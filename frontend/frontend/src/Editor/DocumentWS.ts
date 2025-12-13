@@ -7,27 +7,27 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
     setUserCount: React.Dispatch<React.SetStateAction<number>>, setValue: React.Dispatch<React.SetStateAction<string>>
 ) => {
 
-    const ws = useRef<WebSocket | null>(null);
+    const wsRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
         if(!docId) return;
 
         const wsURL = `ws://127.0.0.1:8000/ws/documents/${docId}/`;
-        ws.current = new WebSocket(wsURL);
+        wsRef.current = new WebSocket(wsURL);
 
-        ws.current.onopen = () => console.log("Websocket connected");
+        wsRef.current.onopen = () => console.log("Websocket connected");
 
-        ws.current.onmessage = (event) => {
+        wsRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
             //load CRDT
-            if(data.event === 'Load'){
+            if(data.event === 'load.crdt'){
                 crdtRef.current!.state = data.crdt
                 setValue(data.text);
             }
 
             //User count
-            if(data.event === 'userCount_updated'){
+            if(data.event === 'userCount.updated'){
                 setUserCount(data.count);
             }
 
@@ -60,12 +60,12 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
             
         }
 
-        ws.current.onclose = () => console.log("WebSocket disconnected")
+        wsRef.current.onclose = () => console.log("WebSocket disconnected")
 
         return () => {
-            ws.current?.close();
+            wsRef.current?.close();
         };
     }, [docId, crdtRef, editorRef, setUserCount, setValue]);
 
-    return ws;
+    return wsRef;
 }

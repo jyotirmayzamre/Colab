@@ -1,6 +1,6 @@
 # Colab - Real-Time Collaborative Text Editor
 
-A real-time collaborative text editor built with React, Django, and CodeMirror, featuring shared editing, rich text formatting, live cursors, comments, version control, and access management. The project uses a custom 2D array based CRDT (Conflict-Free Replicated Data Type).
+A real-time collaborative text editor built with React, Django, and CodeMirror, featuring shared editing, live cursors, comments, version control, and access management. The project uses a custom 2D array based CRDT (Conflict-Free Replicated Data Type).
 
 This readme will be updated with more details soon!
 
@@ -15,7 +15,6 @@ This readme will be updated with more details soon!
 
 ### ToDo
 - **Live Cursors** - See collaborator positions in real-time with color-coded cursors
-- **Rich Text Formatting** - Full support for text styling and formatting
 - **Inline Comments** - Add contextual comments and discussions within documents
 - **Version Control** - Track changes with comprehensive version history and rollback
 

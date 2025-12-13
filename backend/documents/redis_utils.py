@@ -1,17 +1,19 @@
 import json
 import redis.asyncio as redis
-# from crdt import serialize
 from asgiref.sync import sync_to_async
 from .models import Document
 from .crdt import remoteDelete, remoteInsert
 
 client: redis.Redis = redis.Redis(host='localhost', port=6379, db=0)
 
-async def loadCRDT(docId):
+
+# Loads CRDT from redis, used for users joining on active document
+async def redis_load_crdt(docId):
     state_json = await client.get(f'crdt:{docId}')
     if state_json:
         return json.loads(state_json)
     
+    #if document just became active, crdt is obtained from document and set in redis
     doc = await sync_to_async(Document.objects.get)(id=docId)
     state = doc.state
 
@@ -22,7 +24,7 @@ async def loadCRDT(docId):
     return state
     
 
-async def remote_operation(docId, content):
+async def redis_update_crdt(docId, content):
     state_json = await client.get(f'crdt:{docId}')
     if state_json is None:
         return
@@ -36,19 +38,19 @@ async def remote_operation(docId, content):
 
     await client.set(f'crdt:{docId}', json.dumps(newState))
 
-async def add_user(docId, userId):
+
+async def redis_add_user(docId, userId):
     await client.sadd(f'users:{docId}', userId) #type: ignore
 
-async def remove_user(docId, userId):
+async def redis_remove_user(docId, userId):
     await client.srem(f'users:{docId}', userId) #type: ignore
 
-async def get_user_count(docId):
+async def redis_get_user_count(docId):
     count = await client.scard(f'users:{docId}') #type: ignore
     return int(count)
 
 
-
-async def flush_to_db(docId):
+async def redis_flush_to_db(docId):
     state_bytes = await client.get(f'crdt:{docId}')
     if(state_bytes):
         state_str = state_bytes.decode('utf-8')

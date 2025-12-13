@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { Document } from "./Dashboard";
-import { useNavigate } from "react-router-dom";
+import { createSearchParams, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import api from "@/Auth/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -29,11 +29,10 @@ interface DocumentPage {
 }
 
 
-
 function DocumentList({ documents, setDocuments}: props): JSX.Element {
     const navigate = useNavigate();
  
-      const { 
+    const { 
         data, 
         fetchNextPage,
         hasNextPage,
@@ -41,7 +40,7 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
     } = useInfiniteQuery<DocumentPage>({
         queryKey: ["documents"],
         queryFn: async ({ pageParam = '/api/documents/' }) => {
-            const res = await api.get(pageParam);
+            const res = await api.get(pageParam as string);
             return res.data;
         },
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
@@ -93,7 +92,15 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => navigate(`/document/${doc.id}`)}>
+
+                                    <DropdownMenuItem onClick={() => navigate({
+                                        pathname: `/document/${doc.id}`,
+                                        search: createSearchParams({
+                                            title: doc.title,
+                                            isEditable: (doc.access !== 'viewer').toString()
+                                        }).toString()
+                                        })}>
+                                            
                                         <ArrowUpRight className="mr-2 h-4 w-4" />
                                         Open
                                     </DropdownMenuItem>
@@ -106,7 +113,13 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
                             </DropdownMenu>
                         </div>
                     </CardHeader>
-                    <CardContent onClick={() => navigate(`/document/${doc.id}`)}>
+                    <CardContent onClick={() => navigate({
+                                pathname: `/document/${doc.id}`,
+                                search: createSearchParams({
+                                    title: doc.title,
+                                    isEditable: (doc.access !== 'viewer').toString()
+                                }).toString()
+                            })}>
                         <div className="text-sm text-muted-foreground">
                             Click to open and continue editing
                         </div>

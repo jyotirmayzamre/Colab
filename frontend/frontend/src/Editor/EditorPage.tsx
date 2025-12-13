@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useCallback, useRef, useState, type JSX } from "react";
 import CodeMirror, { EditorSelection, EditorView, ViewUpdate } from '@uiw/react-codemirror';
 import { basicLight } from "@uiw/codemirror-theme-basic";
 import CRDT from "../CRDT/crdt";
@@ -8,70 +8,63 @@ import type { Char } from "../CRDT/utils";
 import { type Change, getCursorPos, getChangeObj } from "./EditorUtils";
 import { useDocumentWebSocket } from "./DocumentWS";
 import EditorNavbar from "./EditorNavbar";
-import api from "../Auth/api";
-
+import { useSearchParams } from "react-router-dom";
 
 
 function EditorPage(): JSX.Element {
     const params = useParams();
     const { user } = useAuth();
+    const [docAttribs] = useSearchParams();
+    const title = docAttribs.get('title');
+    const isEditable: boolean = JSON.parse(docAttribs.get('isEditable'));
+    
 
     const [value, setValue] = useState<string>('');
     const [pos, setPos] = useState({'col': 0, 'row': 0});
-    const [docTitle, setDocTitle] = useState<string>('');
-    const [editable, setEditable] = useState<boolean>(true);
     const [userCount, setUserCount] = useState<number>(0);
     
-    const crdt = useRef<CRDT | null>(null);
-    if(!crdt.current && user) crdt.current = new CRDT(user.site_id);
-    const editorViewRef = useRef<EditorView | null>(null);
-    const ws = useDocumentWebSocket(params.docId, crdt, editorViewRef, setUserCount, setValue);
+    const crdtRef = useRef<CRDT | null>(null);
+    if(!crdtRef.current && user) crdtRef.current = new CRDT(user.site_id);
 
+    const editorRef = useRef<EditorView | null>(null);
+    const wsRef = useDocumentWebSocket(params.docId, crdtRef, editorRef, setUserCount, setValue);
 
-    useEffect(() => {
-        const fetchDoc = async () => {
-            try{
-                const response = await api.get(`/api/documents/${params.docId}/`);
-                setDocTitle(response.data.title);
-                setEditable(response.data.access !== 'viewer')
-            } catch(err){
-                console.error(err);
-            }
-        }
-
-        fetchDoc();
-
-
-    }, [params])    
+ 
     
-
-
     const onChange = useCallback((val: string, viewUpdate: ViewUpdate) => {
         setValue(val);
         setPos(getCursorPos(viewUpdate));
-        const crdtRef = crdt.current;
-        if(!crdtRef) return;
+
+        const ws: WebSocket = wsRef.current;
+        
+        const crdt = crdtRef.current;
+        if(!crdt) return;
+
         const change: Change | null = getChangeObj(viewUpdate);
         if(!change) return;
 
         const isRemote = viewUpdate.transactions[0].isUserEvent('remote');
+
+        //send local operations to rest of the group (not remote operations)
         if(!isRemote){
-            if(change?.oper == 'Insert'){
-                const char: Char = crdtRef.localInsert(change.text, change.row, change.col);
-                const data = JSON.stringify({oper: 'Insert', char: char, row: change.row, col: change.col})
-                ws.current?.send(data);
+            if(change.oper == 'Insert'){
+                const char: Char = crdt.localInsert(change.text, change.row, change.col);
+                const data = JSON.stringify({type: 'char', oper: 'Insert', char: char, row: change.row, col: change.col})
+                ws.send(data);
             } else{
-                const char: Char = crdtRef.localDelete(change!.row, change!.col);
-                const data = JSON.stringify({oper: 'Delete', char: char, row: change.row, col: change.col})
-                ws.current?.send(data);
+                const char: Char = crdt.localDelete(change!.row, change!.col);
+                const data = JSON.stringify({type: 'char', oper: 'Delete', char: char, row: change.row, col: change.col})
+                ws.send(data);
             }
         }
         
-    }, [ws]);
+    }, [wsRef]);
+
+
 
     return (
         <div className="min-h-screen flex flex-col">
-            <EditorNavbar docTitle={ docTitle } docId={ params.docId! } editable={ editable } userCount={ userCount }/>
+            <EditorNavbar docTitle={title} docId={ params.docId! } editable={isEditable} userCount={ userCount }/>
             <div className="flex-1 bg-muted/20">
                 <div className="container max-w-5xl mx-auto py-8 px-4">
                     <div className="bg-background rounded-lg shadow-lg border border-border min-h-[calc(100vh-12rem)] text-left">
@@ -80,10 +73,10 @@ function EditorPage(): JSX.Element {
                             selection={EditorSelection.cursor(0)}
                             autoFocus={true}
                             onCreateEditor={(view) => {
-                                editorViewRef.current = view;
+                                editorRef.current = view;
                             }}
                             placeholder={'Start typing here!'}
-                            editable={editable}
+                            editable={isEditable}
                         />
                     </div>
                     <p>{pos.row}:{pos.col}</p>

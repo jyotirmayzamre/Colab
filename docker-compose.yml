@@ -36,7 +36,7 @@ services:
   
   db:
     image: postgres
-    
+    container_name: postgres
     environment:
       POSTGRES_DB: colab
       POSTGRES_USER: jyotirmay

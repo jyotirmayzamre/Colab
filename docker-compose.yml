@@ -1,0 +1,52 @@
+services:
+  frontend:
+    build:
+      context: ./frontend/frontend
+      dockerfile: frontend.dockerfile
+      args:
+        VITE_BACKEND_URL: http://localhost:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: backend.dockerfile
+    environment:
+      DB_NAME: colab
+      DB_USER: jyotirmay
+      DB_PASSWORD: msshonco
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    depends_on:
+      - db
+
+  
+  db:
+    image: postgres
+    
+    environment:
+      POSTGRES_DB: colab
+      POSTGRES_USER: jyotirmay
+      POSTGRES_PASSWORD: msshonco
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

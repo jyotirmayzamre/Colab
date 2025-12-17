@@ -31,7 +31,7 @@ function RegisterForm(): JSX.Element {
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirm_password, ...payload } = data; 
-        const apiUrl = import.meta.env.VITE_API_URL
+        const apiUrl = import.meta.env.VITE_BACKEND_URL
         try {
             await axios.post(`${apiUrl}/api/accounts/signup/`, 
                 payload,

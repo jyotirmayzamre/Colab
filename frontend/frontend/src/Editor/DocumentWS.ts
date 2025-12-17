@@ -12,7 +12,7 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
     useEffect(() => {
         if(!docId) return;
 
-        const wsURL = `ws://127.0.0.1:8000/ws/documents/${docId}/`;
+        const wsURL = `ws://localhost:8000/ws/documents/${docId}/`;
         wsRef.current = new WebSocket(wsURL);
 
         wsRef.current.onopen = () => console.log("Websocket connected");

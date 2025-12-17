@@ -10,7 +10,7 @@ function getCSRFToken(): string | null {
 }
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL, 
+    baseURL: import.meta.env.VITE_BACKEND_URL, 
     headers: {
         'Content-Type': 'application/json'
     },
@@ -62,7 +62,7 @@ api.interceptors.response.use(
     
             try {
                
-                await axios.post(`${import.meta.env.VITE_API_URL}/api/accounts/token/refresh/`, {}, {withCredentials: true});
+                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/accounts/token/refresh/`, {}, {withCredentials: true});
                 processQueue(null);
                 isRefreshing = false;
                 return api(originalRequest);

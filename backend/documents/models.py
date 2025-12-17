@@ -51,20 +51,23 @@ class DocumentAccessManager(models.Manager):
     '''
     def create_or_update_access(self, docId: UUID, userId: UUID, level: str) -> tuple['DocumentAccess', bool]:
         document = Document.objects.get(pk=docId)
-        try:
-            user = User.objects.get(pk=userId)
-            access = self.get(document=document, user=user)
+        user = User.objects.get(pk=userId)
+
+        access, created = DocumentAccess.objects.get_or_create(
+        document=document,
+        user=user,
+        defaults={'level': level})
+
+        if not created:
             if access.level == 'owner':
                 raise ValueError('Cannot edit access level of an owner')
-            
             access.level = level
             access.save(update_fields=['level'])
-            return access, False  
-        
-        except DocumentAccess.DoesNotExist:
-            docAccess = super().create(document=document, user=user, level=level)
+        else:
             document.authors.add(user)
-            return docAccess, True  
+
+        return access, created
+       
 
     def delete_access(self, docId: UUID, userId: UUID):
         try:
@@ -115,7 +118,7 @@ def delete_user(sender, instance, **kwargs):
 
 
 class ShareLinkManager(models.Manager):
-    
+
     def create_share_link(self, docId: UUID, role: str, expires: int) -> 'ShareLink':
         document = Document.objects.get(pk=docId)
         expires_at = timezone.now() + timedelta(days=expires)

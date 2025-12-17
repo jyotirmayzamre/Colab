@@ -15,6 +15,7 @@ class DocumentAccessInputSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentAccess
         fields = ['user', 'document', 'level']
+        validators = []
 
     def validate_document(self, value):
         if not Document.objects.filter(id=value).exists():

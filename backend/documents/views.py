@@ -8,7 +8,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from accounts.serializers import CookieJWTAuthentication
 from rest_framework.response import Response
 from rest_framework.request import Request
-import rest_framework.status as status
+from rest_framework import status
 
 
 class DocumentPagination(LimitOffsetPagination):
@@ -69,9 +69,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
     
     def partial_update(self, request, *args, **kwargs):
         return self._upsert_access(request)
-        
-    def perform_destroy(self, instance):
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
         Document.objects.delete_document(docId=instance.id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        
 
 
 class DocumentAccessViewSet(viewsets.ModelViewSet):
@@ -79,34 +82,30 @@ class DocumentAccessViewSet(viewsets.ModelViewSet):
     authentication_classes=[CookieJWTAuthentication]
 
     def get_serializer_class(self):
-        if self.action in ('create', 'update', 'partial_update'):
+        if self.action == 'create':
             return DocumentAccessInputSerializer
         return DocumentAccessOutputSerializer
 
     def get_queryset(self):
         return (DocumentAccess.objects.filter(user=self.request.user))
-    
-    def _upsert_access(self, request, status_code=status.HTTP_200_OK):
+        
+
+    def create(self, request, *args, **kwargs):
         input_serializer = self.get_serializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
 
         data = input_serializer.validated_data
 
-        access = DocumentAccess.objects.create_or_update_access(
+        access, created = DocumentAccess.objects.create_or_update_access(
             docId=data['document'],
             userId=data['user'],
             level=data['level']
         )
 
         output_serializer = DocumentAccessOutputSerializer(access)
-
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(output_serializer.data, status=status_code)
-
-    def create(self, request, *args, **kwargs):
-        return self._upsert_access(request, status.HTTP_201_CREATED)
         
-    def update(self, request, *args, **kwargs):
-        return self._upsert_access(request)
 
 
 class CreateShareLink(APIView):

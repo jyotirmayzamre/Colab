@@ -1,24 +1,50 @@
 from rest_framework import serializers
-from .models import Document, DocumentAccess
+from .models import Document, DocumentAccess, ShareLink
 from django.utils import timezone
 from django.utils.timesince import timesince
 
-class DocumentAccessSerializer(serializers.ModelSerializer):
+'''
+Document Access Serializers
+'''
+
+class DocumentAccessInputSerializer(serializers.ModelSerializer):
+    user = serializers.UUIDField()
+    document = serializers.UUIDField()
+    level = serializers.ChoiceField(choices=DocumentAccess.ACCESS)
+
     class Meta:
         model = DocumentAccess
         fields = ['user', 'document', 'level']
-        validators = []
 
-    def create(self, validated_data):
-        level = validated_data['level']
-        userId = validated_data['user'].id
-        docId = validated_data['document'].id
+    def validate_document(self, value):
+        if not Document.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Document does not exist.")
+        return value
+    
+    def validate_level(self, value):
+       if value == 'owner':
+           raise serializers.ValidationError("Owner access cannot be assigned directly.")
+       return value
 
-        docAccess, created = DocumentAccess.objects.create_or_update_access(docId, userId, level)
-        return docAccess
+class DocumentAccessOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentAccess
+        fields = ['user', 'document', 'level']
+        read_only_fields = fields
 
 
-class DocumentSerializer(serializers.ModelSerializer):
+'''
+Document Serializers
+'''
+
+class DocumentInputSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=50)
+
+    class Meta:
+        model = Document
+        fields = ['title']
+
+class DocumentOutputSerializer(serializers.ModelSerializer):
     access = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField() 
     num_users = serializers.SerializerMethodField()
@@ -26,14 +52,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = ['id', 'access', 'title', 'updated_at', 'num_users']
-        read_only_fields=['id', 'authors', 'created_at', 'updated_at']
+        read_only_fields=['id', 'created_at', 'updated_at']
 
-    def create(self, validated_data):
-        user_id = self.context.get('user_id')
-
-        document = Document.objects.create_document(user_id) #type:ignore
-        return document
-    
     
     def get_access(self, obj):
         user_id = self.context.get('user_id')
@@ -47,3 +67,36 @@ class DocumentSerializer(serializers.ModelSerializer):
     
     def get_num_users(self, obj):
         return obj.authors.count()
+
+    
+    
+'''
+ShareLink Serializers
+'''
+
+class ShareLinkInputSerializer(serializers.ModelSerializer):
+    docId = serializers.UUIDField()
+    role = serializers.ChoiceField(choices=ShareLink.ROLE)
+    expires = serializers.IntegerField()
+
+    class Meta:
+        model = ShareLink
+        fields = ['docId', 'role', 'expires']
+
+    def validate_docId(self, value):
+        if not Document.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Document does not exist.")
+        return value
+
+
+class ShareLinkOutputSerializer(serializers.ModelSerializer):
+    link = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ShareLink
+        fields = ['link']
+
+    def get_link(self, obj):
+        link = f'http://localhost:5173/'
+        return link
+

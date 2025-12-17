@@ -3,20 +3,16 @@ from accounts.models import User
 import uuid
 from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
-import json
+from django.utils import timezone
+from datetime import timedelta
 
 class DocumentManager(models.Manager):
     '''
     - Add user to list of auhtors
     - Create 'owner' access level for this doc + user
     '''
-    def create_document(self, userId: UUID, title: str='Untitled Document') -> 'Document':
-        try:
-            user = User.objects.get(pk=userId)
-        except ObjectDoesNotExist:
-            raise ValueError('User with this id does not exist')
-        
-        doc = self.create(title=title)
+    def create_document(self, userId: UUID, title: str='Untitled Document') -> 'Document': 
+        doc = super().create(title=title)
         DocumentAccess.objects.create_or_update_access(docId=doc.id, userId=userId, level='owner')
 
         return doc
@@ -54,20 +50,9 @@ class DocumentAccessManager(models.Manager):
     Anytime an access object is created, the user is added to the document's list of authors
     '''
     def create_or_update_access(self, docId: UUID, userId: UUID, level: str) -> tuple['DocumentAccess', bool]:
-        try:
-            document = Document.objects.get(pk=docId)
-        except ObjectDoesNotExist:
-            raise ValueError('This document does not exist')
-        
+        document = Document.objects.get(pk=docId)
         try:
             user = User.objects.get(pk=userId)
-        except ObjectDoesNotExist:
-            raise ValueError('This user does not exist')
-        
-        if level not in dict(DocumentAccess.ACCESS):
-            raise ValueError('Invalid access level label')
-        
-        try:
             access = self.get(document=document, user=user)
             if access.level == 'owner':
                 raise ValueError('Cannot edit access level of an owner')
@@ -77,7 +62,7 @@ class DocumentAccessManager(models.Manager):
             return access, False  
         
         except DocumentAccess.DoesNotExist:
-            docAccess = self.create(document=document, user=user, level=level)
+            docAccess = super().create(document=document, user=user, level=level)
             document.authors.add(user)
             return docAccess, True  
 
@@ -87,10 +72,7 @@ class DocumentAccessManager(models.Manager):
         except ObjectDoesNotExist:
             raise ValueError(f"Document with this id doesn't exist")
 
-        try:
-            user = User.objects.get(pk=userId)
-        except ObjectDoesNotExist:
-            raise ValueError(f"User with this id doesn't exist")
+        user = User.objects.get(pk=userId)
         
         try:
             access = self.get(document=document, user=user)
@@ -132,7 +114,25 @@ def delete_user(sender, instance, **kwargs):
     DocumentAccess.objects.filter(user_id=instance.id).delete()
 
 
+class ShareLinkManager(models.Manager):
     
-    
+    def create_share_link(self, docId: UUID, role: str, expires: int) -> 'ShareLink':
+        document = Document.objects.get(pk=docId)
+        expires_at = timezone.now() + timedelta(days=expires)
+        link = super().create(document=document, role=role, expires_at=expires_at)
+        return link
+
+
+class ShareLink(models.Model):
+    ROLE = [('viewer', 'Viewer'), ('editor', 'Editor')]
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="document")
+    role = models.CharField(max_length=10, choices=ROLE)
+    token = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+
+    objects: 'ShareLinkManager' = ShareLinkManager()
+
+
 
     

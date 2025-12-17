@@ -5,7 +5,6 @@ from django.contrib.auth import authenticate
 from .utils import validate_email as check_valid_email
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework import exceptions
 
 '''
 Read-only serializer for returning user to frontend

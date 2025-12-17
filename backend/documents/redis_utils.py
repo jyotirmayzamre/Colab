@@ -4,7 +4,8 @@ from asgiref.sync import sync_to_async
 from .models import Document
 from .crdt import remoteDelete, remoteInsert
 
-client: redis.Redis = redis.Redis(host='redis', port=6379, db=0)
+# client: redis.Redis = redis.Redis(host='redis', port=6379, db=0)
+client: redis.Redis = redis.Redis(host='localhost', port=6379, db=0)
 
 
 # Loads CRDT from redis, used for users joining on active document

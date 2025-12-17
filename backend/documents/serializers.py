@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Document, DocumentAccess, ShareLink
 from django.utils import timezone
 from django.utils.timesince import timesince
+import json
+import base64
 
 '''
 Document Access Serializers
@@ -78,11 +80,10 @@ ShareLink Serializers
 class ShareLinkInputSerializer(serializers.ModelSerializer):
     docId = serializers.UUIDField()
     role = serializers.ChoiceField(choices=ShareLink.ROLE)
-    expires = serializers.IntegerField()
 
     class Meta:
         model = ShareLink
-        fields = ['docId', 'role', 'expires']
+        fields = ['docId', 'role']
 
     def validate_docId(self, value):
         if not Document.objects.filter(id=value).exists():
@@ -98,6 +99,6 @@ class ShareLinkOutputSerializer(serializers.ModelSerializer):
         fields = ['link']
 
     def get_link(self, obj):
-        link = f'http://localhost:5173/'
+        link = f'http://localhost:5173/shareLink/{obj.document.id}?token={obj.token}&role={obj.role}'
         return link
 

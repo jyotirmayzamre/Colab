@@ -22,14 +22,19 @@ type User = {
 
 function ShareDoc(): JSX.Element {
     const [query, setQuery] = useState<string>('');
+    const [url, setUrl] = useState<string>('');
     const [results, setResults] = useState<User[]>([]);
+    const [role, setRole] = useState<string>('editor');
     const params = useParams();
 
     const { register,
             handleSubmit,
             setValue,
-            formState: { errors, isSubmitting }
+            watch,
+            formState: { errors, isSubmitting },
     } = useForm<FormFields>();
+
+    const access = watch('access', 'editor');
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         const docId = params.docId;
@@ -47,13 +52,27 @@ function ShareDoc(): JSX.Element {
 
     const dialogRef = useRef<HTMLDialogElement | null>(null);
 
-    const openModal = (): void => {
+    const openModal = async (): Promise<void> => {
         dialogRef.current?.showModal();
     }
 
     const closeModal = (): void => {
         dialogRef.current?.close();
     }
+
+    useEffect(() => {
+        setRole(access);
+        const fetchShare = async () => {
+            const data = { docId: params.docId, role: role }
+            try {
+                const response = await api.post('/api/createShareLink/', data);
+                setUrl(response.data.link);
+            } catch(e){
+                console.error(e)
+            }
+        }
+        fetchShare();
+    }, [params.docId, role, access])
 
     
 
@@ -93,19 +112,18 @@ function ShareDoc(): JSX.Element {
                 <div className="flex justify-center items-start gap-2">
                     <FormInput 
                         id="name"
-                        register={register('username', {
-                            required: 'Required'
-                        })}
+                        register={register('username')}
                         error={errors.username}
                         placeholder="Search by name..."
                         onChange={onChange}
                     />
                     <input type='hidden' {...register('user_id')} />
 
-                    <select className='rounded-sm border border-black p-2' {...register('access', { required: true })}>
+                    <select className='rounded-sm border border-black p-2 bg-white' {...register('access', { required: true })}>
                         <option value="editor" defaultChecked>Editor</option>
                         <option value="viewer">Viewer</option>
                     </select>
+
                 </div>
                 <div>
                     <ul className="bg-[rgb(233,238,246)] shadow-lg rounded-md">
@@ -122,10 +140,23 @@ function ShareDoc(): JSX.Element {
                         )})}
                     </ul>
                 </div>
-                <div className="flex justify-center items-center">
+                <div className="flex justify-center items-center m-2">
                     <button className='rounded-lg py-3 px-5 bg-blue-800 text-white w-21 hover:cursor-pointer hover:brightness-125' type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Loading...' : 'Done'}
+                        {isSubmitting ? 'Loading...' : 'Share'}
                     </button>
+                </div>
+                <div className="m-2 justify-center items-center">
+                    <p>or</p>
+                </div>
+
+                 <div className="flex justify-center items-center gap-2">
+                    <p>Share Link: </p>
+                    <button type='button' className="p-3 rounded-sm bg-gray-100 hover:cursor-pointer hover:bg-gray-200 overflow-hidden text-ellipsis whitespace-nowrap w-60"
+                    onClick={() => {
+                        navigator.clipboard.writeText(url)
+                        alert('Link copied')
+                    }}
+                    >{url}</button>
                 </div>
                 
             </form>

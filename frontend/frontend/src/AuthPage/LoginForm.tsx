@@ -1,7 +1,7 @@
 import FormInput from './FormInput';
 import { useEffect, type JSX } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Auth/useAuth';
 import { FileText,  } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent,  } from '@/Components/card';
@@ -21,14 +21,23 @@ function LoginForm(): JSX.Element {
     } = useForm<FormFields>();
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     const { login, user } = useAuth(); 
 
+    const searchParams = new URLSearchParams(location.search);
+    const next = searchParams.get("next") || "";
+
     useEffect(() => {
         if(user){
-            navigate(`/home/${user?.user_id}`)
+            if(next && next.startsWith("/")){
+              navigate(next, { replace: true });
+            } else{
+              navigate(`/home/${user?.user_id}`, { replace: true })
+            }
+            
         }
-    }, [user, navigate])
+    }, [user, navigate, next])
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try{

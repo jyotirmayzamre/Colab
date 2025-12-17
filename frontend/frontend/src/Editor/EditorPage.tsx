@@ -16,7 +16,7 @@ function EditorPage(): JSX.Element {
     const { user } = useAuth();
     const [docAttribs] = useSearchParams();
     const title = docAttribs.get('title');
-    const isEditable: boolean = JSON.parse(docAttribs.get('isEditable'));
+    const isEditable: boolean = JSON.parse(docAttribs.get('isEditable').toLowerCase());
     
 
     const [value, setValue] = useState<string>('');

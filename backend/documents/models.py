@@ -117,24 +117,36 @@ def delete_user(sender, instance, **kwargs):
     DocumentAccess.objects.filter(user_id=instance.id).delete()
 
 
-class ShareLinkManager(models.Manager):
 
-    def create_share_link(self, docId: UUID, role: str, expires: int) -> 'ShareLink':
+class ShareLinkManager(models.Manager):
+    def create_share_link(self, docId: UUID, role: str) -> 'ShareLink':
         document = Document.objects.get(pk=docId)
-        expires_at = timezone.now() + timedelta(days=expires)
-        link = super().create(document=document, role=role, expires_at=expires_at)
+        link = super().filter(
+            document=document, 
+            role=role, 
+            expires_at__gt=timezone.now()
+        ).first()
+        
+        if not link:
+            link = super().create(document=document, role=role)
+
         return link
 
 
+def get_expiry_date():
+        return timezone.now() + timedelta(days=7)
+
+
 class ShareLink(models.Model):
+    
     ROLE = [('viewer', 'Viewer'), ('editor', 'Editor')]
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="document")
     role = models.CharField(max_length=10, choices=ROLE)
     token = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(blank=True, null=True)
+    expires_at = models.DateTimeField(default=get_expiry_date)
 
     objects: 'ShareLinkManager' = ShareLinkManager()
+    
 
 
 

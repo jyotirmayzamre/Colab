@@ -6,6 +6,7 @@ import ProtectedRoute from "./Auth/ProtectedRoute";
 import Dashboard from "./Dashboard/Dashboard";
 import EditorPage from "./Editor/EditorPage";
 import Landing from "./landing";
+import ShareLinkComponent from "./Editor/ShareLink";
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,9 @@ const router = createBrowserRouter([
   {
     path: 'document/:docId',
     element: <ProtectedRoute><EditorPage /></ProtectedRoute>
+  },
+  {
+    path: 'shareLink/:docId', element: <ShareLinkComponent/>
   }
 ]);
 

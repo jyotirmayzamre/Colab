@@ -108,8 +108,9 @@ class DocumentAccessViewSet(viewsets.ModelViewSet):
         
 
 
-class CreateShareLink(APIView):
+class CreateShareLinkView(APIView):
     permission_classes=(IsAuthenticated,)
+    authentication_classes=[CookieJWTAuthentication]
     serializer_class = ShareLinkInputSerializer
 
     def post(self, request: Request) -> Response:
@@ -121,7 +122,6 @@ class CreateShareLink(APIView):
         link = ShareLink.objects.create_share_link(
             docId=data['docId'], # type: ignore
             role=data['role'], # type: ignore
-            expires=data['expires'] #type: ignore
         )
 
         output_serializer = ShareLinkOutputSerializer(link)
@@ -130,4 +130,24 @@ class CreateShareLink(APIView):
 
 
 
-    
+class AcceptShareView(APIView):
+    permission_classes=(IsAuthenticated,)
+    authentication_classes=[CookieJWTAuthentication]
+
+    def post(self, request: Request) -> Response:
+        role = request.data['role']
+        token = request.data['token']
+
+        if not ShareLink.objects.filter(token=token).exists():
+            return Response('Invalid share link', status.HTTP_401_UNAUTHORIZED)
+
+        link = ShareLink.objects.get(token=token)
+        document = link.document
+        
+
+        DocumentAccess.objects.create_or_update_access(document.id, request.user.id, role)
+
+        redirect_link = f'/document/{document.id}?title={document.title}&isEditable={role == "editor"}'
+        return Response(redirect_link, status.HTTP_200_OK)
+
+

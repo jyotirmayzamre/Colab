@@ -16,6 +16,8 @@ export type Document = {
 function Dashboard(): JSX.Element {
     const [documents, setDocuments] = useState<Document[] | null>(null);
 
+   
+
     return (
         <div className="min-h-screen bg-gradient-subtle">
             <HomeNavbar />

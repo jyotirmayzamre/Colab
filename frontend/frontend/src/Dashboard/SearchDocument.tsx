@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Document } from "./Dashboard";
 import api from "@/Auth/api";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 
 
@@ -18,8 +19,16 @@ function SearchDocument(){
                 const response = await api.get(`/api/documents/?search=${query}`);
                 const data = response.data;
                 setResults(data.results);
-            } catch(error){
-                console.error(error);
+            } catch {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Could not search for documents :(',
+                    icon: 'error',
+                    showConfirmButton: false,
+                    toast: true,
+                    timer: 3000,
+                    position: 'top',
+                  })
             }
         }
         if(!query){

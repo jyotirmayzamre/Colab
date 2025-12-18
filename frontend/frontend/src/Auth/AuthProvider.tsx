@@ -14,15 +14,16 @@ export const AuthProvider = ({ children }: Props) => {
 
 
     const login = async (username: string, password: string) => {
-        const data = {'username': username, 'password': password}
+        const data = {'username': username, 'password': password};
+        
         try {
-            const response = await api.post('/api/accounts/login/', data)
+            const response = await api.post('/api/accounts/login/', data);
             await getUser();
             return response.data;
         } catch(error){
             setUser(null);
             setAuthenticated(false);
-            console.error(error);
+            throw error;
         } 
     }
 
@@ -34,10 +35,9 @@ export const AuthProvider = ({ children }: Props) => {
             setUser(user);
             setAuthenticated(true);
             return response.data;
-        } catch(err){
+        } catch {
             setUser(null);
             setAuthenticated(false);
-            console.error(err);
         }  
     }, []);
 
@@ -61,12 +61,7 @@ export const AuthProvider = ({ children }: Props) => {
     useEffect(() => {
         const checkAuth = async() => {
             if(isLoggingOut.current) return;
-
-            try {
-                await getUser();
-            } catch (error) {
-                console.error(error);
-            }
+            await getUser();
         }
         checkAuth();
 

@@ -42,12 +42,10 @@ function LoginForm(): JSX.Element {
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try{
             await login(data.username, data.password);
-        } catch(error){
-            if(error instanceof Error){
-                setError('root', {
-                    message: error.message
-                })
-            }
+        } catch {
+          setError('root', {
+            message: 'Incorrect credentials'
+          })
         }
         
     }
@@ -69,6 +67,7 @@ function LoginForm(): JSX.Element {
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
+            <p className='text-red-600 text-sm'>{errors.root ? errors.root.message : ''}</p>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">

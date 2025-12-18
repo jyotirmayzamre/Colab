@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "../Components/card";
 import { Plus} from "lucide-react";
+import Swal from 'sweetalert2';
 
 type props = {
     setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>;
@@ -20,10 +21,23 @@ function CreateDocument({ setDocuments }: props): JSX.Element {
             const newDoc = response.data;
             queryClient.invalidateQueries({ queryKey: ["documents"] });
             setDocuments(prev => [...(prev ?? []), newDoc]);
-            navigate(`/document/${newDoc.id}`)
 
-        } catch(err){
-            console.error(err)
+            const params = new URLSearchParams({
+              title: "Untitled Document",
+              isEditable: "true",
+            });
+            navigate(`/document/${newDoc.id}?${params.toString()}`)
+
+        } catch{
+          Swal.fire({
+            title: 'Error!',
+            text: 'Could not create document :(',
+            icon: 'error',
+            showConfirmButton: false,
+            toast: true,
+            timer: 3000,
+            position: 'top',
+          })
         }
     }
 

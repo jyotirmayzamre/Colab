@@ -15,6 +15,8 @@ import {
 } from "@/Components/dropdown";
 import { Button } from "@/Components/button";
 
+import Swal from "sweetalert2";
+
 
 type props = {
     documents: Document[] | null;
@@ -51,8 +53,16 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
         try {
             await api.delete(`/api/documents/${docId}/`);
             setDocuments(prev => prev.filter(doc => doc.id !== docId));
-        } catch (e) {
-            console.error(e);
+        } catch {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Could not delete document :(',
+                icon: 'error',
+                showConfirmButton: false,
+                toast: true,
+                timer: 3000,
+                position: 'top',
+            })
         }
     };
 

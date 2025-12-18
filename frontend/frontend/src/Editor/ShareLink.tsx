@@ -2,6 +2,7 @@ import { useAuth } from "@/Auth/useAuth";
 import { useEffect, type JSX } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import api from "@/Auth/api";
+import Swal from "sweetalert2";
 
 function ShareLinkComponent(): JSX.Element {
     const [searchParams] = useSearchParams();
@@ -19,8 +20,16 @@ function ShareLinkComponent(): JSX.Element {
                 const payload = { token, role };
                 const response = await api.post("/api/acceptShare/", payload);
                 navigate(response.data, { replace: true });
-            } catch (e) {
-                console.error(e);
+            } catch{
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Could not share document via link :(',
+                    icon: 'error',
+                    showConfirmButton: false,
+                    toast: true,
+                    timer: 3000,
+                    position: 'top',
+                })
             }
         };
 

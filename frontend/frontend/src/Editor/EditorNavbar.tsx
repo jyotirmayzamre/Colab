@@ -8,6 +8,7 @@ import { Button } from "@/Components/button";
 import { ArrowLeft, FileText, Clock, Users, Download, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger,  DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem} from "@/Components/dropdown";
 import { Input } from "@/Components/input";
+import Swal from "sweetalert2";
 
 type props = {
     docTitle: string;
@@ -32,17 +33,38 @@ function EditorNavbar({ docTitle, docId, editable, userCount, value }: props): J
         try {
             await api.patch(`/api/documents/${docId}/`, { title: newTitle});
             console.log('Document renamed to', newTitle);
-        } catch(e){
-            console.error(e);
+        } catch{
+            Swal.fire({
+              title: 'Error!',
+              text: 'Could not rename document :(',
+              icon: 'error',
+              showConfirmButton: false,
+              toast: true,
+              timer: 3000,
+              position: 'top',
+            })
         }
     }, [docId]);
 
 
     const handleDownload = () => {
-      const link = document.createElement('a');
-      link.setAttribute('download', 'download.doc');
-      link.setAttribute('href', 'data:' + 'text/doc' + ';charset=utf-8,' + encodeURIComponent(value));
-      link.click();
+      try{
+        const link = document.createElement('a');
+        link.setAttribute('download', 'download.doc');
+        link.setAttribute('href', 'data:' + 'text/doc' + ';charset=utf-8,' + encodeURIComponent(value));
+        link.click();
+      } catch{
+        Swal.fire({
+          title: 'Error!',
+          text: 'Could not download document :(',
+          icon: 'error',
+          showConfirmButton: false,
+          toast: true,
+          timer: 3000,
+          position: 'top',
+        })
+      }
+      
     }
 
 

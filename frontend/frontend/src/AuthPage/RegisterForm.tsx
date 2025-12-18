@@ -43,12 +43,12 @@ function RegisterForm(): JSX.Element {
             );
             navigate('/auth/login')
             
-        } catch(error: unknown){
-            if(error instanceof Error){
-                setError('root', {
-                    message: error.message
-                })
-            }
+        } catch(error){
+            const keys = Object.keys(error.response.data)
+            setError('root', {
+                message: error.response.data[keys[0]][0]
+            })
+            
         }
         
     };
@@ -71,6 +71,7 @@ function RegisterForm(): JSX.Element {
                 Get started with your free account
               </CardDescription>
             </CardHeader>
+            <p className="text-red-600 text-sm p-2 mb-3">{errors.root ? errors.root.message : ''}</p>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-0.5 flex justify-center items-center gap-2">

@@ -4,6 +4,7 @@ import FormInput from "../AuthPage/FormInput";
 import api from "../Auth/api";
 import { useParams } from "react-router-dom";
 import { Share2 } from "lucide-react";
+import Swal from "sweetalert2";
 
 type FormFields = {
     username: string,
@@ -44,8 +45,16 @@ function ShareDoc(): JSX.Element {
         try{
             await api.post('/api/documentAccess/', payload)
             dialogRef.current?.close();
-        } catch(error){
-            console.error(error);
+        } catch{
+            Swal.fire({
+                title: 'Error!',
+                text: 'Could not share document :(',
+                icon: 'error',
+                showConfirmButton: false,
+                toast: true,
+                timer: 3000,
+                position: 'top',
+            })
         }
     }
 
@@ -67,8 +76,16 @@ function ShareDoc(): JSX.Element {
             try {
                 const response = await api.post('/api/createShareLink/', data);
                 setUrl(response.data.link);
-            } catch(e){
-                console.error(e)
+            } catch{
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Could not create share link :(',
+                    icon: 'error',
+                    showConfirmButton: false,
+                    toast: true,
+                    timer: 3000,
+                    position: 'top',
+                })
             }
         }
         fetchShare();
@@ -83,9 +100,17 @@ function ShareDoc(): JSX.Element {
             const response = await api.get(`/api/accounts/searchUsers/?q=${query}`);
             const data = response.data;
             setResults(data.results);
-        } catch(error){
-            console.error(error);
-        }
+        } catch{
+            Swal.fire({
+                title: 'Error!',
+                text: 'Could not search for users :(',
+                icon: 'error',
+                showConfirmButton: false,
+                toast: true,
+                timer: 3000,
+                position: 'top',
+            })
+}
        }
 
        if(!query){

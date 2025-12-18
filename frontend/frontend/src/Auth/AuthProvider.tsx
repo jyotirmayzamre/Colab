@@ -9,7 +9,6 @@ interface Props {
 
 export const AuthProvider = ({ children }: Props) => {
     const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
     const [authenticated, setAuthenticated] = useState(false);
     const isLoggingOut = useRef(false);
 
@@ -67,8 +66,6 @@ export const AuthProvider = ({ children }: Props) => {
                 await getUser();
             } catch (error) {
                 console.error(error);
-            } finally {
-                setLoading(false);
             }
         }
         checkAuth();
@@ -89,7 +86,7 @@ export const AuthProvider = ({ children }: Props) => {
 
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading, authenticated, getUser }}>
+        <AuthContext.Provider value={{ user, login, logout, authenticated, getUser }}>
             {children}
         </AuthContext.Provider>
     )

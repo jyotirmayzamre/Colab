@@ -35,9 +35,9 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
             self.group_name, self.channel_name
         )
 
-        #updates the user count, if last user leaves, then crdt in redis is flushed to db
+        await redis_remove_user(self.doc_id, self.channel_name)
         remaining_count = await redis_get_user_count(self.doc_id)
-        await redis_remove_user(self.doc_id, self.channel_name) 
+         
         if(remaining_count > 0):
             await self.channel_layer.group_send(
                 self.group_name, {'type': 'userCount.updated', 'count': remaining_count}

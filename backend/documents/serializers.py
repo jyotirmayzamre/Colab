@@ -99,6 +99,6 @@ class ShareLinkOutputSerializer(serializers.ModelSerializer):
         fields = ['link']
 
     def get_link(self, obj):
-        link = f'http://localhost:5173/shareLink/{obj.document.id}?token={obj.token}&role={obj.role}'
+        link = f'http://localhost:5173/shareLink/{obj.token}?role={obj.role}'
         return link
 

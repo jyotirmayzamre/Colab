@@ -8,15 +8,8 @@ interface ProtectedProps {
 
 
 const ProtectedRoute = ({ children }: ProtectedProps) => {
-    const { authenticated, loading } = useAuth();
-    if(loading){
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <div>Loading...</div>
-            </div>
-        )
-    }
-
+    const { authenticated } = useAuth();
+    
     if(!authenticated){
         return <Navigate to='/auth/login' />
     }

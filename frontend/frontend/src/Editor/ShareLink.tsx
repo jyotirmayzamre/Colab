@@ -4,31 +4,16 @@ import { useLocation, useNavigate, useParams, useSearchParams } from "react-rout
 import api from "@/Auth/api";
 
 function ShareLinkComponent(): JSX.Element {
-    const { docId } = useParams();
     const [searchParams] = useSearchParams();
-    const { authenticated, loading } = useAuth();
+    const { authenticated } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
 
     const role = searchParams.get("role");
-    const token = searchParams.get("token");
+    const { token } = useParams();
+
 
     useEffect(() => {
-        if (loading) return;
-
-        if (!authenticated) {
-            const nextPath = `${location.pathname}${location.search}`;
-            navigate(`/auth/login/?next=${encodeURIComponent(nextPath)}`, {
-                replace: true,
-            });
-        }
-    }, [authenticated, loading, location, navigate]);
-
-    
-    useEffect(() => {
-        if (loading || !authenticated) return;
-        if (!token || !role || !docId) return;
-
         const sendShare = async () => {
             try {
                 const payload = { token, role };
@@ -39,8 +24,16 @@ function ShareLinkComponent(): JSX.Element {
             }
         };
 
-        sendShare();
-    }, [authenticated, loading, token, role, docId, navigate]);
+        //main logic
+        if (!authenticated){
+            const nextPath = `${location.pathname}${location.search}`;
+            navigate(`/auth/login/?next=${encodeURIComponent(nextPath)}`, {
+                replace: true,
+            });
+        } else {
+            sendShare();
+        }
+    }, [authenticated, location, navigate, role, token])
 
     return (
         <div className="flex justify-center items-center h-screen">

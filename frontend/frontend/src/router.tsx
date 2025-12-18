@@ -30,7 +30,7 @@ const router = createBrowserRouter([
     element: <ProtectedRoute><EditorPage /></ProtectedRoute>
   },
   {
-    path: 'shareLink/:docId', element: <ShareLinkComponent/>
+    path: 'shareLink/:token', element: <ShareLinkComponent/>
   }
 ]);
 

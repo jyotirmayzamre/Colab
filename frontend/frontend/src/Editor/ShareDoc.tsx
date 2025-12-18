@@ -24,7 +24,6 @@ function ShareDoc(): JSX.Element {
     const [query, setQuery] = useState<string>('');
     const [url, setUrl] = useState<string>('');
     const [results, setResults] = useState<User[]>([]);
-    const [role, setRole] = useState<string>('editor');
     const params = useParams();
 
     const { register,
@@ -34,8 +33,8 @@ function ShareDoc(): JSX.Element {
             formState: { errors, isSubmitting },
     } = useForm<FormFields>();
 
-    const access = watch('access', 'editor');
 
+    //Submit handler for share document form
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         const docId = params.docId;
         const userId = data.user_id;
@@ -60,10 +59,11 @@ function ShareDoc(): JSX.Element {
         dialogRef.current?.close();
     }
 
+    const access = watch('access', 'editor');
+
     useEffect(() => {
-        setRole(access);
         const fetchShare = async () => {
-            const data = { docId: params.docId, role: role }
+            const data = { docId: params.docId, role: access }
             try {
                 const response = await api.post('/api/createShareLink/', data);
                 setUrl(response.data.link);
@@ -72,11 +72,11 @@ function ShareDoc(): JSX.Element {
             }
         }
         fetchShare();
-    }, [params.docId, role, access])
+    }, [params.docId, access])
 
     
 
-
+    //Used to display search results in share form
     useEffect(() => {
         const getData = async () => {
         try{

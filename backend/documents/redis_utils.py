@@ -60,6 +60,7 @@ async def redis_flush_to_db(docId):
             state=state
         )
     await client.delete(f'crdt:{docId}')
+    await client.delete(f'users:{docId}')
 
 
     

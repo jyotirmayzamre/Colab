@@ -43,7 +43,7 @@ function ShareDoc(): JSX.Element {
         const payload = { document: docId, user: userId, level: access}
 
         try{
-            await api.post('/api/documentAccess/', payload)
+            await api.post('/api/permissions/share/', payload)
             dialogRef.current?.close();
         } catch{
             Swal.fire({
@@ -74,7 +74,7 @@ function ShareDoc(): JSX.Element {
         const fetchShare = async () => {
             const data = { docId: params.docId, role: access }
             try {
-                const response = await api.post('/api/createShareLink/', data);
+                const response = await api.post('/api/permissions/createShareLink/', data);
                 setUrl(response.data.link);
             } catch{
                 Swal.fire({

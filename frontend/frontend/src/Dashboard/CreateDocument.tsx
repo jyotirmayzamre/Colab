@@ -26,7 +26,7 @@ function CreateDocument({ setDocuments }: props): JSX.Element {
               title: "Untitled Document",
               isEditable: "true",
             });
-            navigate(`/document/${newDoc.id}?${params.toString()}`)
+            navigate(`/documents/${newDoc.id}?${params.toString()}`)
 
         } catch{
           Swal.fire({

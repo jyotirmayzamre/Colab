@@ -26,7 +26,7 @@ const router = createBrowserRouter([
     element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
   },
   {
-    path: 'document/:docId',
+    path: 'documents/:docId',
     element: <ProtectedRoute><EditorPage /></ProtectedRoute>
   },
   {

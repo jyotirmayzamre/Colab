@@ -18,7 +18,7 @@ function ShareLinkComponent(): JSX.Element {
         const sendShare = async () => {
             try {
                 const payload = { token, role };
-                const response = await api.post("/api/acceptShare/", payload);
+                const response = await api.post("/api/permissions/acceptShare/", payload);
                 navigate(response.data, { replace: true });
             } catch{
                 Swal.fire({

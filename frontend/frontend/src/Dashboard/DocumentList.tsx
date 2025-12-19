@@ -104,7 +104,7 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
                                 <DropdownMenuContent align="end">
 
                                     <DropdownMenuItem onClick={() => navigate({
-                                        pathname: `/document/${doc.id}`,
+                                        pathname: `/documents/${doc.id}`,
                                         search: createSearchParams({
                                             title: doc.title,
                                             isEditable: (doc.access !== 'viewer').toString()
@@ -124,7 +124,7 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
                         </div>
                     </CardHeader>
                     <CardContent onClick={() => navigate({
-                                pathname: `/document/${doc.id}`,
+                                pathname: `/documents/${doc.id}`,
                                 search: createSearchParams({
                                     title: doc.title,
                                     isEditable: (doc.access !== 'viewer').toString()

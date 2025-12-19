@@ -8,11 +8,9 @@ class DocumentManager(models.Manager):
     def create_document(self, title: str = 'Untitled Document') -> 'Document':
             return super().create(title=title)
     
-    def get_document(self, docId: UUID) -> Optional['Document']:
-        try:
-            return self.get(pk=docId)
-        except self.model.DoesNotExist:
-            return None
+    def update_state(self, docId: UUID, state):
+         Document.objects.filter(id=docId).update(state=state)
+         
     
     def get_user_documents(self, user):
         return Document.objects.filter(authors=user).order_by('-updated_at')

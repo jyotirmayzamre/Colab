@@ -8,7 +8,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 
 from channels.auth import AuthMiddlewareStack
-from documents.routing import websocket_urlpatterns
+from collaboration.routing import websocket_urlpatterns
 
 
 

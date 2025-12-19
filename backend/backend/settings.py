@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'accounts',
     'corsheaders',
-    'permissions'
+    'permissions',
+    'collaboration'
 ]
 
 REST_FRAMEWORK = {

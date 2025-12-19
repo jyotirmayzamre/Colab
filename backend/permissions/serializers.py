@@ -1,5 +1,6 @@
 from .models import Document, DocumentAccess, ShareLink
 from rest_framework import serializers
+from documents.services import DocumentService
 
 '''
 Document Access Serializers
@@ -16,7 +17,9 @@ class DocumentAccessInputSerializer(serializers.ModelSerializer):
         validators = []
 
     def validate_document(self, value):
-        if not Document.objects.filter(id=value).exists():
+        try:
+            doc = DocumentService.get_document(value)
+        except Document.DoesNotExist:
             raise serializers.ValidationError("Document does not exist.")
         return value
     
@@ -45,7 +48,9 @@ class ShareLinkInputSerializer(serializers.ModelSerializer):
         fields = ['docId', 'role']
 
     def validate_docId(self, value):
-        if not Document.objects.filter(id=value).exists():
+        try:
+            doc = DocumentService.get_document(value)
+        except Document.DoesNotExist:
             raise serializers.ValidationError("Document does not exist.")
         return value
 

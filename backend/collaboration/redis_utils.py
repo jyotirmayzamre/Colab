@@ -1,7 +1,7 @@
 import json
 import redis.asyncio as redis
 from asgiref.sync import sync_to_async
-from .models import Document
+from documents.services import DocumentService
 from .crdt import remoteDelete, remoteInsert
 
 # client: redis.Redis = redis.Redis(host='redis', port=6379, db=0)
@@ -15,7 +15,7 @@ async def redis_load_crdt(docId):
         return json.loads(state_json)
     
     #if document just became active, crdt is obtained from document and set in redis
-    doc = await sync_to_async(Document.objects.get)(id=docId)
+    doc = await sync_to_async(DocumentService.get_document)(docId)
     state = doc.state
 
     await client.set(
@@ -56,7 +56,8 @@ async def redis_flush_to_db(docId):
     if(state_bytes):
         state_str = state_bytes.decode('utf-8')
         state = json.loads(state_str)
-        await sync_to_async(Document.objects.filter(id=docId).update)(
+        await sync_to_async(DocumentService.update_document_state)(
+            docId=docId,
             state=state
         )
     await client.delete(f'crdt:{docId}')

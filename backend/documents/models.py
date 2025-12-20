@@ -15,6 +15,7 @@ class DocumentManager(models.Manager):
     def get_user_documents(self, user):
         return Document.objects.filter(authors=user).order_by('-updated_at')
     
+    
 
 def default_state():
     return []

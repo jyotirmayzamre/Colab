@@ -10,6 +10,7 @@ interface InputProps {
   error?: FieldError;
   id: string;
   placeholder?: string;
+  className?: string;
   onChange?: (q: string) => void;
 }
 
@@ -25,7 +26,7 @@ function FormInput(data: InputProps) {
         {...data.register}
         placeholder={data.placeholder}
         onChange={(e) => data.onChange?.(e.target.value)}
-        className={cn(data.error && "border-destructive focus-visible:ring-destructive")}
+        className={cn(data.error && "border-destructive focus-visible:ring-destructive", data.className)}
       />
       <div className="text-destructive text-xs min-h-[1rem]">
         {data.error ? data.error.message : "\u00A0"}

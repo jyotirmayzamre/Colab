@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'accounts',
     'corsheaders',
     'permissions',
-    'collaboration'
+    'collaboration',
+    'versions',
 ]
 
 REST_FRAMEWORK = {

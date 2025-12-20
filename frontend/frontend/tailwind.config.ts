@@ -80,12 +80,22 @@ export default {
             height: "0",
           },
         },
+        overlayShow: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        contentShow: {
+          '0%': { opacity: '0', transform: 'translateY(-10px) scale(0.96)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        overlayShow: 'overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1)',
+        contentShow: 'contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1)',
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 } satisfies Config;

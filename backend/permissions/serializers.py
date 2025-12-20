@@ -7,13 +7,13 @@ Document Access Serializers
 '''
 
 class DocumentAccessInputSerializer(serializers.ModelSerializer):
-    user = serializers.UUIDField()
-    document = serializers.UUIDField()
+    userId = serializers.UUIDField()
+    docId = serializers.UUIDField()
     level = serializers.ChoiceField(choices=DocumentAccess.ACCESS)
 
     class Meta:
         model = DocumentAccess
-        fields = ['user', 'document', 'level']
+        fields = ['userId', 'docId', 'level']
         validators = []
 
     def validate_document(self, value):

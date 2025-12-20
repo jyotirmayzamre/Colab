@@ -31,8 +31,8 @@ class DocumentAccessViewSet(viewsets.ModelViewSet):
         data = input_serializer.validated_data
 
         access, created = DocumentAccessService.create_or_update_access(
-            docId = data['document'],
-            userId=data['user'],
+            docId = data['docId'],
+            userId=data['userId'],
             level=data['level']
         )
 

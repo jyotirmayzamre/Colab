@@ -2,11 +2,15 @@ from rest_framework import serializers
 from .models import Version
 from documents.services import DocumentService
 from documents.models import Document
+from accounts.models import User
 
 class VersionInputSerializer(serializers.ModelSerializer):
-    docId = serializers.UUIDField()
     title = serializers.CharField(max_length=50)
     state = serializers.JSONField()
+    docId = serializers.PrimaryKeyRelatedField(
+        source="document",
+        queryset=Document.objects.all()
+    )
 
     class Meta:
         model = Version
@@ -23,8 +27,9 @@ class VersionInputSerializer(serializers.ModelSerializer):
 class VersionOutputSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
-    updated_at = serializers.DateTimeField()
+    created_at = serializers.DateTimeField(format="%d %b %Y")  # type: ignore
+    creator_username = serializers.CharField()
 
     class Meta:
         model = Version
-        fields = ['id', 'title', 'updated_at']
+        fields = ['id', 'title', 'created_at', 'creator_username']

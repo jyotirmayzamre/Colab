@@ -2,16 +2,15 @@ from rest_framework import viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from accounts.serializers import CookieJWTAuthentication
-from .services import VersionService
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import VersionInputSerializer, VersionOutputSerializer
+from .models import Version
 
 # Create your views here.
 class VersionPagination(LimitOffsetPagination):
-    default_limit = 5
-    max_limit = 5
+    default_limit = 10
+    max_limit = 10
 
 
 class VersionViewSet(viewsets.ModelViewSet):
@@ -19,20 +18,29 @@ class VersionViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]
     pagination_class = VersionPagination
 
-    def get_queryset(self, request: Request):
-        docId = request.query_params.get('docId') 
-        return VersionService.get_versions(docId=docId)
+
+    def get_queryset(self):
+        qs = Version.objects.all()
+        docId = self.request.query_params.get('docId')  #type: ignore
+        if docId:
+            qs = qs.filter(document_id=docId)
+        return qs
+    
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return VersionInputSerializer
+        return VersionOutputSerializer
     
     def create(self, request, *args, **kwargs):
-        input_serializer = VersionInputSerializer(data=request.data)
+        input_serializer = self.get_serializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
-
         data = input_serializer.validated_data
 
-        version = VersionService.create_version(
-            title=data['title'], #type: ignore
-            docId=data['docId'], #type: ignore
-            state=data['state'] #type: ignore
+        version = Version.objects.create_version(
+            title=data['title'], 
+            docId=data['document'].id, 
+            state=data['state'], 
+            creator=request.user
         )
 
         output_serializer = VersionOutputSerializer(version)

@@ -33,7 +33,7 @@ function ShareDoc(): JSX.Element {
     const [selectedUser, setSelectedUser] = useState<string>('');
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
-    const params = useParams();
+    const { docId } = useParams();
 
     const { register,
             handleSubmit,
@@ -45,7 +45,6 @@ function ShareDoc(): JSX.Element {
 
     //Submit handler for share document form
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
-        const docId = params.docId;
         const userId = data.user_id;
         const access = data.access;
         const payload = { docId: docId, userId: userId, level: access}
@@ -80,7 +79,7 @@ function ShareDoc(): JSX.Element {
 
     useEffect(() => {
         const fetchShare = async () => {
-            const data = { docId: params.docId, role: access }
+            const data = { docId: docId, role: access }
             try {
                 const response = await api.post('/api/permissions/create-share-link/', data);
                 setShareLink(response.data.link);
@@ -97,7 +96,7 @@ function ShareDoc(): JSX.Element {
             }
         }
         fetchShare();
-    }, [params.docId, access])
+    }, [docId, access])
 
     
 
@@ -146,7 +145,7 @@ function ShareDoc(): JSX.Element {
                 <DialogOverlay />
                 <DialogContent>
                     <DialogTitle>Share document</DialogTitle>
-                    <DialogDescription className="text-gray-500">
+                    <DialogDescription>
                         Search for a user or share an invite link.
                     </DialogDescription>
                     <form method="post" onSubmit={handleSubmit(onSubmit)} className="mt-6">

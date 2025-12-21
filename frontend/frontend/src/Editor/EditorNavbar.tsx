@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import type { JSX, RefObject } from "react";
 import { useAuth } from "../Auth/useAuth";
 import { useNavigate} from "react-router-dom";
 import ShareDoc from "./ShareDoc";
@@ -9,6 +9,8 @@ import { ArrowLeft, FileText, Clock, Users, Download, MoreVertical } from "lucid
 import { DropdownMenu, DropdownMenuTrigger,  DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem} from "@/Components/dropdown";
 import { Input } from "@/Components/input";
 import Swal from "sweetalert2";
+import VersionHistory from "./VersionHistory";
+import CRDT from "@/CRDT/crdt";
 
 type props = {
     docTitle: string;
@@ -16,9 +18,10 @@ type props = {
     editable: boolean;
     userCount: number;
     value: string;
+    crdtRef: RefObject<CRDT | null>
 }
 
-function EditorNavbar({ docTitle, docId, editable, userCount, value }: props): JSX.Element {
+function EditorNavbar({ docTitle, docId, editable, userCount, value, crdtRef }: props): JSX.Element {
     const { user } = useAuth();
     const [documentTitle, setDocumentTitle] = useState<string>(docTitle);
     const navigate = useNavigate();
@@ -138,7 +141,7 @@ function EditorNavbar({ docTitle, docId, editable, userCount, value }: props): J
                     Make a copy
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Version history</DropdownMenuItem>
+                  <DropdownMenuItem asChild><VersionHistory crdtRef={crdtRef}/></DropdownMenuItem>
                   <DropdownMenuItem>Document settings</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

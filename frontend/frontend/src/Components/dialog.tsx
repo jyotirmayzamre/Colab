@@ -6,9 +6,7 @@ import { X } from 'lucide-react';
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger
 const DialogPortal = DialogPrimitive.Portal
-const DialogDescription = DialogPrimitive.Description
 const DialogClose = DialogPrimitive.Close
-
 
 
 const DialogContent = forwardRef<
@@ -53,7 +51,6 @@ const DialogOverlay = forwardRef<
     ElementRef<typeof DialogPrimitive.Overlay>,
     ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-    <div className="flex justify-between items-center">
         <DialogPrimitive.Overlay
             ref={ref}
             className={cn(
@@ -64,7 +61,22 @@ const DialogOverlay = forwardRef<
         >
         
         </DialogPrimitive.Overlay>
-    </div> 
+))
+
+const DialogDescription = forwardRef<
+    ElementRef<typeof DialogPrimitive.Description>,
+    ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+    <DialogPrimitive.Description
+        ref={ref}
+        className={cn(
+            "text-gray-500",
+            className,
+        )}
+        {...props}
+    >
+    
+    </DialogPrimitive.Description>
 ))
 
 

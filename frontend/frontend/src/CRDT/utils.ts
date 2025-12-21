@@ -5,27 +5,8 @@ export type Identifier = {
 
 export type Char = {
     position: Identifier[];
-    lamport: number;
     value: string;
 }
-
-
-export class LamportClock {
-    counter: number;
-
-    constructor(){
-        this.counter = 0;
-    }
-
-    tick(): void {
-        this.counter += 1;
-    }
-
-    receive(t: number): void {
-        this.counter = Math.max(this.counter, t) + 1;
-    }
-}
-
 
 
 

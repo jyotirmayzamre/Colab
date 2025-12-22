@@ -65,8 +65,9 @@ export const AuthProvider = ({ children }: Props) => {
             const response = await api.post('/api/accounts/login/', data);
             await getUser();
             return response.data;
-        } catch {
+        } catch(error) {
             dispatch({ type: 'CLEAR_USER'});
+            throw error;
         } 
     }, [getUser]);
 

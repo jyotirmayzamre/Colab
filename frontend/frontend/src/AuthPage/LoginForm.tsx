@@ -10,7 +10,7 @@ import { Button } from '@/Components/button';
 
 type FormFields = {
     username: string,
-    password: string
+    password: string,
 }
 
 function LoginForm(): JSX.Element {
@@ -50,7 +50,7 @@ function LoginForm(): JSX.Element {
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
-            <p className='text-red-600 text-sm'>{errors.root ? errors.root.message : ''}</p>
+            <p className='text-red-600 text-sm'>{errors.root?.message}</p>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">

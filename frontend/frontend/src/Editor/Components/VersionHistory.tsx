@@ -20,7 +20,7 @@ import { crdtToString } from "@/CRDT/utils";
 import handleDownload from '../Utils/downloadUtil';
 import { useEditor } from '../Provider/useEditor';
 
-type Version = {
+interface Version {
     id: number;
     title: string;
     created_at: string;

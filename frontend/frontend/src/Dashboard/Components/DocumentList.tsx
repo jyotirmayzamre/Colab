@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Document } from "./Dashboard";
+import type { Document } from "../Dashboard";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import api from "@/Auth/api";
@@ -18,7 +18,7 @@ import { Button } from "@/Components/button";
 import Swal from "sweetalert2";
 
 
-type props = {
+interface props {
     documents: Document[] | null;
     setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>,
 }

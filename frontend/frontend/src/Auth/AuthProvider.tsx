@@ -10,11 +10,12 @@ interface Props {
 interface AuthState {
     user: User | null;
     authenticated: boolean;
+    authChecked: boolean;
 }
 
 type AuthAction = 
     | { type: 'SET_USER'; payload: User }
-    | { type: 'CLEAR_USER' };
+    | { type: 'CLEAR_USER' }
 
 
 function authReducer(state: AuthState, action: AuthAction){
@@ -22,13 +23,17 @@ function authReducer(state: AuthState, action: AuthAction){
         case 'SET_USER':
             return {
                 user: action.payload,
-                authenticated: true
+                authenticated: true,
+                authChecked: true
             }
+
         case 'CLEAR_USER':
             return {
                 user: null,
-                authenticated: true
+                authenticated: false,
+                authChecked: true
             }
+
         default:
             return state
     }
@@ -36,7 +41,7 @@ function authReducer(state: AuthState, action: AuthAction){
 
 
 export const AuthProvider = ({ children }: Props) => {
-    const [state, dispatch] = useReducer(authReducer, { user: null, authenticated: false});
+    const [state, dispatch] = useReducer(authReducer, { user: null, authenticated: false, authChecked: false});
 
     const isLoggingOut = useRef(false);
 
@@ -104,8 +109,8 @@ export const AuthProvider = ({ children }: Props) => {
     }, [getUser]);
 
     const contextValue = useMemo(
-        () => ({ user: state.user, login, logout, authenticated: state.authenticated}),
-        [state.user, login, logout, state.authenticated]
+        () => ({ user: state.user, login, logout, authenticated: state.authenticated, authChecked: state.authChecked}),
+        [state.user, login, logout, state.authenticated, state.authChecked]
     );
 
 

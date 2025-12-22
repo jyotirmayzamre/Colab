@@ -1,5 +1,5 @@
 import { type JSX } from "react";
-import { useAuth } from "../Auth/useAuth";
+import { useAuth } from "../../Auth/useAuth";
 import { Link } from "react-router-dom";
 import { FileText, User, LogOut } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger,DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem  } from "@/Components/dropdown";

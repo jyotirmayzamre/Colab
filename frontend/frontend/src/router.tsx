@@ -3,6 +3,7 @@ import AuthPage from "./AuthPage/AuthPage";
 import LoginForm from "./AuthPage/LoginForm";
 import RegisterForm from "./AuthPage/RegisterForm";
 import ProtectedRoute from "./Auth/ProtectedRoute";
+import PublicRoute from "./Auth/PublicRoute";
 import Dashboard from "./Dashboard/Dashboard";
 import EditorPage from "./Editor/EditorPage";
 import Landing from "./landing";
@@ -15,7 +16,7 @@ const router = createBrowserRouter([
   },
   {
     path: "auth",
-    element: <AuthPage />,
+    element: <PublicRoute><AuthPage /></PublicRoute>,
     children: [
       { path: "register", element: <RegisterForm /> },
       { path: "login", element: <LoginForm /> },

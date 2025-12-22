@@ -9,13 +9,13 @@ import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, Dial
 import { cn } from "@/lib/utils";
 import { useEditor } from "../Provider/useEditor";
 
-type FormFields = {
+interface FormFields {
     username: string,
     access: string,
     user_id: string
 }
 
-type User = {
+interface User {
     username: string,
     id: string,
     first_name: string,

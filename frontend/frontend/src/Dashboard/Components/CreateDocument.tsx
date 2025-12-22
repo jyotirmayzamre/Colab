@@ -1,9 +1,9 @@
 import type { JSX } from "react";
-import api from "../Auth/api";
-import type { Document } from "./Dashboard";
+import api from "../../Auth/api";
+import type { Document } from "../Dashboard";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "../Components/card";
+import { Card, CardContent } from "../../Components/card";
 import { Plus} from "lucide-react";
 import Swal from 'sweetalert2';
 

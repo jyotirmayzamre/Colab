@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import { Input } from "@/Components/input";
 import { useEffect, useState } from "react";
-import { Document } from "./Dashboard";
+import { Document } from "../Dashboard";
 import api from "@/Auth/api";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";

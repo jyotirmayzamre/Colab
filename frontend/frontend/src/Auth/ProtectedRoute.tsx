@@ -8,13 +8,11 @@ interface ProtectedProps {
 
 
 const ProtectedRoute = ({ children }: ProtectedProps) => {
-    const { authenticated } = useAuth();
-    
-    if(!authenticated){
-        return <Navigate to='/auth/login' />
-    }
+    const { authenticated, authChecked } = useAuth();
 
-    return children;
+    if(!authChecked) return <div></div>;
+
+    return authenticated ? children : <Navigate to='/auth/login' />;
 }
 
 export default ProtectedRoute;

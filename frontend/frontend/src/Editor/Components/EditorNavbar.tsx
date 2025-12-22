@@ -14,11 +14,11 @@ import handleDownload from "../Utils/downloadUtil";
 import { useEditor } from "../Provider/useEditor";
 
 function EditorNavbar(): JSX.Element {
-  const { userCount, value, docId, isEditable, title } = useEditor();
+  const { userCount, value, docId, isEditable, docTitle, ws } = useEditor();
   const { user } = useAuth();
   const [titles, setTitles] = useState<{curr: string, prev: string}>({
-    curr: title,
-    prev: title
+    curr: docTitle,
+    prev: docTitle
   });
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -36,6 +36,7 @@ function EditorNavbar(): JSX.Element {
             timer: 3000,
             position: 'top',
           })
+          ws.send(JSON.stringify({ type: 'document_rename', newTitle: newTitle }));
       } catch{
           Swal.fire({
             title: 'Error!',
@@ -47,7 +48,11 @@ function EditorNavbar(): JSX.Element {
             position: 'top',
           })
       }
-  }, [docId]);
+  }, [docId, ws]);
+
+  useEffect(() => {
+    setTitles({ curr: docTitle, prev: docTitle });
+  }, [docTitle]);
 
 
   useEffect(() => {

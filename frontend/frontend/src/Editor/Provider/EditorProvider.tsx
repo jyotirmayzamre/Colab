@@ -19,6 +19,7 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
     const [value, setValue] = useState<string>('');
     const [cursorPos, setCursorPos] = useState({'col': 0, 'row': 0});
     const [userCount, setUserCount] = useState<number>(0);
+    const [docTitle, setDocTitle] = useState<string>(title);
 
     //Refs
     const crdtRef = useRef<CRDT | null>(null);
@@ -41,52 +42,52 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
         wsRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            //load CRDT
-            if(data.event === 'load.crdt'){
-                crdtRef.current.state = data.state
-                setValue(crdtToString(data.state));
-            }
+            switch(data.event){
+                case 'load.crdt':
+                    crdtRef.current.state = data.state;
+                    setValue(crdtToString(data.state));
+                    break;
 
-            //restore version
-            if(data.event == 'version.restore'){
-                crdtRef.current.state = data.state;
-                setValue(crdtToString(data.state));
-            }
+                case 'version.restore':
+                    crdtRef.current.state = data.state;
+                    setValue(crdtToString(data.state));
+                    break;
 
-            //User count
-            if(data.event === 'userCount.updated'){
-                setUserCount(data.count);
-            }
+                case 'document.rename': 
+                    setDocTitle(data.newTitle);
+                    break;
 
-            //CRDT operation
-            if(data.event === 'crdt.oper'){
+                case 'userCount.updated':
+                    setUserCount(data.count);
+                    break;
                 
-                
-                const content = data.content;
-            
-                const doc = editorRef.current!.state.doc;
-                const line = doc.line(content.row + 1); 
-                const pos = line.from + content.col;
+                case 'crdt.oper': {
+                    const content = data.content;
+                    const doc = editorRef.current!.state.doc;
+                    const line = doc.line(content.row + 1); 
+                    const pos = line.from + content.col;
 
-                if(content.oper == 'Insert'){
-                    crdtRef.current.remoteInsert(content.row, content.char);
-                    editorRef.current.dispatch({
-                        changes: {from: pos, insert: content.char.value},
-                        userEvent: 'remote'
-                    })
+                    if(content.oper == 'Insert'){
+                        crdtRef.current.remoteInsert(content.row, content.char);
+                        editorRef.current.dispatch({
+                            changes: {from: pos, insert: content.char.value},
+                            userEvent: 'remote'
+                        })
 
-                } else{
-                    crdtRef.current.remoteDelete(content.row, content.char);
-                    editorRef.current.dispatch({
-                        changes: {from: pos, to: pos+1},
-                        userEvent: 'remote'
-                    })
+                    } else{
+                        crdtRef.current.remoteDelete(content.row, content.char);
+                        editorRef.current.dispatch({
+                            changes: {from: pos, to: pos+1},
+                            userEvent: 'remote'
+                        })
+                    }
+                    break;
                 }
+
+                default:
+                    console.log('Unexpected message') 
             }
-
-            
         }
-
         wsRef.current.onclose = () => console.log("WebSocket disconnected")
 
         return () => {
@@ -95,9 +96,7 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
     }, [docId, crdtRef, editorRef, setUserCount, setValue]);
 
     //methods
-
-   
-
+    
     const setEditorRef = useCallback((view: EditorView) => {
         editorRef.current = view;
     }, []);
@@ -106,7 +105,7 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
         () => ({
             value,
             cursorPos,
-            title,
+            docTitle,
             userCount,
             isEditable,
             docId,
@@ -116,8 +115,9 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
             setCursorPos,
             setValue,
             setEditorRef,
+            setDocTitle
         }),
-        [value,title,  docId, cursorPos, userCount, isEditable, setEditorRef]
+        [value, docTitle, docId, cursorPos, userCount, isEditable, setEditorRef]
     );
 
     return (

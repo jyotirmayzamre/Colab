@@ -3,7 +3,7 @@ import type { EditorView } from "@uiw/react-codemirror";
 
 export interface EditorContextType {
     value: string,
-    title: string,
+    docTitle: string,
     docId: string,
     cursorPos: {row: number, col: number}
     userCount: number
@@ -13,5 +13,6 @@ export interface EditorContextType {
     ws: WebSocket
     setCursorPos: React.Dispatch<React.SetStateAction<{col: number; row: number;}>>
     setValue: React.Dispatch<React.SetStateAction<string>>
-    setEditorRef: (view: EditorView) => void
+    setEditorRef: (view: EditorView) => void,
+    setDocTitle: React.Dispatch<React.SetStateAction<string>>
 }

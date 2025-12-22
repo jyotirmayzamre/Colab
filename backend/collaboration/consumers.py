@@ -62,6 +62,12 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_send(
                 self.group_name, {'type': 'version.restore', 'versionId': content['versionId'], 'state': state}
             )
+
+        elif(content['type'] == 'document_rename'):
+            await self.channel_layer.group_send(
+                self.group_name, {'type': 'document.rename', 'newTitle': content['newTitle'], 'sender': self.channel_name}
+            )
+
         else:
             pass
 
@@ -82,3 +88,6 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({'event': 'userCount.updated', 'count': event.get('count')})
 
 
+    async def document_rename(self, event):
+        if(self.channel_name != event['sender']):
+            await self.send_json({'event': 'document.rename', 'newTitle': event.get('newTitle')})

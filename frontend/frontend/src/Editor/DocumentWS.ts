@@ -1,6 +1,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import CRDT from "../CRDT/crdt";
 import type { EditorView } from "@uiw/react-codemirror";
+import { crdtToString } from "@/CRDT/utils";
 
 
 export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObject<CRDT | null>, editorRef: RefObject<EditorView | null>, 
@@ -22,8 +23,14 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
 
             //load CRDT
             if(data.event === 'load.crdt'){
-                crdtRef.current!.state = data.crdt
-                setValue(data.text);
+                crdtRef.current.state = data.state
+                setValue(crdtToString(data.state));
+            }
+
+            //restore version
+            if(data.event == 'version.restore'){
+                crdtRef.current.state = data.state;
+                setValue(crdtToString(data.state));
             }
 
             //User count
@@ -33,7 +40,7 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
 
             //CRDT operation
             if(data.event === 'crdt.oper'){
-                if(!crdtRef.current) return;
+               
                 
                 const content = data.content;
             
@@ -43,14 +50,14 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
 
                 if(content.oper == 'Insert'){
                     crdtRef.current.remoteInsert(content.row, content.char);
-                    editorRef.current?.dispatch({
+                    editorRef.current.dispatch({
                         changes: {from: pos, insert: content.char.value},
                         userEvent: 'remote'
                     })
 
                 } else{
                     crdtRef.current.remoteDelete(content.row, content.char);
-                    editorRef.current?.dispatch({
+                    editorRef.current.dispatch({
                         changes: {from: pos, to: pos+1},
                         userEvent: 'remote'
                     })
@@ -63,7 +70,7 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
         wsRef.current.onclose = () => console.log("WebSocket disconnected")
 
         return () => {
-            wsRef.current?.close();
+            wsRef.current.close();
         };
     }, [docId, crdtRef, editorRef, setUserCount, setValue]);
 

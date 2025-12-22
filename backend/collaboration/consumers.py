@@ -1,6 +1,5 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .redis_utils import *
-from .crdt import getText
 
 
 class DocumentConsumer(AsyncJsonWebsocketConsumer):
@@ -21,8 +20,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
 
         #loads the crdt from db/redis and sends it to the client
         state = await redis_load_crdt(self.doc_id)
-        text = getText(state)
-        await self.send_json({'event': 'load.crdt', 'crdt': state, 'text': text})
+        await self.send_json({'event': 'load.crdt', 'state': state})
 
         #updates the user count in redis
         await self.channel_layer.group_send(
@@ -50,15 +48,29 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
     #Received character obj from client
     async def receive_json(self, content):
         #send the received operation to the rest of the group
-        await self.channel_layer.group_send(
-            self.group_name, {'type': 'crdt.oper', 'content': content, 'sender': self.channel_name}
-        )
+        if(content['type'] == 'char'):
+            await self.channel_layer.group_send(
+                self.group_name, {'type': 'crdt.oper', 'content': content, 'sender': self.channel_name}
+            )
 
-        #update crdt in redis
-        await redis_update_crdt(self.doc_id, content)
+            #update crdt in redis
+            await redis_update_crdt(self.doc_id, content)
+
+        elif(content['type'] == 'version_restore'):
+            state = await redis_restore_version(content['versionId'])
+
+            await self.channel_layer.group_send(
+                self.group_name, {'type': 'version.restore', 'versionId': content['versionId'], 'state': state}
+            )
+        else:
+            pass
+
+
+
+    async def version_restore(self, event):
+        await self.send_json({'event': 'version.restore', 'versionId': event.get('versionId'), 'state': event.get('state')})
 
         
-
     #Get remote operation (character or cursor) from another user
     async def crdt_oper(self, event):
         if(self.channel_name != event['sender']):

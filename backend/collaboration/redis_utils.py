@@ -2,6 +2,7 @@ import json
 import redis.asyncio as redis
 from asgiref.sync import sync_to_async
 from documents.services import DocumentService
+from versions.services import VersionService
 from .crdt import remoteDelete, remoteInsert
 
 # client: redis.Redis = redis.Redis(host='redis', port=6379, db=0)
@@ -39,6 +40,14 @@ async def redis_update_crdt(docId, content):
 
     await client.set(f'crdt:{docId}', json.dumps(newState))
 
+
+async def redis_restore_version(versionId):
+    state, docId = await sync_to_async(VersionService.get_version_state)(versionId)
+    await client.set(
+        f'crdt:{docId}',
+        json.dumps(state)
+    )
+    return state
 
 async def redis_add_user(docId, userId):
     await client.sadd(f'users:{docId}', userId) #type: ignore

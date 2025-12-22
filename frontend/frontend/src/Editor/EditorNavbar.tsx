@@ -1,6 +1,6 @@
 import type { JSX, RefObject } from "react";
 import { useAuth } from "../Auth/useAuth";
-import { useNavigate} from "react-router-dom";
+import { useNavigate, useParams, useSearchParams} from "react-router-dom";
 import ShareDoc from "./ShareDoc";
 import { useState, useEffect, useCallback } from "react";
 import api from "../Auth/api";
@@ -11,31 +11,41 @@ import { Input } from "@/Components/input";
 import Swal from "sweetalert2";
 import VersionHistory from "./VersionHistory";
 import CRDT from "@/CRDT/crdt";
+import handleDownload from "./downloadUtil";
 
 type props = {
-    docTitle: string;
-    docId: string;
-    editable: boolean;
     userCount: number;
     value: string;
-    crdtRef: RefObject<CRDT | null>
+    crdtRef: RefObject<CRDT | null>,
+    wsRef: RefObject<WebSocket | null>
 }
 
-function EditorNavbar({ docTitle, docId, editable, userCount, value, crdtRef }: props): JSX.Element {
+function EditorNavbar({ userCount, value, crdtRef, wsRef }: props): JSX.Element {
     const { user } = useAuth();
-    const [documentTitle, setDocumentTitle] = useState<string>(docTitle);
+    const [searchParams] = useSearchParams();
+    const [titles, setTitles] = useState<{curr: string, prev: string}>({
+      curr: searchParams.get('title'),
+      prev: searchParams.get('title')
+    });
+    const [open, setOpen] = useState(false);
     const navigate = useNavigate();
+    const { docId } = useParams();
 
-    useEffect(() => {
-        setDocumentTitle(docTitle);
-    }, [docTitle]);
+    const isEditable = searchParams.get('isEditable') === 'true';
 
-
-
+   
     const renameDocument = useCallback(async (newTitle: string) => {
         try {
             await api.patch(`/api/documents/${docId}/`, { title: newTitle});
-            console.log('Document renamed to', newTitle);
+            Swal.fire({
+              title: 'Success!',
+              text: `Renamed document to "${newTitle}" :)`,
+              icon: 'success',
+              showConfirmButton: false,
+              toast: true,
+              timer: 3000,
+              position: 'top',
+            })
         } catch{
             Swal.fire({
               title: 'Error!',
@@ -50,39 +60,22 @@ function EditorNavbar({ docTitle, docId, editable, userCount, value, crdtRef }: 
     }, [docId]);
 
 
-    const handleDownload = () => {
-      try{
-        const link = document.createElement('a');
-        link.setAttribute('download', 'download.doc');
-        link.setAttribute('href', 'data:' + 'text/doc' + ';charset=utf-8,' + encodeURIComponent(value));
-        link.click();
-      } catch{
-        Swal.fire({
-          title: 'Error!',
-          text: 'Could not download document :(',
-          icon: 'error',
-          showConfirmButton: false,
-          toast: true,
-          timer: 3000,
-          position: 'top',
-        })
-      }
-      
-    }
-
-
-
     useEffect(() => {
         const handler = setTimeout(() => {
-            if(documentTitle !== docTitle){
-                renameDocument(documentTitle);
-            }
-        }, 800);
+          if(titles.curr != titles.prev){
+            renameDocument(titles.curr);
+            setTitles({
+              curr: titles.curr,
+              prev: titles.curr
+            })
+          }
+          
+        }, 2000);
 
         return () => {
             clearTimeout(handler);
         }
-    }, [documentTitle, renameDocument, docTitle]);
+    }, [renameDocument, titles]);
 
 
 
@@ -102,10 +95,13 @@ function EditorNavbar({ docTitle, docId, editable, userCount, value, crdtRef }: 
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                 <Input
-                  value={documentTitle}
-                  onChange={(e) => setDocumentTitle(e.target.value)}
+                  value={titles.curr}
+                  onChange={(e) => setTitles({
+                    curr: e.target.value,
+                    prev: titles.prev
+                  })}
                   className="border-none shadow-none focus-visible:ring-0 font-semibold text-base px-2 py-1 h-auto max-w-xs"
-                  readOnly={!editable}
+                  readOnly={!isEditable}
                 />
               </div>
             </div>
@@ -123,7 +119,7 @@ function EditorNavbar({ docTitle, docId, editable, userCount, value, crdtRef }: 
                 <span className="text-sm font-medium">Active: {userCount}</span>
               </div>
               <ShareDoc />
-              <DropdownMenu>
+              <DropdownMenu open={open} onOpenChange={setOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
                     <MoreVertical className="h-5 w-5" />
@@ -132,17 +128,19 @@ function EditorNavbar({ docTitle, docId, editable, userCount, value, crdtRef }: 
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>Document Options</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDownload}>
+                  <DropdownMenuItem onClick={() => {
+                    setOpen(false);
+                    handleDownload(value)}}>
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Make a copy
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild><VersionHistory crdtRef={crdtRef}/></DropdownMenuItem>
-                  <DropdownMenuItem>Document settings</DropdownMenuItem>
+                  <DropdownMenuItem asChild onSelect={(e) => {
+                      e.preventDefault(); // keep Radix happy
+                      setOpen(false);
+                    }}>
+                      <VersionHistory crdtRef={crdtRef} wsRef={wsRef}/>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

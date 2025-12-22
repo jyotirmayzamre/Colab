@@ -190,3 +190,9 @@ export function binarySearch(arr: Char[], item: Identifier[], compare: (p1: Iden
     }
     return algo(0, arr.length);
 }
+
+
+
+export function crdtToString(state: Char[][]){
+    return state.map(row => row.map(char => char.value).join('')).join('');
+}

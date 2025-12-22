@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from .models import Version
-from documents.services import DocumentService
+from permissions.services import DocumentAccessService
 from documents.models import Document
-from accounts.models import User
+
 
 class VersionInputSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50)
@@ -17,10 +17,16 @@ class VersionInputSerializer(serializers.ModelSerializer):
         fields = ['docId', 'title', 'state']
 
     def validate_document(self, value):
-        try:
-            doc = DocumentService.get_document(value)
-        except Document.DoesNotExist:
-            raise serializers.ValidationError("Document does not exist.")
+        request = self.context.get("request")
+        user = request.user if request else None
+
+        if not user or not user.is_authenticated:
+            raise serializers.ValidationError("Authentication required.")
+
+        access = DocumentAccessService.get_access(value, user.id)
+        if access.level == 'viewer':
+            raise serializers.ValidationError("Current user is not an owner or an editor.")
+
         return value
     
 
@@ -33,3 +39,9 @@ class VersionOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
         fields = ['id', 'title', 'created_at', 'creator_username']
+
+
+class VersionStateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Version
+        fields = ['state']

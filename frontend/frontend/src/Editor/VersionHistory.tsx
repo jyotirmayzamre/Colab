@@ -1,10 +1,10 @@
 import type { JSX, RefObject } from 'react';
-import { History, Plus } from "lucide-react";
+import { Download, History, Plus } from "lucide-react";
 import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/Components/card';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import api from '@/Auth/api';
 import Swal from 'sweetalert2';
 import {
@@ -18,6 +18,8 @@ import { Trash2, MoreVertical, ArrowUpRight, ArrowDownIcon, X } from "lucide-rea
 import { Button } from "@/Components/button";
 import { Input } from '@/Components/input';
 import CRDT from '@/CRDT/crdt';
+import { crdtToString } from "@/CRDT/utils";
+import handleDownload from './downloadUtil';
 
 type Version = {
     id: number;
@@ -34,18 +36,22 @@ interface VersionPage {
 }
 
 type Props = {
-    crdtRef: RefObject<CRDT | null>
+    crdtRef: RefObject<CRDT | null>,
+    wsRef: RefObject<WebSocket | null>
 }
 
 
 
-function VersionHistory({ crdtRef }: Props): JSX.Element {
+function VersionHistory({ crdtRef, wsRef }: Props): JSX.Element {
     const [open, setOpen] = useState<boolean>(false);
     const { docId } = useParams();
     const [versions, setVersions] = useState<Version[]>([]);
     const [isCreating, setIsCreating] = useState<boolean>(false);
     const [versionTitle, setVersionTitle] = useState<string>('');
     const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
+
+    const isEditable = searchParams.get('isEditable') === 'true';
 
     const {
         data,
@@ -75,7 +81,7 @@ function VersionHistory({ crdtRef }: Props): JSX.Element {
                      });
                 const newVer = response.data;
                 queryClient.invalidateQueries({ queryKey: ["documents"] });
-                setVersions(prev => [...(prev ?? []), newVer]);
+                setVersions(prev => [newVer, ...(prev ?? [])]);
                 setIsCreating(false);
 
                 Swal.fire({
@@ -107,6 +113,15 @@ function VersionHistory({ crdtRef }: Props): JSX.Element {
         try {
             await api.delete(`/api/versions/${versionId}/`);
             setVersions(prev => prev.filter(version => version.id !== versionId));
+            Swal.fire({
+                title: 'Success!',
+                text: 'Deleted version :(',
+                icon: 'success',
+                showConfirmButton: false,
+                toast: true,
+                timer: 3000,
+                position: 'top',
+            })
         } catch {
             Swal.fire({
                 title: 'Error!',
@@ -119,6 +134,66 @@ function VersionHistory({ crdtRef }: Props): JSX.Element {
             })
         }
     }
+
+    const downloadVersion = async (versionId: number) => {
+        try {
+            const response  = await api.get(`/api/versions/${versionId}/state`);
+            const state = response.data.state;
+            const value = crdtToString(state);
+            handleDownload(value);
+        } catch {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Could not download version :(',
+                icon: 'error',
+                showConfirmButton: false,
+                toast: true,
+                timer: 3000,
+                position: 'top',
+            })
+
+        }
+    }
+
+
+    const restoreVersion = async (versionId: number, versionTitle: string) => {
+        Swal.fire({
+            title: `Restore '${versionTitle}'?`,
+            text: 'Click confirm to restore this version',
+            icon: 'warning',
+            showConfirmButton: true,
+            toast: true,
+            position: 'top',
+        }).then((result) => {
+            if(result.isConfirmed){
+                const ws = wsRef.current;
+                if(!ws){
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Could not restore version :(',
+                        icon: 'error',
+                        showConfirmButton: false,
+                        toast: true,
+                        timer: 3000,
+                        position: 'top',
+                    })
+                } else {
+                    ws.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
+                    Swal.fire({
+                        title: 'Success!',
+                        text: `Restored version '${versionTitle}':(`,
+                        icon: 'success',
+                        showConfirmButton: false,
+                        toast: true,
+                        timer: 3000,
+                        position: 'top',
+                    })
+                }
+            }
+        })
+    }
+
+    
 
     useEffect(() => {
             if (!data) return;
@@ -145,39 +220,41 @@ function VersionHistory({ crdtRef }: Props): JSX.Element {
                 <DialogContent className='max-w-lg'>
                     <DialogTitle>Version History</DialogTitle>
                     <DialogDescription></DialogDescription>
-                    <Card className="my-8 h-16 border-2 border-dashed hover:border-primary transition-smooth cursor-pointer group">
-                        <CardContent className="flex flex-col items-center justify-center py-3">
-                            {isCreating ? (
-                                <div className='flex gap-2 animate-fade-in'>
-                                    <Input 
-                                        placeholder='Enter version name...'
-                                        value={versionTitle}
-                                        onChange={(e) => setVersionTitle(e.target.value)}
-                                        autoFocus
-                                        className="flex-1"
-                                    />
-                                    <Button size="sm" onClick={createVersion} disabled={!versionTitle.trim()}>
-                                        Save
-                                    </Button>
-                                    <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        onClick={() => { setIsCreating(false); setVersionTitle(""); }}
+                    {isEditable && (
+                        <Card className="my-8 h-16 border-2 border-dashed hover:border-primary transition-smooth cursor-pointer group">
+                            <CardContent className="flex flex-col items-center justify-center py-3">
+                                {isCreating ? (
+                                    <div className='flex gap-2 animate-fade-in'>
+                                        <Input 
+                                            placeholder='Enter version name...'
+                                            value={versionTitle}
+                                            onChange={(e) => setVersionTitle(e.target.value)}
+                                            autoFocus
+                                            className="flex-1"
+                                        />
+                                        <Button size="sm" onClick={createVersion} disabled={!versionTitle.trim()}>
+                                            Save
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            onClick={() => { setIsCreating(false); setVersionTitle(""); }}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="inline-flex items-center gap-2 rounded-md px-3 py-2 bg-primary/10 hover:bg-primary/20 transition-colors" 
+                                        onClick={() => setIsCreating(true)}
                                     >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="inline-flex items-center gap-2 rounded-md px-3 py-2 bg-primary/10 hover:bg-primary/20 transition-colors" 
-                                    onClick={() => setIsCreating(true)}
-                                >
-                                    <Plus className="h-4 w-4 text-primary" />
-                                    <h3 className="text-sm font-semibold text-primary">Create New Version</h3>
-                                </div>
-                            )}
-                                
-                        </CardContent>
-                    </Card>
+                                        <Plus className="h-4 w-4 text-primary" />
+                                        <h3 className="text-sm font-semibold text-primary">Create New Version</h3>
+                                    </div>
+                                )}
+                                    
+                            </CardContent>
+                        </Card>
+                    )}
                     {versions.length > 0 && (
                         <Card className="rounded-lg w-full border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
                             <CardContent className='p-0'>
@@ -201,16 +278,27 @@ function VersionHistory({ crdtRef }: Props): JSX.Element {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-
-                                                        <DropdownMenuItem>
-                                                                
-                                                            <ArrowUpRight className="mr-2 h-4 w-4" />
-                                                            Restore
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-destructive" onClick={() => deleteVersion(ver.id)}>
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Delete
+                                                        {isEditable && (
+                                                            <DropdownMenuItem onClick={() => restoreVersion(ver.id, ver.title)}>   
+                                                                <ArrowUpRight className="mr-2 h-4 w-4" />
+                                                                Restore
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {isEditable && (
+                                                            <DropdownMenuSeparator />
+                                                        )}
+                                                        {isEditable && (
+                                                            <DropdownMenuItem className="text-destructive" onClick={() => deleteVersion(ver.id)}>
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {isEditable && (
+                                                            <DropdownMenuSeparator />
+                                                        )}
+                                                        <DropdownMenuItem onClick={() => downloadVersion(ver.id)}>
+                                                            <Download className='mr-2 h-4 w-4' />
+                                                            Download
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>

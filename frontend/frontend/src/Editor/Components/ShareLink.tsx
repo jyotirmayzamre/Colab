@@ -1,6 +1,7 @@
 import { useAuth } from "@/Auth/useAuth";
 import { useEffect, type JSX } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useMemo } from "react";
 import api from "@/Auth/api";
 import Swal from "sweetalert2";
 
@@ -10,7 +11,7 @@ function ShareLinkComponent(): JSX.Element {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const role = searchParams.get("role");
+    const role = useMemo(() => searchParams.get("role"), [searchParams]);
     const { token } = useParams();
 
 

@@ -50,20 +50,32 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
     });
 
     const deleteDoc = async (docId: string) => {
-        try {
-            await api.delete(`/api/documents/${docId}/`);
-            setDocuments(prev => prev.filter(doc => doc.id !== docId));
-        } catch {
-            Swal.fire({
-                title: 'Error!',
-                text: 'Could not delete document :(',
-                icon: 'error',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top',
-            })
-        }
+        Swal.fire({
+            title: 'Are you sure?',
+            text: 'Click confirm to delete this document',
+            icon: 'warning',
+            showConfirmButton: true,
+            toast: true,
+            position: 'top',
+        }).then(async (result) => {
+            if(result.isConfirmed){
+                try {
+                    await api.delete(`/api/documents/${docId}/`);
+                    setDocuments(prev => prev.filter(doc => doc.id !== docId));
+                } catch {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Could not delete document :(',
+                        icon: 'error',
+                        showConfirmButton: false,
+                        toast: true,
+                        timer: 3000,
+                        position: 'top',
+                    })
+                }
+                    }
+                })
+        
     };
 
     useEffect(() => {

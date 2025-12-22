@@ -1,13 +1,13 @@
 import { ChangeEvent, useEffect, useState, type JSX } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Input } from "@/Components/input";
-import api from "../Auth/api";
-import { useParams } from "react-router-dom";
+import api from "../../Auth/api";
 import { Button } from "@/Components/button";
 import { Share2, User, Copy, Check } from "lucide-react";
 import Swal from "sweetalert2";
 import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
 import { cn } from "@/lib/utils";
+import { useEditor } from "../Provider/useEditor";
 
 type FormFields = {
     username: string,
@@ -33,7 +33,7 @@ function ShareDoc(): JSX.Element {
     const [selectedUser, setSelectedUser] = useState<string>('');
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
-    const { docId } = useParams();
+    const { docId } = useEditor();
 
     const { register,
             handleSubmit,
@@ -55,7 +55,7 @@ function ShareDoc(): JSX.Element {
             // dialogRef.current?.close();
             Swal.fire({
                 title: 'Success!',
-                text: 'Document shared :)',
+                text: 'Document shared',
                 icon: 'success',
                 showConfirmButton: false,
                 toast: true,

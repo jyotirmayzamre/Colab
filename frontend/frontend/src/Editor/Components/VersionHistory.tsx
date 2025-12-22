@@ -1,10 +1,9 @@
-import type { JSX, RefObject } from 'react';
+import type { JSX } from 'react';
 import { Download, History, Plus } from "lucide-react";
 import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/Components/card';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams, useSearchParams } from 'react-router-dom';
 import api from '@/Auth/api';
 import Swal from 'sweetalert2';
 import {
@@ -17,9 +16,9 @@ import {
 import { Trash2, MoreVertical, ArrowUpRight, ArrowDownIcon, X } from "lucide-react";
 import { Button } from "@/Components/button";
 import { Input } from '@/Components/input';
-import CRDT from '@/CRDT/crdt';
 import { crdtToString } from "@/CRDT/utils";
-import handleDownload from './downloadUtil';
+import handleDownload from '../Utils/downloadUtil';
+import { useEditor } from '../Provider/useEditor';
 
 type Version = {
     id: number;
@@ -35,23 +34,15 @@ interface VersionPage {
     results: Version[]
 }
 
-type Props = {
-    crdtRef: RefObject<CRDT | null>,
-    wsRef: RefObject<WebSocket | null>
-}
 
 
-
-function VersionHistory({ crdtRef, wsRef }: Props): JSX.Element {
+function VersionHistory(): JSX.Element {
     const [open, setOpen] = useState<boolean>(false);
-    const { docId } = useParams();
     const [versions, setVersions] = useState<Version[]>([]);
     const [isCreating, setIsCreating] = useState<boolean>(false);
     const [versionTitle, setVersionTitle] = useState<string>('');
+    const { docId, isEditable, ws, crdt } = useEditor();
     const queryClient = useQueryClient();
-    const [searchParams] = useSearchParams();
-
-    const isEditable = searchParams.get('isEditable') === 'true';
 
     const {
         data,
@@ -70,7 +61,6 @@ function VersionHistory({ crdtRef, wsRef }: Props): JSX.Element {
 
     const createVersion = async () => {
             try {
-                const crdt = crdtRef.current;
                 if(!crdt){
                     throw new Error('Document state is not available')
                 }
@@ -115,7 +105,7 @@ function VersionHistory({ crdtRef, wsRef }: Props): JSX.Element {
             setVersions(prev => prev.filter(version => version.id !== versionId));
             Swal.fire({
                 title: 'Success!',
-                text: 'Deleted version :(',
+                text: 'Deleted version',
                 icon: 'success',
                 showConfirmButton: false,
                 toast: true,
@@ -166,7 +156,6 @@ function VersionHistory({ crdtRef, wsRef }: Props): JSX.Element {
             position: 'top',
         }).then((result) => {
             if(result.isConfirmed){
-                const ws = wsRef.current;
                 if(!ws){
                     Swal.fire({
                         title: 'Error!',
@@ -181,7 +170,7 @@ function VersionHistory({ crdtRef, wsRef }: Props): JSX.Element {
                     ws.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
                     Swal.fire({
                         title: 'Success!',
-                        text: `Restored version '${versionTitle}':(`,
+                        text: `Restored version '${versionTitle}'`,
                         icon: 'success',
                         showConfirmButton: false,
                         toast: true,

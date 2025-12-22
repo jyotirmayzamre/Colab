@@ -1,8 +1,8 @@
 import { useState, type JSX } from "react";
-import CreateDocument from "./CreateDocument";
-import DocumentList from "./DocumentList";
-import HomeNavbar from "./DashboardNavbar";
-import SearchDocument from "./SearchDocument";
+import CreateDocument from "./Components/CreateDocument";
+import DocumentList from "./Components/DocumentList";
+import HomeNavbar from "./Components/DashboardNavbar";
+import SearchDocument from "./Components/SearchDocument";
 
 export type Document = {
     access: string;

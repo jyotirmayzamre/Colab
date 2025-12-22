@@ -1,12 +1,32 @@
-import { useEffect, useRef, type RefObject } from "react";
-import CRDT from "../CRDT/crdt";
+import { useAuth } from "@/Auth/useAuth";
+import CRDT from "@/CRDT/crdt";
+import { type ReactNode, useEffect, useRef, useState, useCallback, useMemo } from "react"
 import type { EditorView } from "@uiw/react-codemirror";
 import { crdtToString } from "@/CRDT/utils";
+import { EditorContext } from "./useEditor";
 
+interface Props {
+    children: ReactNode,
+    docId: string,
+    isEditable: boolean,
+    title: string
+}
 
-export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObject<CRDT | null>, editorRef: RefObject<EditorView | null>, 
-    setUserCount: React.Dispatch<React.SetStateAction<number>>, setValue: React.Dispatch<React.SetStateAction<string>>
-) => {
+export const EditorProvider = ({ children, docId, isEditable, title }: Props) => {
+    const { user } = useAuth();
+
+    //State
+    const [value, setValue] = useState<string>('');
+    const [cursorPos, setCursorPos] = useState({'col': 0, 'row': 0});
+    const [userCount, setUserCount] = useState<number>(0);
+
+    //Refs
+    const crdtRef = useRef<CRDT | null>(null);
+    if(!crdtRef.current && user){
+        crdtRef.current = new CRDT(user.site_id);
+    }
+
+    const editorRef = useRef<EditorView | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
 
@@ -17,7 +37,7 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
         wsRef.current = new WebSocket(wsURL);
 
         wsRef.current.onopen = () => console.log("Websocket connected");
-
+        
         wsRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
@@ -40,7 +60,7 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
 
             //CRDT operation
             if(data.event === 'crdt.oper'){
-               
+                
                 
                 const content = data.content;
             
@@ -74,5 +94,37 @@ export const useDocumentWebSocket = (docId: string | undefined, crdtRef: RefObje
         };
     }, [docId, crdtRef, editorRef, setUserCount, setValue]);
 
-    return wsRef;
+    //methods
+
+   
+
+    const setEditorRef = useCallback((view: EditorView) => {
+        editorRef.current = view;
+    }, []);
+
+    const contextValue = useMemo(
+        () => ({
+            value,
+            cursorPos,
+            title,
+            userCount,
+            isEditable,
+            docId,
+            crdt: crdtRef.current,
+            editor: editorRef.current,
+            ws: wsRef.current,
+            setCursorPos,
+            setValue,
+            setEditorRef,
+        }),
+        [value,title,  docId, cursorPos, userCount, isEditable, setEditorRef]
+    );
+
+    return (
+        <EditorContext.Provider value={contextValue}>
+            {children}
+        </EditorContext.Provider>
+    );
+
+    
 }

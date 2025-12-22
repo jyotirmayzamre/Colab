@@ -12,11 +12,11 @@ This readme will be updated with more details soon!
 - **Access Management** - Granular permissions with role-based access control
 - **Auto-Save** - Automatic document saving to prevent data loss
 - **Active Users** - Showcasing number of active users on a given document
+- **Version Control** - Track changes with comprehensive version history and rollback
 
 ### ToDo
 - **Live Cursors** - See collaborator positions in real-time with color-coded cursors
-- **Inline Comments** - Add contextual comments and discussions within documents
-- **Version Control** - Track changes with comprehensive version history and rollback
+
 
 ## Screenshots
 

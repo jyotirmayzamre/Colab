@@ -1,11 +1,11 @@
 import type { JSX } from "react";
 import type { Document } from "../Dashboard";
 import { createSearchParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, forwardRef } from "react";
 import api from "@/Auth/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
-import { FileText, Users, Trash2, MoreVertical, ArrowUpRight, ArrowDownIcon } from "lucide-react";
+import { FileText, Users, Trash2, MoreVertical, ArrowUpRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/Components/dropdown";
 import { Button } from "@/Components/button";
-
+import { VirtuosoGrid } from "react-virtuoso";
 import Swal from "sweetalert2";
 
 
@@ -38,7 +38,6 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
         data, 
         fetchNextPage,
         hasNextPage,
-        isFetchingNextPage
     } = useInfiniteQuery<DocumentPage>({
         queryKey: ["documents"],
         queryFn: async ({ pageParam = '/api/documents/' }) => {
@@ -84,80 +83,90 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
         setDocuments(allDocs);
     }, [data, setDocuments]);
 
-
-    return (
-        <div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {documents && documents.map((doc: Document) => (
-                <Card key={doc.id} className="hover:shadow-lg transition-smooth cursor-pointer group">
-                    <CardHeader>
-                        <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3 flex-1">
-                                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-smooth">
-                                    <FileText className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <CardTitle className="text-lg mb-1 truncate">{doc.title}</CardTitle>
-                                    <CardDescription className="flex items-center gap-4 text-sm">
-                                        <span>{doc.updated_at}</span>
-                                        <span className="flex items-center gap-1">
-                                            <Users className="h-3 w-3" />
-                                            {doc.num_users}
-                                        </span>
-                                    </CardDescription> 
-                                </div>
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-
-                                    <DropdownMenuItem onClick={() => navigate({
-                                        pathname: `/documents/${doc.id}`,
-                                        search: createSearchParams({
-                                            title: doc.title,
-                                            isEditable: (doc.access !== 'viewer').toString()
-                                        }).toString()
-                                        })}>
-                                            
-                                        <ArrowUpRight className="mr-2 h-4 w-4" />
-                                        Open
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive" onClick={() => deleteDoc(doc.id)}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+    const documentCard = (doc: Document) => {
+        return (<Card key={doc.id} className="hover:shadow-lg transition-smooth cursor-pointer group">
+            <CardHeader>
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-smooth">
+                            <FileText className="h-5 w-5 text-primary" />
                         </div>
-                    </CardHeader>
-                    <CardContent onClick={() => navigate({
+                        <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg mb-1 truncate">{doc.title}</CardTitle>
+                            <CardDescription className="flex items-center gap-4 text-sm">
+                                <span>{doc.updated_at}</span>
+                                <span className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    {doc.num_users}
+                                </span>
+                            </CardDescription> 
+                        </div>
+                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+
+                            <DropdownMenuItem onClick={() => navigate({
                                 pathname: `/documents/${doc.id}`,
                                 search: createSearchParams({
                                     title: doc.title,
                                     isEditable: (doc.access !== 'viewer').toString()
                                 }).toString()
-                            })}>
-                        <div className="text-sm text-muted-foreground">
-                            Click to open and continue editing
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
-        {hasNextPage && (
-                <button 
-                    onClick={() => fetchNextPage()} 
-                    disabled={isFetchingNextPage}
-                    className="w-full flex justify-center items-center"
-                >
-                    {isFetchingNextPage ? 'Loading...' : <ArrowDownIcon className="w-5 h-5 hover:cursor-pointer" />}
-                </button>
-            )}
+                                })}>
+                                    
+                                <ArrowUpRight className="mr-2 h-4 w-4" />
+                                Open
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onClick={() => deleteDoc(doc.id)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </CardHeader>
+            <CardContent onClick={() => navigate({
+                        pathname: `/documents/${doc.id}`,
+                        search: createSearchParams({
+                            title: doc.title,
+                            isEditable: (doc.access !== 'viewer').toString()
+                        }).toString()
+                    })}>
+                <div className="text-sm text-muted-foreground">
+                    Click to open and continue editing
+                </div>
+            </CardContent>
+        </Card>)
+    }
+
+
+    return (
+        <div>
+        
+            {documents && <VirtuosoGrid
+                data={documents}
+                endReached={() => {
+                    if(hasNextPage) fetchNextPage()
+                }}
+                itemContent={(_, doc) => documentCard(doc)}
+                components={{
+                    List: forwardRef(({ style, children }, ref) => (
+                    <div
+                        ref={ref}
+                        style={style}
+                        className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                    >
+                        {children}
+                    </div>
+                    )),
+                }}
+                style={{ height: 320}}
+                />}
         </div>
     )
 }

@@ -13,12 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/Components/dropdown";
-import { Trash2, MoreVertical, ArrowUpRight, ArrowDownIcon, X } from "lucide-react";
+import { Trash2, MoreVertical, ArrowUpRight, X } from "lucide-react";
 import { Button } from "@/Components/button";
 import { Input } from '@/Components/input';
 import { crdtToString } from "@/CRDT/utils";
 import handleDownload from '../Utils/downloadUtil';
 import { useEditor } from '../Provider/useEditor';
+import { Virtuoso } from 'react-virtuoso';
 
 interface Version {
     id: number;
@@ -35,7 +36,6 @@ interface VersionPage {
 }
 
 
-
 function VersionHistory(): JSX.Element {
     const [open, setOpen] = useState<boolean>(false);
     const [versions, setVersions] = useState<Version[]>([]);
@@ -48,7 +48,6 @@ function VersionHistory(): JSX.Element {
         data,
         fetchNextPage,
         hasNextPage,
-        isFetchingNextPage
     } = useInfiniteQuery<VersionPage>({
         queryKey: ["versions", docId],
         queryFn: async({ pageParam = `/api/versions?docId=${docId}`}) => {
@@ -70,7 +69,7 @@ function VersionHistory(): JSX.Element {
                       state: crdt.state
                      });
                 const newVer = response.data;
-                queryClient.invalidateQueries({ queryKey: ["documents"] });
+                queryClient.invalidateQueries({ queryKey: ["versions", docId] });
                 setVersions(prev => [newVer, ...(prev ?? [])]);
                 setIsCreating(false);
 
@@ -100,29 +99,40 @@ function VersionHistory(): JSX.Element {
 
 
     const deleteVersion = async (versionId: number) => {
-        try {
-            await api.delete(`/api/versions/${versionId}/`);
-            setVersions(prev => prev.filter(version => version.id !== versionId));
-            Swal.fire({
-                title: 'Success!',
-                text: 'Deleted version',
-                icon: 'success',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top',
-            })
-        } catch {
-            Swal.fire({
-                title: 'Error!',
-                text: 'Could not delete version :(',
-                icon: 'error',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top',
-            })
-        }
+        Swal.fire({
+            title: `Are you sure?`,
+            text: 'Click confirm to delete this version',
+            icon: 'warning',
+            showConfirmButton: true,
+            toast: true,
+            position: 'top',
+        }).then(async (result) => {
+            if(result.isConfirmed){
+                try {
+                    await api.delete(`/api/versions/${versionId}/`);
+                    setVersions(prev => prev.filter(version => version.id !== versionId));
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Deleted version',
+                        icon: 'success',
+                        showConfirmButton: false,
+                        toast: true,
+                        timer: 3000,
+                        position: 'top',
+                    })
+                } catch {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Could not delete version :(',
+                        icon: 'error',
+                        showConfirmButton: false,
+                        toast: true,
+                        timer: 3000,
+                        position: 'top',
+                    })
+                }
+            }
+        })
     }
 
     const downloadVersion = async (versionId: number) => {
@@ -141,8 +151,7 @@ function VersionHistory(): JSX.Element {
                 timer: 3000,
                 position: 'top',
             })
-
-        }
+        }  
     }
 
 
@@ -181,6 +190,54 @@ function VersionHistory(): JSX.Element {
             }
         })
     }
+
+    const versionCard = (ver: Version) => {
+        return(
+            <li key={ver.id} className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200">
+                <div className='flex items-center justify-center gap-5'>
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">
+                        <History className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-medium text-md truncate">{ver.title}</p>
+                        <p className="text-sm text-muted-foreground truncate">{ver.created_at} • {ver.creator_username}</p>
+                    </div>
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {isEditable && (
+                            <DropdownMenuItem onClick={() => restoreVersion(ver.id, ver.title)}>   
+                                <ArrowUpRight className="mr-2 h-4 w-4" />
+                                Restore
+                            </DropdownMenuItem>
+                        )}
+                        {isEditable && (
+                            <DropdownMenuSeparator />
+                        )}
+                        {isEditable && (
+                            <DropdownMenuItem className="text-destructive" onClick={() => deleteVersion(ver.id)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
+                        {isEditable && (
+                            <DropdownMenuSeparator />
+                        )}
+                        <DropdownMenuItem onClick={() => downloadVersion(ver.id)}>
+                            <Download className='mr-2 h-4 w-4' />
+                            Download
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </li>
+        )
+    }
+
 
     
 
@@ -246,66 +303,12 @@ function VersionHistory(): JSX.Element {
                     )}
                     {versions.length > 0 && (
                         <Card className="rounded-lg w-full border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                            <CardContent className='p-0'>
-                                <ul className='divide-y divide-border'>
-                                    {versions && versions.map((ver) => {
-                                        return (
-                                            <li key={ver.id} className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200">
-                                                <div className='flex items-center justify-center gap-5'>
-                                                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">
-                                                        <History className="h-4 w-4" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-md truncate">{ver.title}</p>
-                                                        <p className="text-sm text-muted-foreground truncate">{ver.created_at} • {ver.creator_username}</p>
-                                                    </div>
-                                                </div>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        {isEditable && (
-                                                            <DropdownMenuItem onClick={() => restoreVersion(ver.id, ver.title)}>   
-                                                                <ArrowUpRight className="mr-2 h-4 w-4" />
-                                                                Restore
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {isEditable && (
-                                                            <DropdownMenuSeparator />
-                                                        )}
-                                                        {isEditable && (
-                                                            <DropdownMenuItem className="text-destructive" onClick={() => deleteVersion(ver.id)}>
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {isEditable && (
-                                                            <DropdownMenuSeparator />
-                                                        )}
-                                                        <DropdownMenuItem onClick={() => downloadVersion(ver.id)}>
-                                                            <Download className='mr-2 h-4 w-4' />
-                                                            Download
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </li>
-                                        )
-
-                                    })
-                                }
-                                </ul>
-                                {hasNextPage && (
-                                    <button 
-                                        onClick={() => fetchNextPage()} 
-                                        disabled={isFetchingNextPage}
-                                        className="w-full flex justify-center items-center"
-                                    >
-                                        {isFetchingNextPage ? 'Loading...' : <ArrowDownIcon className="w-5 h-5 hover:cursor-pointer" />}
-                                    </button>
-                                )}
+                            <CardContent className='p-0 h-[250px]'>
+                                    {versions && 
+                                        <Virtuoso className='divide-y divide-border' data={versions} endReached={() => {
+                                            if(hasNextPage) fetchNextPage()
+                                        }} itemContent={(_, ver) => versionCard(ver)} />
+                                    }
                             </CardContent>
                         </Card>
                     )}

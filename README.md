@@ -2,7 +2,7 @@
 
 A real-time collaborative text editor built with React, Django, and CodeMirror, featuring shared editing, live cursors, comments, version control, and access management. The project uses a custom 2D array based CRDT (Conflict-Free Replicated Data Type).
 
-This readme will be updated with more details soon!
+This project was initially built as a course project for CS-3810 (Design Practices in CS). However, I definitely did not do justice to the project at that time. This is my attempt in remaking a more complete, technically sound, and bug-free version of the project from scratch. Learnt a ton - WebSockets, good React design, abstraction complexity in DRF (did not enjoy the confusion this caused), comprehensive testing, etc. Obviously this project is not perfect and I will try to improve it incrementally as my engineering and coding skills improve.
 
 ## Features
 
@@ -12,11 +12,11 @@ This readme will be updated with more details soon!
 - **Access Management** - Granular permissions with role-based access control
 - **Auto-Save** - Automatic document saving to prevent data loss
 - **Active Users** - Showcasing number of active users on a given document
+- **Version Control** - Track changes with comprehensive version history and rollback
 
 ### ToDo
 - **Live Cursors** - See collaborator positions in real-time with color-coded cursors
-- **Inline Comments** - Add contextual comments and discussions within documents
-- **Version Control** - Track changes with comprehensive version history and rollback
+
 
 ## Screenshots
 
@@ -61,37 +61,16 @@ This readme will be updated with more details soon!
 - PostgreSQL 13+
 - Redis 6+
 - Docker
+- Docker Compose
 
-### Backend Setup
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
-
-### Redis Setup
+### How to build and run
 
 ```bash
-docker run --rm -p 6379:6379 redis 
-```
-
-### Frontend Setup
-
-```bash
-cd frontend/frontend
-npm install
-# Create a dotenv file containing VITE_API_URL=http://localhost:8000
-npm run dev
+docker compose up -d --build
 ```
 
 Access the application at:
 - Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
 
 
 ## Component Overview
@@ -107,7 +86,7 @@ Access the application at:
 **Backend Layer**
 - Django REST Framework provides HTTP API endpoints protected using JWT 
 - Django Channels handles WebSocket connections and groups for each document
-- SQLite stores documents and user data
+- PostgreSQL stores documents and user data
 - Redis manages backend document state for autosaving
 
 **Data Flow**
@@ -124,12 +103,12 @@ The CRDT was inspired by [Conclave](https://conclave-team.github.io/conclave-sit
 
 
 ## To Do
-- Implement remaining features (text styling, version history, etc)
+- Implement remaining features (live cursors, etc)
+- Fix bugs
+- Revamp landing page + some UI colours
 - Finish writing tests
-- Switch to PostgreSQL for the database and integrate
-- Containerize the application using Docker
 - Write a CI/CD pipeline for hosting
-- Update Readme with all the above details
+- Update Readme 
 
 ## Contact
 

@@ -4,10 +4,34 @@ from asgiref.sync import sync_to_async
 from documents.services import DocumentService
 from versions.services import VersionService
 from .crdt import remoteDelete, remoteInsert
+import colorsys
 
 # client: redis.Redis = redis.Redis(host='redis', port=6379, db=0)
-client: redis.Redis = redis.Redis(host='localhost', port=6379, db=0)
+client: redis.Redis = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
+
+async def redis_generate_colours(docId, n=200, saturation=0.65, value=0.95):
+    set_exists = await client.exists(f'colours:{docId}')
+    if not set_exists:
+        colours = set()
+        for i in range(n):
+            hue = i / n
+            r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
+            colours.add(f"#{int(r*255):02X}{int(g*255):02X}{int(b*255):02X}")
+
+        await client.sadd(f'colours:{docId}', *colours) # type: ignore
+
+async def redis_assign_colour(docId):
+    colour = await client.spop(f'colours:{docId}') #type: ignore
+    return colour
+
+
+async def redis_add_colour(docId, colour):
+    await client.sadd(f'colours:{docId}', colour) #type: ignore
+
+
+async def redis_remove_colours(docId):
+    await client.delete(f'colours:{docId}')
 
 # Loads CRDT from redis, used for users joining on active document
 async def redis_load_crdt(docId):
@@ -57,17 +81,16 @@ async def redis_remove_user(docId, userId):
 
 async def redis_get_user_count(docId):
     count = await client.scard(f'users:{docId}') #type: ignore
-    return int(count)
+    return count
 
 
 async def redis_flush_to_db(docId):
-    state_bytes = await client.get(f'crdt:{docId}')
-    if(state_bytes):
-        state_str = state_bytes.decode('utf-8')
-        state = json.loads(state_str)
+    state = await client.get(f'crdt:{docId}')
+    if(state):
+        state_decoded = json.loads(state)
         await sync_to_async(DocumentService.update_document_state)(
             docId=docId,
-            state=state
+            state=state_decoded
         )
     await client.delete(f'crdt:{docId}')
     await client.delete(f'users:{docId}')

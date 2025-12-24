@@ -20,6 +20,8 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
     const [cursorPos, setCursorPos] = useState({'col': 0, 'row': 0});
     const [userCount, setUserCount] = useState<number>(0);
     const [docTitle, setDocTitle] = useState<string>(title);
+    const [remoteCursors, setRemoteCursors] = useState<Record<string, { col: number, row: number, colour: string }>>({});
+    const [colour, setColour] = useState<string>('');
 
     //Refs
     const crdtRef = useRef<CRDT | null>(null);
@@ -34,7 +36,7 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
     useEffect(() => {
         if(!docId) return;
 
-        const wsURL = `ws://localhost:8000/ws/documents/${docId}/`;
+        const wsURL = `ws://localhost:8000/ws/documents/${docId}?username=${user.username}`;
         wsRef.current = new WebSocket(wsURL);
 
         wsRef.current.onopen = () => console.log("Websocket connected");
@@ -46,6 +48,16 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
                 case 'load.crdt':
                     crdtRef.current.state = data.state;
                     setValue(crdtToString(data.state));
+                    setColour(data.colour);
+                    break;
+
+                case 'cursor.update':
+                    setTimeout(() => {
+                        setRemoteCursors(prev => ({
+                            ...prev,
+                            [data.username]: {colour: data.colour, col: data.col, row: data.row}
+                        }))
+                    }, 0);
                     break;
 
                 case 'version.restore':
@@ -93,7 +105,7 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
         return () => {
             wsRef.current.close();
         };
-    }, [docId, crdtRef, editorRef, setUserCount, setValue]);
+    }, [docId, crdtRef, editorRef, setUserCount, setValue, user.username]);
 
     //methods
     
@@ -106,18 +118,21 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
             value,
             cursorPos,
             docTitle,
+            colour,
             userCount,
             isEditable,
             docId,
+            remoteCursors,
             crdt: crdtRef.current,
             editor: editorRef.current,
             ws: wsRef.current,
+            setRemoteCursors,
             setCursorPos,
             setValue,
             setEditorRef,
             setDocTitle
         }),
-        [value, docTitle, docId, cursorPos, userCount, isEditable, setEditorRef]
+        [value, colour, remoteCursors, docTitle, docId, cursorPos, userCount, isEditable, setEditorRef]
     );
 
     return (

@@ -2,7 +2,7 @@ import { ViewUpdate } from "@uiw/react-codemirror";
 
 export const getCursorPos = (viewUpdate: ViewUpdate): {col: number, row: number} => {
     let pos: {col: number, row: number} = { col: 0, row: 0};
-    viewUpdate.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+    viewUpdate.changes.iterChanges((fromA, toA, fromB, toB) => {
         const line = viewUpdate.state.doc.lineAt(toB);
         pos = { col: line.to - line.from, row: line.number - 1};
     }, true);
@@ -22,7 +22,6 @@ export const getChangeObj = (viewUpdate: ViewUpdate): Change | null => {
     const newDoc = viewUpdate.state.doc;
     let obj: Change | null = null;
     viewUpdate.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-        //if(inserted.text.length !== 2){
             if(inserted.length === 0){
                 const deletedChar = oldDoc.sliceString(fromA, toA);
                 const oldLine = oldDoc.lineAt(fromA);
@@ -35,7 +34,6 @@ export const getChangeObj = (viewUpdate: ViewUpdate): Change | null => {
                 const col = fromB - newLine.from;
                 obj = {oper: 'Insert', text: inserted.text.length !== 2 ? inserted.text[0] : '\n', row: row, col: col};
             }
-        //}
         
     }, true);
     return obj;

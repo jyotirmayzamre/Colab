@@ -13,9 +13,10 @@ This project was initially built as a course project for CS-3810 (Design Practic
 - **Auto-Save** - Automatic document saving to prevent data loss
 - **Active Users** - Showcasing number of active users on a given document
 - **Version Control** - Track changes with comprehensive version history and rollback
+- **Live Cursors** - See collaborator positions in real-time with color-coded cursors
 
 ### ToDo
-- **Live Cursors** - See collaborator positions in real-time with color-coded cursors
+- **Notifications** - Email links to document upon sharing
 
 
 ## Screenshots
@@ -103,7 +104,6 @@ The CRDT was inspired by [Conclave](https://conclave-team.github.io/conclave-sit
 
 
 ## To Do
-- Implement remaining features (live cursors, etc)
 - Fix bugs
 - Revamp landing page + some UI colours
 - Finish writing tests

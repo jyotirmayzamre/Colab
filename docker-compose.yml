@@ -1,7 +1,7 @@
 services:
   frontend:
     build:
-      context: ./frontend/frontend
+      context: ./frontend
       dockerfile: frontend.dockerfile
       args:
         VITE_BACKEND_URL: http://localhost:8000

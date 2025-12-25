@@ -12,17 +12,17 @@ class CursorWidget extends WidgetType {
     }
 
     toDOM(){
-       const container = document.createElement('span');
+        const container = document.createElement('span');
         container.style.position = "relative";
         container.style.display = "inline-block";
         container.style.pointerEvents = "none";
+        container.style.verticalAlign = 'top';
         
         //cursor line
         const cursor = document.createElement('span');
         cursor.style.borderLeft = `2px solid ${this.colour}`;
         cursor.style.marginLeft = "-1px";
-        cursor.style.height = "18px";
-        cursor.style.verticalAlign = 'middle';
+        cursor.style.height = "1.2em";
         cursor.style.display = "inline-block";
         cursor.style.pointerEvents = "none";
         
@@ -31,7 +31,7 @@ class CursorWidget extends WidgetType {
         label.textContent = this.username; 
         label.style.position = "absolute";
         label.style.bottom = "100%"; 
-        label.style.left = "0";
+        label.style.left = "50%";
         label.style.backgroundColor = this.colour;
         label.style.color = "white";
         label.style.padding = "2px 6px";

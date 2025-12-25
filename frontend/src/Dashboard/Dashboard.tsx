@@ -3,6 +3,7 @@ import CreateDocument from "./Components/CreateDocument";
 import DocumentList from "./Components/DocumentList";
 import HomeNavbar from "./Components/DashboardNavbar";
 import SearchDocument from "./Components/SearchDocument";
+import { useAuth } from "@/Auth/useAuth";
 
 export type Document = {
     access: string;
@@ -15,6 +16,7 @@ export type Document = {
 
 function Dashboard(): JSX.Element {
     const [documents, setDocuments] = useState<Document[] | null>(null);
+    const { user } = useAuth();
 
    
 
@@ -24,7 +26,7 @@ function Dashboard(): JSX.Element {
             <div className="container mx-auto px-4 py-8 text-left">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold mb-2">Your Documents</h1>
-                    <p className="text-muted-foreground text-lg">Welcome back! Continue working on your projects.</p>
+                    <p className="text-muted-foreground text-lg">Welcome back, {user.username}! Continue working on your projects.</p>
                 </div>
                 <CreateDocument setDocuments={setDocuments} />
                 <SearchDocument  />

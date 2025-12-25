@@ -28,11 +28,12 @@ export function remoteCursorPlugin(
             const widgets = getCursors().map(c =>
             Decoration.widget({
                 widget: new CursorWidget(c.colour, c.username),
-                side: 1
+                side: 1,
+                block: false
             }).range(c.pos)
             )
 
-            return Decoration.set(widgets)
+            return Decoration.set(widgets, true)
         }
         }, {
             decorations: v => v.decorations

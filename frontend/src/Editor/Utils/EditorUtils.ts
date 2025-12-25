@@ -1,13 +1,13 @@
 import { ViewUpdate } from "@uiw/react-codemirror";
 
 export const getCursorPos = (viewUpdate: ViewUpdate): {col: number, row: number} => {
-    let pos: {col: number, row: number} = { col: 0, row: 0};
-    viewUpdate.changes.iterChanges((fromA, toA, fromB, toB) => {
-        const line = viewUpdate.state.doc.lineAt(toB);
-        pos = { col: line.to - line.from, row: line.number - 1};
-    }, true);
-
-    return pos;
+    const selection = viewUpdate.state.selection.main;
+    const line = viewUpdate.state.doc.lineAt(selection.head);
+    
+    return {
+        col: selection.head - line.from,
+        row: line.number - 1
+    };
 }
 
 export type Change = {

@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import type { Document } from "../Dashboard";
 import { createSearchParams, useNavigate } from "react-router-dom";
-import { useEffect, forwardRef } from "react";
+import { useEffect, forwardRef, useState } from "react";
 import api from "@/Auth/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/Components/button";
 import { VirtuosoGrid } from "react-virtuoso";
 import Swal from "sweetalert2";
+import SearchDocument from "./SearchDocument";
 
 
 interface props {
@@ -33,6 +34,7 @@ interface DocumentPage {
 
 function DocumentList({ documents, setDocuments}: props): JSX.Element {
     const navigate = useNavigate();
+    const [query, setQuery] = useState<string>('');
  
     const { 
         data, 
@@ -144,12 +146,16 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
         </Card>)
     }
 
+    const filterDocuments = () => {
+        return documents.filter((doc) => doc.title.includes(query));
+    }
+
 
     return (
         <div>
-        
+            <SearchDocument query={query} setQuery={setQuery} />
             {documents && <VirtuosoGrid
-                data={documents}
+                data={filterDocuments()}
                 endReached={() => {
                     if(hasNextPage) fetchNextPage()
                 }}

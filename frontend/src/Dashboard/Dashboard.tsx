@@ -2,7 +2,6 @@ import { useState, type JSX } from "react";
 import CreateDocument from "./Components/CreateDocument";
 import DocumentList from "./Components/DocumentList";
 import HomeNavbar from "./Components/DashboardNavbar";
-import SearchDocument from "./Components/SearchDocument";
 import { useAuth } from "@/Auth/useAuth";
 
 export type Document = {
@@ -29,7 +28,6 @@ function Dashboard(): JSX.Element {
                     <p className="text-muted-foreground text-lg">Welcome back, {user.username}! Continue working on your projects.</p>
                 </div>
                 <CreateDocument setDocuments={setDocuments} />
-                <SearchDocument  />
                 <DocumentList documents={ documents } setDocuments={setDocuments} />
                 
             </div>

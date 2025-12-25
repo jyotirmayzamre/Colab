@@ -1,6 +1,7 @@
 from .models import Document
 from permissions.services import DocumentAccessService
 from uuid import UUID
+from accounts.models import User
 
 class DocumentService:
     @staticmethod
@@ -21,8 +22,12 @@ class DocumentService:
     def delete_document(document: 'Document') -> None:
         document.delete()
 
+    @staticmethod
+    def get_user_documents(user: User):
+        return Document.objects.get_user_documents(user)
+
     
     @staticmethod
-    def update_document_state(docId: UUID, state):
+    def update_state(docId: UUID, state):
         return Document.objects.update_state(docId, state)
     

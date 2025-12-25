@@ -101,6 +101,7 @@ function DocumentList({ documents, setDocuments}: props): JSX.Element {
                                     <Users className="h-3 w-3" />
                                     {doc.num_users}
                                 </span>
+                                <span>{doc.access.charAt(0).toUpperCase() + doc.access.slice(1)}</span>
                             </CardDescription> 
                         </div>
                     </div>

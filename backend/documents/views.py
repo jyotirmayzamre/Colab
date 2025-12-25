@@ -22,7 +22,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        return Document.objects.get_user_documents(user)
+        return DocumentService.get_user_documents(user) #type: ignore
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

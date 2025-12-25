@@ -102,7 +102,7 @@ function EditorNavbar(): JSX.Element {
 
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
-            <span>Last saved: Just now</span>
+            <span>Autosave is on</span>
           </div>
 
           <div className="flex items-center gap-2.5">

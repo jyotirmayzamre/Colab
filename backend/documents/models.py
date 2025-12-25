@@ -2,14 +2,16 @@ from django.db import models
 from accounts.models import User
 import uuid
 from uuid import UUID
-from typing import Optional
+from django.utils import timezone
 
 class DocumentManager(models.Manager):
     def create_document(self, title: str = 'Untitled Document') -> 'Document':
             return super().create(title=title)
     
     def update_state(self, docId: UUID, state):
-         Document.objects.filter(id=docId).update(state=state)
+         Document.objects.filter(id=docId).update(
+            state=state, 
+            updated_at=timezone.now())
          
     
     def get_user_documents(self, user):

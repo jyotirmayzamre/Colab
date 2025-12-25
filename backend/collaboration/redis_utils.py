@@ -88,7 +88,7 @@ async def redis_flush_to_db(docId):
     state = await client.get(f'crdt:{docId}')
     if(state):
         state_decoded = json.loads(state)
-        await sync_to_async(DocumentService.update_document_state)(
+        await sync_to_async(DocumentService.update_state)(
             docId=docId,
             state=state_decoded
         )

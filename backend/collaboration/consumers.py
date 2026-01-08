@@ -25,7 +25,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         current_count = await redis_get_user_count(self.doc_id)
 
         state = await redis_load_crdt(self.doc_id)
-        await self.send_json({'event': 'load.crdt', 'state': state, 'colour': self.colour, 'username': self.username})
+        await self.send_json({'event': 'load.crdt', 'state': state, 'username': self.username})
 
         await self.channel_layer.group_send(
             self.group_name, {'type': 'userCount.updated', 'count': current_count}

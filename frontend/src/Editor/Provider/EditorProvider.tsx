@@ -1,6 +1,6 @@
 import { useAuth } from "@/Auth/useAuth";
 import CRDT from "@/CRDT/crdt";
-import { type ReactNode, useEffect, useRef, useState, useCallback, useMemo } from "react"
+import { type ReactNode, useEffect, useRef, useState, useMemo } from "react"
 import type { EditorView } from "@uiw/react-codemirror";
 import { crdtToString } from "@/CRDT/utils";
 import { EditorContext } from "./useEditor";
@@ -14,8 +14,6 @@ interface Props {
 }
 
 
-
-
 export const EditorProvider = ({ children, docId, isEditable, title }: Props) => {
     const { user } = useAuth();
 
@@ -24,7 +22,6 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
     const [userCount, setUserCount] = useState<number>(0);
     const [docTitle, setDocTitle] = useState<string>(title);
     const [remoteCursors, setRemoteCursors] = useState<Record<string, RemoteCursor>>({});
-    const [colour, setColour] = useState<string>('');
 
     //Refs
     const crdtRef = useRef<CRDT>(new CRDT(user.site_id));
@@ -46,7 +43,6 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
                 case 'load.crdt':
                     crdtRef.current.state = data.state;
                     setValue(crdtToString(data.state));
-                    setColour(data.colour);
                     break;
 
                 case 'cursor.update':
@@ -73,11 +69,13 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
                 
                 case 'crdt.oper': {
                     const content = data.content;
-                    const doc = editorRef.current!.state.doc;
+                    const doc = editorRef.current.state.doc;
                     const line = doc.line(content.row + 1); 
                     const pos = line.from + content.col;
 
-                    if(content.oper == 'Insert'){
+                    //handle remote changes
+
+                    if(content.oper === 'Insert'){
                         crdtRef.current.remoteInsert(content.row, content.char);
                         editorRef.current.dispatch({
                             changes: {from: pos, insert: content.char.value},
@@ -103,19 +101,18 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
         return () => {
             wsRef.current.close();
         };
-    }, [docId, crdtRef, editorRef, setUserCount, setValue, user.username]);
+    }, [docId, user.username]);
 
     //methods
     
-    const setEditorRef = useCallback((view: EditorView) => {
+    const setEditorRef = (view: EditorView) => {
         editorRef.current = view;
-    }, []);
+    };
 
     const contextValue = useMemo(
         () => ({
             value,
             docTitle,
-            colour,
             userCount,
             isEditable,
             docId,
@@ -125,9 +122,8 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
             ws: wsRef.current,
             setValue,
             setEditorRef,
-            setDocTitle
         }),
-        [value, colour, remoteCursors, docTitle, docId, userCount, isEditable, setEditorRef]
+        [value, remoteCursors, docTitle, docId, userCount, isEditable]
     );
 
     return (

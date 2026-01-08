@@ -9,7 +9,7 @@ function EditorPage(): JSX.Element {
     const params = useParams();
     const [docAttribs] = useSearchParams();
     const isEditable: boolean = JSON.parse(docAttribs.get('isEditable').toLowerCase());
-    const title = docAttribs.get('title');
+    const title: string  = docAttribs.get('title');
 
 
     return (

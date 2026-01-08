@@ -24,7 +24,6 @@ export interface EditorContextType {
     value: string
     docTitle: string
     docId: string
-    colour: string
     userCount: number
     isEditable: boolean
     crdt: CRDT
@@ -33,7 +32,6 @@ export interface EditorContextType {
     remoteCursors: Record<string, RemoteCursor>
     setValue: React.Dispatch<React.SetStateAction<string>>
     setEditorRef: (view: EditorView) => void,
-    setDocTitle: React.Dispatch<React.SetStateAction<string>>
 }
 
 export interface Version {

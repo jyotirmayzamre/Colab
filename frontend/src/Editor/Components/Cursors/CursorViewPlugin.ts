@@ -1,7 +1,7 @@
 import { ViewUpdate, ViewPlugin, DecorationSet, Decoration } from "@uiw/react-codemirror";
 import CursorWidget from "./CursorWidget";
 
-export interface RemoteCursor {
+interface RemoteCursor {
     pos: number
     colour: string
     username: string

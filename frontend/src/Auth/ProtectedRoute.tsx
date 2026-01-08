@@ -2,12 +2,12 @@ import { useAuth } from "./useAuth";
 import { Navigate} from "react-router-dom";
 import { type JSX } from "react";
 
-interface ProtectedProps {
+interface Props {
     children: JSX.Element;
 }
 
 
-const ProtectedRoute = ({ children }: ProtectedProps) => {
+const ProtectedRoute = ({ children }: Props) => {
     const { authenticated, authChecked } = useAuth();
 
     if(!authChecked) return <div></div>;

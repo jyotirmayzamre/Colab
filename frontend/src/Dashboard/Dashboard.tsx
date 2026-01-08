@@ -3,15 +3,8 @@ import CreateDocument from "./Components/CreateDocument";
 import DocumentList from "./Components/DocumentList";
 import HomeNavbar from "./Components/DashboardNavbar";
 import { useAuth } from "@/Auth/useAuth";
+import { Document } from "./types";
 
-export type Document = {
-    access: string;
-    authors: string[];
-    id: string;
-    title: string;
-    updated_at: string;
-    num_users: number;
-}
 
 function Dashboard(): JSX.Element {
     const [documents, setDocuments] = useState<Document[] | null>(null);

@@ -1,17 +1,17 @@
 import type { JSX } from "react";
 import api from "../../Auth/api";
-import type { Document } from "../Dashboard";
+import { Document } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "../../Components/card";
 import { Plus} from "lucide-react";
 import Swal from 'sweetalert2';
 
-type props = {
+interface Props {
     setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>;
 }
 
-function CreateDocument({ setDocuments }: props): JSX.Element {
+function CreateDocument({ setDocuments }: Props): JSX.Element {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 

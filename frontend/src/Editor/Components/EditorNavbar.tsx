@@ -12,11 +12,12 @@ import Swal from "sweetalert2";
 import VersionHistory from "./VersionHistory";
 import handleDownload from "../Utils/downloadUtil";
 import { useEditor } from "../Provider/useEditor";
+import { Titles } from "../types";
 
 function EditorNavbar(): JSX.Element {
   const { userCount, value, docId, isEditable, docTitle, ws } = useEditor();
   const { user } = useAuth();
-  const [titles, setTitles] = useState<{curr: string, prev: string}>({
+  const [titles, setTitles] = useState<Titles>({
     curr: docTitle,
     prev: docTitle
   });
@@ -27,6 +28,7 @@ function EditorNavbar(): JSX.Element {
   const renameDocument = useCallback(async (newTitle: string) => {
       try {
           await api.patch(`/api/documents/${docId}/`, { title: newTitle});
+
           Swal.fire({
             title: 'Success!',
             text: `Renamed document to "${newTitle}" :)`,
@@ -36,7 +38,9 @@ function EditorNavbar(): JSX.Element {
             timer: 3000,
             position: 'top',
           })
+
           ws.send(JSON.stringify({ type: 'document_rename', newTitle: newTitle }));
+          
       } catch{
           Swal.fire({
             title: 'Error!',

@@ -1,17 +1,12 @@
 import { useEffect,useCallback, useRef, useMemo, type ReactNode, useReducer } from 'react';
 import { AuthContext } from './useAuth';
-import type { User } from './types';
+import { User, AuthState } from './types';
 import api from './api';
 
 interface Props {
     children: ReactNode;
 }
 
-interface AuthState {
-    user: User | null;
-    authenticated: boolean;
-    authChecked: boolean;
-}
 
 type AuthAction = 
     | { type: 'SET_USER'; payload: User }

@@ -1,5 +1,4 @@
 import type { JSX } from "react";
-import type { Document } from "../Dashboard";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, forwardRef, useState } from "react";
 import api from "@/Auth/api";
@@ -17,22 +16,17 @@ import { Button } from "@/Components/button";
 import { VirtuosoGrid } from "react-virtuoso";
 import Swal from "sweetalert2";
 import SearchDocument from "./SearchDocument";
+import { Document, DocumentPage } from "../types";
 
 
-interface props {
+interface Props {
     documents: Document[] | null;
     setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>,
 }
 
-interface DocumentPage {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: Document[];
-}
 
 
-function DocumentList({ documents, setDocuments}: props): JSX.Element {
+function DocumentList({ documents, setDocuments}: Props): JSX.Element {
     const navigate = useNavigate();
     const [query, setQuery] = useState<string>('');
  

@@ -7,11 +7,11 @@ class CursorWidget extends WidgetType {
         readonly username: string
     ) { super() }
 
-    eq(other: CursorWidget){
+    eq(other: CursorWidget): boolean{
         return (other.colour == this.colour) && (other.username == this.username)
     }
 
-    toDOM(){
+    toDOM(): HTMLSpanElement{
         const container = document.createElement('span');
         container.style.position = "relative";
         container.style.display = "inline-block";
@@ -49,7 +49,7 @@ class CursorWidget extends WidgetType {
         return container;
     }
 
-    ignoreEvent() {
+    ignoreEvent(): boolean {
         return true;
     }
 }

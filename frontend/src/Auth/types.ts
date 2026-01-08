@@ -12,3 +12,9 @@ export interface AuthContextType {
     authenticated: boolean,
     authChecked: boolean
 }
+
+export interface AuthState {
+    user: User | null;
+    authenticated: boolean;
+    authChecked: boolean;
+}

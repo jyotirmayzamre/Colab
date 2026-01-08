@@ -16,7 +16,7 @@ function ShareLinkComponent(): JSX.Element {
 
 
     useEffect(() => {
-        const sendShare = async () => {
+        const sendShare = async (): Promise<void> => {
             try {
                 const payload = { token, role };
                 const response = await api.post("/api/permissions/accept-share/", payload);

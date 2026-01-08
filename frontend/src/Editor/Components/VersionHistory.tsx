@@ -20,20 +20,9 @@ import { crdtToString } from "@/CRDT/utils";
 import handleDownload from '../Utils/downloadUtil';
 import { useEditor } from '../Provider/useEditor';
 import { Virtuoso } from 'react-virtuoso';
+import { Version, VersionPage } from '../types';
 
-interface Version {
-    id: number;
-    title: string;
-    created_at: string;
-    creator_username: string;
-}
 
-interface VersionPage {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: Version[]
-}
 
 
 function VersionHistory(): JSX.Element {

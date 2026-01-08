@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useRef, useState, useCallback, useMemo } fro
 import type { EditorView } from "@uiw/react-codemirror";
 import { crdtToString } from "@/CRDT/utils";
 import { EditorContext } from "./useEditor";
+import { RemoteCursor } from "../types";
 
 interface Props {
     children: ReactNode,
@@ -12,26 +13,23 @@ interface Props {
     title: string
 }
 
+
+
+
 export const EditorProvider = ({ children, docId, isEditable, title }: Props) => {
     const { user } = useAuth();
 
     //State
     const [value, setValue] = useState<string>('');
-    const [cursorPos, setCursorPos] = useState({'col': 0, 'row': 0});
     const [userCount, setUserCount] = useState<number>(0);
     const [docTitle, setDocTitle] = useState<string>(title);
-    const [remoteCursors, setRemoteCursors] = useState<Record<string, { col: number, row: number, colour: string }>>({});
+    const [remoteCursors, setRemoteCursors] = useState<Record<string, RemoteCursor>>({});
     const [colour, setColour] = useState<string>('');
 
     //Refs
-    const crdtRef = useRef<CRDT | null>(null);
-    if(!crdtRef.current && user){
-        crdtRef.current = new CRDT(user.site_id);
-    }
-
-    const editorRef = useRef<EditorView | null>(null);
-
-    const wsRef = useRef<WebSocket | null>(null);
+    const crdtRef = useRef<CRDT>(new CRDT(user.site_id));
+    const editorRef = useRef<EditorView | undefined>(undefined);
+    const wsRef = useRef<WebSocket | undefined>(undefined);
 
     useEffect(() => {
         if(!docId) return;
@@ -116,7 +114,6 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
     const contextValue = useMemo(
         () => ({
             value,
-            cursorPos,
             docTitle,
             colour,
             userCount,
@@ -126,13 +123,11 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
             crdt: crdtRef.current,
             editor: editorRef.current,
             ws: wsRef.current,
-            setRemoteCursors,
-            setCursorPos,
             setValue,
             setEditorRef,
             setDocTitle
         }),
-        [value, colour, remoteCursors, docTitle, docId, cursorPos, userCount, isEditable, setEditorRef]
+        [value, colour, remoteCursors, docTitle, docId, userCount, isEditable, setEditorRef]
     );
 
     return (

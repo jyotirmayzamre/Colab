@@ -1,12 +1,13 @@
 import { useEditor } from "../Provider/useEditor";
 import CodeMirror, { EditorSelection } from '@uiw/react-codemirror';
 import { basicLight } from "@uiw/codemirror-theme-basic";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { ViewUpdate, EditorView } from '@uiw/react-codemirror';
-import { type Change, getCursorPos, getChangeObj } from "../Utils/EditorUtils";
+import { getCursorPos, getChangeObj } from "../Utils/EditorUtils";
 import type { Char } from "../../CRDT/utils";
 import { remoteCursorPlugin } from "./Cursors/CursorViewPlugin";
 import { useAuth } from "@/Auth/useAuth";
+import { CursorPosition, EditorChange } from "../types";
 
 const editorPadding = EditorView.theme({
     ".cm-content": {
@@ -14,32 +15,35 @@ const editorPadding = EditorView.theme({
     }
 });
 
+
+
+
+
 function EditorComponent(){
     const { user } = useAuth();
-    const { cursorPos, value, setCursorPos, remoteCursors, editor,  setValue, setEditorRef, isEditable, ws, crdt } = useEditor(); 
+    const [cursorPos, setCursorPos] = useState<CursorPosition>({'col': 0, 'row': 0});
+    const { value, remoteCursors, editor,  setValue, setEditorRef, isEditable, ws, crdt } = useEditor(); 
 
     const cursorUpdateTimeoutRef = useRef<NodeJS.Timeout>();
 
     //only for handling mouse-keyboard related cursors changes
-    const onUpdate = useCallback((viewUpdate: ViewUpdate) => {
+    const onUpdate = useCallback((viewUpdate: ViewUpdate): void => {
         if (viewUpdate.selectionSet && !viewUpdate.docChanged) {
-            const CP = getCursorPos(viewUpdate);
-            setCursorPos(CP);
+            const newCursorPos = getCursorPos(viewUpdate);
+            setCursorPos(newCursorPos);
             
             const isRemote = viewUpdate.transactions.some(tr => tr.isUserEvent('remote'));
             if (!isRemote) {
                 if (cursorUpdateTimeoutRef.current) {
                     clearTimeout(cursorUpdateTimeoutRef.current);
                 }
-                const col = CP.col;
-                const row = CP.row;
                 
                 cursorUpdateTimeoutRef.current = setTimeout(() => {
                     ws.send(JSON.stringify({ 
                         type: 'cursor_update', 
                         username: user.username, 
-                        col: col, 
-                        row: row 
+                        col: newCursorPos.col, 
+                        row: newCursorPos.row 
                     }));
                 }, 150);
             }
@@ -47,12 +51,12 @@ function EditorComponent(){
     }, [setCursorPos, ws, user.username]);
 
 
-    const onChange = useCallback((val: string, viewUpdate: ViewUpdate) => {
+    const onChange = useCallback((val: string, viewUpdate: ViewUpdate): void => {
         setValue(val);
-        const CP = getCursorPos(viewUpdate);
-        setCursorPos(CP);
+        const newCursorPos = getCursorPos(viewUpdate);
+        setCursorPos(newCursorPos);
 
-        const change: Change | null = getChangeObj(viewUpdate);
+        const change: EditorChange | null = getChangeObj(viewUpdate);
         
         if(!change) return;
 
@@ -62,6 +66,7 @@ function EditorComponent(){
         if (!isRemote) {
             if (change.oper === 'Insert') {
                 const char: Char = crdt.localInsert(change.text, change.row, change.col);
+
                 const data = JSON.stringify({
                     type: 'char',
                     oper: 'Insert',
@@ -69,13 +74,17 @@ function EditorComponent(){
                     row: change.row,
                     col: change.col,
                 });
+
                 ws.send(data);
+
                 ws.send(JSON.stringify({ 
                     type: 'cursor_update', 
                     username: user.username, 
-                    col: CP.col, row: CP.row }));
+                    col: newCursorPos.col, 
+                    row: newCursorPos.row }));
             } else {
                 const char: Char = crdt.localDelete(change.row, change.col);
+
                 const data = JSON.stringify({
                     type: 'char',
                     oper: 'Delete',
@@ -83,11 +92,13 @@ function EditorComponent(){
                     row: change.row,
                     col: change.col
                 });
+
                 ws.send(JSON.stringify({ 
                     type: 'cursor_update', 
                     username: user.username, 
-                    col: CP.col, 
-                    row: CP.row }));
+                    col: newCursorPos.col, 
+                    row: newCursorPos.row }));
+                    
                 ws.send(data);
             }   
         } else{
@@ -95,8 +106,8 @@ function EditorComponent(){
             ws.send(JSON.stringify({ 
                 type: 'cursor_update', 
                 username: user.username, 
-                col: CP.col, 
-                row: CP.row 
+                col: newCursorPos.col, 
+                row: newCursorPos.row 
             }));
             
         }
@@ -114,9 +125,9 @@ function EditorComponent(){
                 const line = doc.line(cur.row + 1);
                 const pos = line.from + cur.col;
                 return {
-                pos: pos,
-                colour: cur.colour,
-                username: username
+                    pos: pos,
+                    colour: cur.colour,
+                    username: username
                 }
             })
         }, [remoteCursors, editor, user.username])

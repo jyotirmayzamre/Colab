@@ -1,6 +1,7 @@
 import { ViewUpdate } from "@uiw/react-codemirror";
+import { EditorChange, CursorPosition } from "../types";
 
-export const getCursorPos = (viewUpdate: ViewUpdate): {col: number, row: number} => {
+export const getCursorPos = (viewUpdate: ViewUpdate): CursorPosition => {
     const selection = viewUpdate.state.selection.main;
     const line = viewUpdate.state.doc.lineAt(selection.head);
     
@@ -10,17 +11,12 @@ export const getCursorPos = (viewUpdate: ViewUpdate): {col: number, row: number}
     };
 }
 
-export type Change = {
-    oper: 'Insert' | 'Delete';
-    text: string;
-    row: number;
-    col: number;
-}
 
-export const getChangeObj = (viewUpdate: ViewUpdate): Change | null => {
+
+export const getChangeObj = (viewUpdate: ViewUpdate): EditorChange | null => {
     const oldDoc = viewUpdate.startState.doc;
     const newDoc = viewUpdate.state.doc;
-    let obj: Change | null = null;
+    let obj: EditorChange | null = null;
     viewUpdate.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
             if(inserted.length === 0){
                 const deletedChar = oldDoc.sliceString(fromA, toA);

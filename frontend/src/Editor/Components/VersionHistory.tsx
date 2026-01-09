@@ -109,7 +109,8 @@ function VersionHistory(): JSX.Element {
                         timer: 3000,
                         position: 'top',
                     })
-                } catch {
+                } catch(e) {
+                    console.error(e);
                     Swal.fire({
                         title: 'Error!',
                         text: 'Could not delete version :(',
@@ -292,7 +293,7 @@ function VersionHistory(): JSX.Element {
                     )}
                     {versions.length > 0 && (
                         <Card className="rounded-lg w-full border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                            <CardContent className='p-0 h-[250px]'>
+                            <CardContent className='p-0 h-[200px]'>
                                     {versions && 
                                         <Virtuoso className='divide-y divide-border' data={versions} endReached={() => {
                                             if(hasNextPage) fetchNextPage()

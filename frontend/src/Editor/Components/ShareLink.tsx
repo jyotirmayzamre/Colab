@@ -21,7 +21,8 @@ function ShareLinkComponent(): JSX.Element {
                 const payload = { token, role };
                 const response = await api.post("/api/permissions/accept-share/", payload);
                 navigate(response.data, { replace: true });
-            } catch{
+            } catch(e){
+                console.error(e);
                 Swal.fire({
                     title: 'Error!',
                     text: 'Could not share document via link :(',

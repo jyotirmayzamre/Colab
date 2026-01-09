@@ -57,7 +57,8 @@ function DocumentList({ documents, setDocuments}: Props): JSX.Element {
                 try {
                     await api.delete(`/api/documents/${docId}/`);
                     setDocuments(prev => prev.filter(doc => doc.id !== docId));
-                } catch {
+                } catch(e) {
+                    console.error(e);
                     Swal.fire({
                         title: 'Error!',
                         text: 'Could not delete document :(',

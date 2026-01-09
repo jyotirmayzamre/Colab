@@ -13,6 +13,7 @@ import VersionHistory from "./VersionHistory";
 import handleDownload from "../Utils/downloadUtil";
 import { useEditor } from "../Provider/useEditor";
 import { Titles } from "../types";
+import SharedUsers from "./SharedUsers";
 
 function EditorNavbar(): JSX.Element {
   const { userCount, value, docId, isEditable, docTitle, ws } = useEditor();
@@ -137,6 +138,15 @@ function EditorNavbar(): JSX.Element {
                   }}>
                     <VersionHistory />
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {isEditable && (
+                  <DropdownMenuItem asChild onSelect={(e) => {
+                    e.preventDefault(); 
+                    setOpen(false);
+                  }}>
+                    <SharedUsers />
+                </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

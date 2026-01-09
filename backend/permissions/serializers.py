@@ -6,6 +6,19 @@ from documents.services import DocumentService
 Document Access Serializers
 '''
 
+class DocumentAccessUpdateSerializer(serializers.ModelSerializer):
+    level = serializers.ChoiceField(choices=DocumentAccess.ACCESS)
+
+    class Meta:
+        model = DocumentAccess
+        fields = ['level']
+        validators = []
+
+    def validate_level(self, value):
+       if value == 'owner':
+           raise serializers.ValidationError("Owner access cannot be assigned directly.")
+       return value
+
 class DocumentAccessInputSerializer(serializers.ModelSerializer):
     userId = serializers.UUIDField()
     docId = serializers.UUIDField()
@@ -29,9 +42,10 @@ class DocumentAccessInputSerializer(serializers.ModelSerializer):
        return value
 
 class DocumentAccessOutputSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
     class Meta:
         model = DocumentAccess
-        fields = ['user', 'document', 'level']
+        fields = ['id', 'user','username', 'document', 'level']
         read_only_fields = fields
 
 

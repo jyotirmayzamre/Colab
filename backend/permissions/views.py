@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .serializers import DocumentAccessInputSerializer, DocumentAccessOutputSerializer
+from .serializers import DocumentAccessInputSerializer, DocumentAccessOutputSerializer, DocumentAccessUpdateSerializer
 from .serializers import ShareLinkInputSerializer, ShareLinkOutputSerializer
 from .models import DocumentAccess, ShareLink
 from accounts.serializers import CookieJWTAuthentication
@@ -16,12 +16,23 @@ class DocumentAccessViewSet(viewsets.ModelViewSet):
     authentication_classes=[CookieJWTAuthentication]
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action in ('create'):
             return DocumentAccessInputSerializer
+        if self.action in ('update', 'partial_update'):
+            return DocumentAccessUpdateSerializer
         return DocumentAccessOutputSerializer
 
-    def get_queryset(self):
-        return (DocumentAccess.objects.filter(user=self.request.user))
+    #make this excluding current user and for a given document id
+    def get_queryset(self): 
+        user = self.request.user
+        docId = self.request.query_params.get("docId") #type: ignore
+
+        if self.action in ("destroy", "retrieve", "update", "partial_update"):
+            return DocumentAccess.objects.filter(document_id=docId)
+        
+        return DocumentAccessService.get_document_access_except_user(
+            docId=docId, userId=user.id #type: ignore
+        )
         
 
     def create(self, request, *args, **kwargs):

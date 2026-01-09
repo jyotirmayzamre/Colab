@@ -7,8 +7,9 @@ const handleDownload = (value: string) => {
     link.setAttribute('download', 'download.doc');
     link.setAttribute('href', 'data:' + 'text/doc' + ';charset=utf-8,' + encodeURIComponent(value));
     link.click();
-  } catch{
-      Swal.fire({
+  } catch(e){
+    console.error(e);
+    Swal.fire({
         title: 'Error!',
         text: 'Could not download document :(',
         icon: 'error',

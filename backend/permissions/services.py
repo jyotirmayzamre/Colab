@@ -20,6 +20,7 @@ class DocumentAccessService:
     def create_or_update_access(docId: UUID, userId: UUID, level: str) -> tuple['DocumentAccess', bool]:
         document = Document.objects.get(pk=docId)
         user = User.objects.get(pk=userId)
+
         access, created = DocumentAccess.objects.get_or_create(
             document_id=docId,
             user_id=userId,
@@ -52,6 +53,15 @@ class DocumentAccessService:
         access.delete()
         return
 
+    @staticmethod
+    def get_document_access_except_user(docId: UUID, userId: UUID):
+        return DocumentAccess.objects.filter(
+            document_id=docId
+        ).exclude(
+            user_id=userId
+        ).exclude(
+            level='owner'
+        )
 
     @staticmethod
     def cleanup_access(userId: UUID):

@@ -28,7 +28,8 @@ function CreateDocument({ setDocuments }: Props): JSX.Element {
             });
             navigate(`/documents/${newDoc.id}?${params.toString()}`)
 
-        } catch{
+        } catch(e){
+          console.error(e);
           Swal.fire({
             title: 'Error!',
             text: 'Could not create document :(',

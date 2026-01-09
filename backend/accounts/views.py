@@ -12,6 +12,7 @@ from django.db.models import Value
 from .models import User
 from typing import cast
 from django.http import JsonResponse
+from documents.models import Document
 
 '''
 Endpoint for registration of users
@@ -130,9 +131,10 @@ class SearchUserAPIView(APIView):
         query = request.query_params['q']
         if not query:
             return Response({'results': []})
+
         
         q = User.objects.annotate(fullname=Concat('first_name', Value(' '), 'last_name'))
-        c = q.filter(fullname__icontains=query).exclude(id=request.user.id)[:5]
+        c = q.filter(fullname__icontains=query).exclude(id=request.user.id)
         serializer = UserSerializer(c, many=True)
 
         return Response({'results': serializer.data})

@@ -17,8 +17,6 @@ const editorPadding = EditorView.theme({
 
 
 
-
-
 function EditorComponent(){
     const { user } = useAuth();
     const [cursorPos, setCursorPos] = useState<CursorPosition>({'col': 0, 'row': 0});

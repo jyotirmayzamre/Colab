@@ -8,6 +8,8 @@ import Swal from "sweetalert2";
 import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
 import { cn } from "@/lib/utils";
 import { useEditor } from "../Provider/useEditor";
+import { Virtuoso } from "react-virtuoso";
+import { Card, CardContent } from "@/Components/card";
 
 interface FormFields {
     username: string,
@@ -62,7 +64,8 @@ function ShareDoc(): JSX.Element {
                 timer: 3000,
                 position: 'top'
             })
-        } catch{
+        } catch(e){
+            console.error(e);
             Swal.fire({
                 title: 'Error!',
                 text: 'Could not share document :(',
@@ -83,7 +86,8 @@ function ShareDoc(): JSX.Element {
             try {
                 const response = await api.post('/api/permissions/create-share-link/', data);
                 setShareLink(response.data.link);
-            } catch{
+            } catch(e){
+                console.error(e);
                 Swal.fire({
                     title: 'Error!',
                     text: 'Could not create share link :(',
@@ -107,7 +111,8 @@ function ShareDoc(): JSX.Element {
             const response = await api.get(`/api/accounts/searchUsers/?q=${query}`);
             const data = response.data;
             setResults(data.results);
-        } catch{
+        } catch(e){
+            console.error(e);
             Swal.fire({
                 title: 'Error!',
                 text: 'Could not search for users :(',
@@ -126,7 +131,7 @@ function ShareDoc(): JSX.Element {
             getData();
        }
  
-    }, [query]);
+    }, [query, docId]);
 
 
     const onChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -134,6 +139,26 @@ function ShareDoc(): JSX.Element {
         if(e.target.value == ''){
             setSelectedUser('');
         }
+    }
+
+    const userCard = (user: User) => {
+        return (
+            <li key={user.id} className={cn("flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200", 
+                selectedUser === user.id && "bg-blue-100")}
+                onClick={() => {
+                    setValue('username', user.username);
+                    setValue('user_id', user.id);
+                    setSelectedUser(user.id);
+                }}>
+                <div className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary">
+                    <User className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{user.first_name} {user.last_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.username}</p>
+                </div>
+            </li>
+        )
     }
 
     return (
@@ -165,29 +190,15 @@ function ShareDoc(): JSX.Element {
 
                         </div>
                         {
-                            query && (
-                                <div className="my-3 rounded-lg border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                                    <ul className="divide-y divide-border">
-                                        {results && results.map((user) => {return (
-                                            <li key={user.id} className={cn("flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200", selectedUser === user.id && "bg-blue-100")}
-                                                onClick={() => {
-                                                    setValue('username', user.username);
-                                                    setValue('user_id', user.id);
-                                                    setSelectedUser(user.id);
-                                                }}>
-                                                <div className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary">
-                                                    <User className="h-4 w-4" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-medium text-sm truncate">{user.first_name} {user.last_name}</p>
-                                                    <p className="text-xs text-muted-foreground truncate">{user.username}</p>
-                                                </div>
-                                                
-                                            </li>
-                                        )})}
-                                    </ul>
-                                </div>
-                            )
+                            query && results.length > 0 && (
+                                    <Card className="my-3 rounded-lg border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                                        <CardContent className="p-0 h-[150px]">
+                                            <Virtuoso className="divide-y divide-border" data={results} 
+                                                itemContent={(_, user) => userCard(user)}
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                )
                         }
                             
                         <div className="flex justify-center items-center">

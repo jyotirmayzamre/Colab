@@ -47,7 +47,8 @@ export const AuthProvider = ({ children }: Props) => {
             const user: User = { username: data.username, site_id: data.site_id, user_id: data.id }
             dispatch({ type: 'SET_USER', payload: user})
             return response.data;
-        } catch {
+        } catch(e) {
+            console.error(e);
             dispatch({ type: 'CLEAR_USER'});
         }  
     }, []);
@@ -73,10 +74,8 @@ export const AuthProvider = ({ children }: Props) => {
         try {
             await api.post('/api/accounts/logout/');
 
-        } catch(error: unknown){
-            if(error instanceof Error){
-                console.error(error.message)
-            }
+        } catch(e){
+            console.error(e);
         } finally {
             dispatch({ type: 'CLEAR_USER'});
             isLoggingOut.current = false;

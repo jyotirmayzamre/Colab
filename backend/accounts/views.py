@@ -12,7 +12,7 @@ from django.db.models import Value
 from .models import User
 from typing import cast
 from django.http import JsonResponse
-from documents.models import Document
+from rest_framework.pagination import LimitOffsetPagination
 
 '''
 Endpoint for registration of users
@@ -123,9 +123,15 @@ class RefreshTokenView(TokenRefreshView):
 
         return response
 
+class UserPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 10
+
 class SearchUserAPIView(APIView):
     authentication_classes = [CookieJWTAuthentication] 
     permission_classes = [IsAuthenticated]
+    pagination_class = UserPagination
+
 
     def get(self, request: Request):
         query = request.query_params['q']

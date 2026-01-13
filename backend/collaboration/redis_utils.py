@@ -36,18 +36,27 @@ async def redis_remove_colours(docId):
 # Loads CRDT from redis, used for users joining on active document
 async def redis_load_crdt(docId):
     state_json = await client.get(f'crdt:{docId}')
-    if state_json:
-        return json.loads(state_json)
+    title = await client.get(f'title:{docId}')
+    if state_json and title:
+        return json.loads(state_json), title
     
     #if document just became active, crdt is obtained from document and set in redis
     doc = await sync_to_async(DocumentService.get_document)(docId)
     state = doc.state
+    title = doc.title
 
     await client.set(
         f'crdt:{docId}',
         json.dumps(state)
     )
-    return state
+
+    await client.set(
+        f'title:{docId}',
+        title
+    )
+
+    
+    return state, title
     
 
 async def redis_update_crdt(docId, content):

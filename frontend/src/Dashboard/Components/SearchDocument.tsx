@@ -10,7 +10,6 @@ interface Props {
 
 
 function SearchDocument({ query, setQuery }: Props){
-
     return (
         <div className="mb-6 flex flex-col justify-center items-center">
             <div className="relative max-w-md">

@@ -3,24 +3,23 @@ import CRDT from "@/CRDT/crdt";
 import { type ReactNode, useEffect, useRef, useState, useMemo } from "react"
 import type { EditorView } from "@uiw/react-codemirror";
 import { crdtToString } from "@/CRDT/utils";
-import { EditorContext } from "./useEditor";
+import { EditorDataContext, EditorMetaContext } from "./hooks";
 import { RemoteCursor } from "../types";
 
 interface Props {
     children: ReactNode,
     docId: string,
     isEditable: boolean,
-    title: string
 }
 
 
-export const EditorProvider = ({ children, docId, isEditable, title }: Props) => {
+export const EditorProvider = ({ children, docId, isEditable }: Props) => {
     const { user } = useAuth();
 
     //State
     const [value, setValue] = useState<string>('');
     const [userCount, setUserCount] = useState<number>(0);
-    const [docTitle, setDocTitle] = useState<string>(title);
+    const [docTitle, setDocTitle] = useState<string>('');
     const [remoteCursors, setRemoteCursors] = useState<Record<string, RemoteCursor>>({});
 
     //Refs
@@ -43,6 +42,8 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
                 case 'load.crdt':
                     crdtRef.current.state = data.state;
                     setValue(crdtToString(data.state));
+                    setUserCount(data.user_count);
+                    setDocTitle(data.title);
                     break;
 
                 case 'cursor.update':
@@ -64,7 +65,7 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
                     break;
 
                 case 'userCount.updated':
-                    setUserCount(data.count);
+                    setUserCount(data.user_count);
                     break;
                 
                 case 'crdt.oper': {
@@ -109,27 +110,37 @@ export const EditorProvider = ({ children, docId, isEditable, title }: Props) =>
         editorRef.current = view;
     };
 
-    const contextValue = useMemo(
+    const dataValue = useMemo(
         () => ({
             value,
+            remoteCursors,
+            setValue
+        }),
+        [remoteCursors, value]
+    );
+
+    const metaValue = useMemo(
+        () => ({
             docTitle,
             userCount,
             isEditable,
             docId,
-            remoteCursors,
-            crdt: crdtRef.current,
-            editor: editorRef.current,
-            ws: wsRef.current,
-            setValue,
+            crdtRef,
+            editorRef,
+            wsRef,
             setEditorRef,
         }),
-        [value, remoteCursors, docTitle, docId, userCount, isEditable]
-    );
+        [docId, docTitle, isEditable, userCount]
+    )
+
+
 
     return (
-        <EditorContext.Provider value={contextValue}>
-            {children}
-        </EditorContext.Provider>
+        <EditorMetaContext.Provider value={metaValue}>
+            <EditorDataContext.Provider value={dataValue}>
+                {children} 
+            </EditorDataContext.Provider>
+        </EditorMetaContext.Provider>
     );
 
     

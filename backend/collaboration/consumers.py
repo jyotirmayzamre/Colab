@@ -24,11 +24,11 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         await redis_add_user(self.doc_id, self.channel_name)
         current_count = await redis_get_user_count(self.doc_id)
 
-        state = await redis_load_crdt(self.doc_id)
-        await self.send_json({'event': 'load.crdt', 'state': state, 'username': self.username})
+        state, title = await redis_load_crdt(self.doc_id)
+        await self.send_json({'event': 'load.crdt', 'state': state, 'user_count': current_count, 'title': title})
 
         await self.channel_layer.group_send(
-            self.group_name, {'type': 'userCount.updated', 'count': current_count}
+            self.group_name, {'type': 'userCount.updated', 'sender': self.channel_name, 'user_count': current_count}
         )
 
 
@@ -44,7 +44,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
          
         if(remaining_count > 0):
             await self.channel_layer.group_send(
-                self.group_name, {'type': 'userCount.updated', 'count': remaining_count}
+                self.group_name, {'type': 'userCount.updated', 'user_count': remaining_count}
             )
         else:
             await redis_remove_colours(self.doc_id)
@@ -68,7 +68,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
 
         elif(content['type'] == 'document_rename'):
             await self.channel_layer.group_send(
-                self.group_name, {'type': 'document.rename', 'newTitle': content['newTitle'], 'sender': self.channel_name}
+                self.group_name, {'type': 'document.rename', 'newTitle': content['newTitle']}
             )
 
         elif(content['type'] == 'cursor_update'):
@@ -95,12 +95,12 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
 
     #User joined or left so send correct count
     async def userCount_updated(self, event):
-        await self.send_json({'event': 'userCount.updated', 'count': event['count']})
+        if(self.channel_name != event['sender']):
+            await self.send_json({'event': 'userCount.updated', 'user_count': event['user_count']})
 
 
     async def document_rename(self, event):
-        if(self.channel_name != event['sender']):
-            await self.send_json({'event': 'document.rename', 'newTitle': event['newTitle']})
+        await self.send_json({'event': 'document.rename', 'newTitle': event['newTitle']})
 
     async def cursor_update(self, event):
         if(self.channel_name != event['sender']):

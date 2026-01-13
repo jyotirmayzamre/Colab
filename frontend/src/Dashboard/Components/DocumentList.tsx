@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { createSearchParams, useNavigate } from "react-router-dom";
-import { useEffect, forwardRef, useState } from "react";
+import { useMemo, forwardRef, useState } from "react";
 import api from "@/Auth/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
@@ -17,18 +17,17 @@ import { VirtuosoGrid } from "react-virtuoso";
 import Swal from "sweetalert2";
 import SearchDocument from "./SearchDocument";
 import { Document, DocumentPage } from "../types";
-
-
-interface Props {
-    documents: Document[] | null;
-    setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>,
-}
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 
 
 
-function DocumentList({ documents, setDocuments}: Props): JSX.Element {
+
+
+function DocumentList(): JSX.Element {
     const navigate = useNavigate();
     const [query, setQuery] = useState<string>('');
+    const queryClient = useQueryClient();
  
     const { 
         data, 
@@ -44,7 +43,7 @@ function DocumentList({ documents, setDocuments}: Props): JSX.Element {
         initialPageParam: '/api/documents/'
     });
 
-    const deleteDoc = async (docId: string) => {
+    const deleteDoc = useCallback(async (docId: string) => {
         Swal.fire({
             title: 'Are you sure?',
             text: 'Click confirm to delete this document',
@@ -56,7 +55,7 @@ function DocumentList({ documents, setDocuments}: Props): JSX.Element {
             if(result.isConfirmed){
                 try {
                     await api.delete(`/api/documents/${docId}/`);
-                    setDocuments(prev => prev.filter(doc => doc.id !== docId));
+                    queryClient.invalidateQueries({ queryKey: ["documents"] })
                 } catch(e) {
                     console.error(e);
                     Swal.fire({
@@ -72,15 +71,14 @@ function DocumentList({ documents, setDocuments}: Props): JSX.Element {
                     }
                 })
         
-    };
+    }, [queryClient]);
 
-    useEffect(() => {
-        if (!data) return;
-        const allDocs = data.pages.flatMap(page => page.results);
-        setDocuments(allDocs);
-    }, [data, setDocuments]);
+    const documents = useMemo(() => {
+            if (!data) return [];
+            return data.pages.flatMap(page => page.results);
+        }, [data]);
 
-    const documentCard = (doc: Document) => {
+    const documentCard = useCallback((doc: Document) => {
         return (<Card key={doc.id} className="hover:shadow-lg transition-smooth cursor-pointer group">
             <CardHeader>
                 <div className="flex items-start justify-between">
@@ -111,7 +109,6 @@ function DocumentList({ documents, setDocuments}: Props): JSX.Element {
                             <DropdownMenuItem onClick={() => navigate({
                                 pathname: `/documents/${doc.id}`,
                                 search: createSearchParams({
-                                    title: doc.title,
                                     isEditable: (doc.access !== 'viewer').toString()
                                 }).toString()
                                 })}>
@@ -131,7 +128,6 @@ function DocumentList({ documents, setDocuments}: Props): JSX.Element {
             <CardContent onClick={() => navigate({
                         pathname: `/documents/${doc.id}`,
                         search: createSearchParams({
-                            title: doc.title,
                             isEditable: (doc.access !== 'viewer').toString()
                         }).toString()
                     })}>
@@ -140,11 +136,11 @@ function DocumentList({ documents, setDocuments}: Props): JSX.Element {
                 </div>
             </CardContent>
         </Card>)
-    }
+    }, [deleteDoc, navigate]);
 
-    const filterDocuments = () => {
+    const filterDocuments = useCallback(() => {
         return documents.filter((doc) => doc.title.includes(query));
-    }
+    }, [documents, query]);
 
 
     return (

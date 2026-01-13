@@ -9,11 +9,10 @@ function EditorPage(): JSX.Element {
     const params = useParams();
     const [docAttribs] = useSearchParams();
     const isEditable: boolean = JSON.parse(docAttribs.get('isEditable').toLowerCase());
-    const title: string  = docAttribs.get('title');
 
 
     return (
-        <EditorProvider docId={params.docId} isEditable={isEditable} title={title}>
+        <EditorProvider docId={params.docId} isEditable={isEditable}>
             <div className="min-h-screen flex flex-col">
                 <EditorNavbar />
                 <EditorComponent />

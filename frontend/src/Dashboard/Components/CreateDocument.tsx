@@ -1,26 +1,22 @@
 import type { JSX } from "react";
 import api from "../../Auth/api";
-import { Document } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "../../Components/card";
 import { Plus} from "lucide-react";
 import Swal from 'sweetalert2';
+import { useCallback } from "react";
 
-interface Props {
-    setDocuments: React.Dispatch<React.SetStateAction<Document[] | null>>;
-}
 
-function CreateDocument({ setDocuments }: Props): JSX.Element {
+function CreateDocument(): JSX.Element {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
-    const createDoc = async () => {
+    const createDoc = useCallback(async () => {
         try {
             const response = await api.post('/api/documents/', {title: 'Untitled Document'});
             const newDoc = response.data;
             queryClient.invalidateQueries({ queryKey: ["documents"] });
-            setDocuments(prev => [...(prev ?? []), newDoc]);
 
             const params = new URLSearchParams({
               title: "Untitled Document",
@@ -40,7 +36,7 @@ function CreateDocument({ setDocuments }: Props): JSX.Element {
             position: 'top',
           })
         }
-    }
+    }, [navigate, queryClient]);
 
     return (
         <Card className="mb-8 border-2 border-dashed hover:border-primary transition-smooth cursor-pointer group" onClick={createDoc}>

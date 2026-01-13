@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from "react-rout
 import { useMemo } from "react";
 import api from "@/Auth/api";
 import Swal from "sweetalert2";
+import useProfiler from "../profiler";
 
 function ShareLinkComponent(): JSX.Element {
     const [searchParams] = useSearchParams();
@@ -13,6 +14,8 @@ function ShareLinkComponent(): JSX.Element {
 
     const role = useMemo(() => searchParams.get("role"), [searchParams]);
     const { token } = useParams();
+
+    useProfiler('Share Link component')
 
 
     useEffect(() => {

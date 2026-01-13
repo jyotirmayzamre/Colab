@@ -8,3 +8,4 @@ jsonpickle
 channels[daphne]
 redis
 channels-redis
+celery

@@ -192,3 +192,8 @@ AUTH_USER_MODEL = 'accounts.User'
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_COOKIE_SAMESITE = 'None'
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'colab.notifs@gmail.com'

@@ -1,7 +1,6 @@
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
 from .serializers import DocumentInputSerializer, DocumentOutputSerializer
-from .models import Document
 from rest_framework.pagination import LimitOffsetPagination
 from accounts.serializers import CookieJWTAuthentication
 from rest_framework.response import Response

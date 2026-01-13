@@ -20,19 +20,23 @@ export type EditorChange = {
 import CRDT from "@/CRDT/crdt";
 import type { EditorView } from "@uiw/react-codemirror";
 
-export interface EditorContextType {
-    value: string
+export interface EditorDataType {
+    value: string,
+    remoteCursors: Record<string, RemoteCursor>
+    setValue: React.Dispatch<React.SetStateAction<string>>
+}
+
+export interface EditorMetaType {
     docTitle: string
     docId: string
     userCount: number
     isEditable: boolean
-    crdt: CRDT
-    editor: EditorView
-    ws: WebSocket
-    remoteCursors: Record<string, RemoteCursor>
-    setValue: React.Dispatch<React.SetStateAction<string>>
+    crdtRef: React.MutableRefObject<CRDT>
+    editorRef: React.MutableRefObject<EditorView>
+    wsRef: React.MutableRefObject<WebSocket>
     setEditorRef: (view: EditorView) => void,
 }
+
 
 export interface Version {
     id: number;
@@ -46,9 +50,4 @@ export interface VersionPage {
     next: string | null;
     previous: string | null;
     results: Version[]
-}
-
-export interface Titles {
-    curr: string;
-    prev: string
 }

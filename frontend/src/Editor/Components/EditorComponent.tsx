@@ -1,4 +1,4 @@
-import { useEditor } from "../Provider/useEditor";
+import { useEditorMeta, useEditorData } from "../Provider/hooks";
 import CodeMirror, { EditorSelection } from '@uiw/react-codemirror';
 import { basicLight } from "@uiw/codemirror-theme-basic";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import type { Char } from "../../CRDT/utils";
 import { remoteCursorPlugin } from "./Cursors/CursorViewPlugin";
 import { useAuth } from "@/Auth/useAuth";
 import { CursorPosition, EditorChange } from "../types";
+import useProfiler from "../profiler";
 
 const editorPadding = EditorView.theme({
     ".cm-content": {
@@ -20,9 +21,22 @@ const editorPadding = EditorView.theme({
 function EditorComponent(){
     const { user } = useAuth();
     const [cursorPos, setCursorPos] = useState<CursorPosition>({'col': 0, 'row': 0});
-    const { value, remoteCursors, editor,  setValue, setEditorRef, isEditable, ws, crdt } = useEditor(); 
+    const { value, remoteCursors, setValue } = useEditorData();
+    const { isEditable, editorRef, setEditorRef, wsRef, crdtRef } = useEditorMeta(); 
+
+    useProfiler('Editor Component');
 
     const cursorUpdateTimeoutRef = useRef<NodeJS.Timeout>();
+
+    const sendCursorUpdate = useCallback((col: number, row: number) => {
+        wsRef.current.send(JSON.stringify({
+            type: 'cursor_update', 
+            username: user.username, 
+            col: col, 
+            row: row 
+        }))
+
+    }, [wsRef, user.username]);
 
     //only for handling mouse-keyboard related cursors changes
     const onUpdate = useCallback((viewUpdate: ViewUpdate): void => {
@@ -37,16 +51,11 @@ function EditorComponent(){
                 }
                 
                 cursorUpdateTimeoutRef.current = setTimeout(() => {
-                    ws.send(JSON.stringify({ 
-                        type: 'cursor_update', 
-                        username: user.username, 
-                        col: newCursorPos.col, 
-                        row: newCursorPos.row 
-                    }));
+                    sendCursorUpdate(newCursorPos.col, newCursorPos.row);
                 }, 150);
             }
         }
-    }, [setCursorPos, ws, user.username]);
+    }, [setCursorPos, sendCursorUpdate]);
 
 
     const onChange = useCallback((val: string, viewUpdate: ViewUpdate): void => {
@@ -63,7 +72,7 @@ function EditorComponent(){
 
         if (!isRemote) {
             if (change.oper === 'Insert') {
-                const char: Char = crdt.localInsert(change.text, change.row, change.col);
+                const char: Char = crdtRef.current.localInsert(change.text, change.row, change.col);
 
                 const data = JSON.stringify({
                     type: 'char',
@@ -73,15 +82,10 @@ function EditorComponent(){
                     col: change.col,
                 });
 
-                ws.send(data);
-
-                ws.send(JSON.stringify({ 
-                    type: 'cursor_update', 
-                    username: user.username, 
-                    col: newCursorPos.col, 
-                    row: newCursorPos.row }));
+                wsRef.current.send(data);
+                sendCursorUpdate(newCursorPos.col, newCursorPos.row);
             } else {
-                const char: Char = crdt.localDelete(change.row, change.col);
+                const char: Char = crdtRef.current.localDelete(change.row, change.col);
 
                 const data = JSON.stringify({
                     type: 'char',
@@ -91,31 +95,20 @@ function EditorComponent(){
                     col: change.col
                 });
 
-                ws.send(JSON.stringify({ 
-                    type: 'cursor_update', 
-                    username: user.username, 
-                    col: newCursorPos.col, 
-                    row: newCursorPos.row }));
-                    
-                ws.send(data);
+                sendCursorUpdate(newCursorPos.col, newCursorPos.row);
+                wsRef.current.send(data);
             }   
         } else{
             //used for when another user's operations shift the cursor
-            ws.send(JSON.stringify({ 
-                type: 'cursor_update', 
-                username: user.username, 
-                col: newCursorPos.col, 
-                row: newCursorPos.row 
-            }));
-            
+            sendCursorUpdate(newCursorPos.col, newCursorPos.row);
         }
         
-    }, [crdt, setCursorPos, ws, setValue, user.username]);
+    }, [crdtRef, setCursorPos, wsRef, setValue, sendCursorUpdate]);
 
     const remoteCursorList = useMemo(() => {
-        if (!editor) return []
+        if (!editorRef.current) return []
 
-        const doc = editor.state.doc
+        const doc = editorRef.current.state.doc
 
         return Object.entries(remoteCursors)
             .filter(([username]) => username !== user.username)
@@ -128,7 +121,7 @@ function EditorComponent(){
                     username: username
                 }
             })
-        }, [remoteCursors, editor, user.username])
+        }, [remoteCursors, editorRef, user.username])
 
     return (
          <div className="flex-1 bg-muted/20">

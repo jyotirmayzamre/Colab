@@ -53,6 +53,9 @@ function RegisterForm(): JSX.Element {
         
     };
 
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+
     return (
 
         <div className="flex items-center justify-center p-6 md:p-12">
@@ -118,7 +121,7 @@ function RegisterForm(): JSX.Element {
                         register={register('email', {
                             required: 'Email is required',
                             pattern: {
-                                value: /^[a-zA-Z0-9._%+-]+@gmail\.com$/,
+                                value: emailRegex,
                                 message: "Input should be a valid email"
                             }
                         })}

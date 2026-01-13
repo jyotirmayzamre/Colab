@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { Download, History, Plus } from "lucide-react";
-import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
-import { useState, useEffect } from 'react';
+import { Dialog, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
+import { useState, useCallback, useMemo, memo } from 'react';
 import { Card, CardContent } from '@/Components/card';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/Auth/api';
@@ -18,20 +18,26 @@ import { Button } from "@/Components/button";
 import { Input } from '@/Components/input';
 import { crdtToString } from "@/CRDT/utils";
 import handleDownload from '../Utils/downloadUtil';
-import { useEditor } from '../Provider/useEditor';
+import { useEditorMeta } from '../Provider/hooks';
 import { Virtuoso } from 'react-virtuoso';
 import { Version, VersionPage } from '../types';
+import useProfiler from '../profiler';
+
+interface VersionHistoryProps {
+  open: boolean;
+  onClose: () => void;
+}
 
 
 
 
-function VersionHistory(): JSX.Element {
-    const [open, setOpen] = useState<boolean>(false);
-    const [versions, setVersions] = useState<Version[]>([]);
+function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
     const [isCreating, setIsCreating] = useState<boolean>(false);
     const [versionTitle, setVersionTitle] = useState<string>('');
-    const { docId, isEditable, ws, crdt } = useEditor();
+    const { docId, isEditable,  wsRef, crdtRef } = useEditorMeta();
     const queryClient = useQueryClient();
+
+    useProfiler('Version History');
 
     const {
         data,
@@ -40,26 +46,34 @@ function VersionHistory(): JSX.Element {
     } = useInfiniteQuery<VersionPage>({
         queryKey: ["versions", docId],
         queryFn: async({ pageParam = `/api/versions?docId=${docId}`}) => {
-            const res = await api.get(pageParam as string);
-            return res.data
+            try{
+                const res = await api.get(pageParam as string);
+                return res.data
+            } catch(e){
+                console.error(e);
+            }
+            
         },
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
         initialPageParam: `/api/versions?docId=${docId}`
     });
 
-    const createVersion = async () => {
+    const versions = useMemo(() => {
+        if (!data) return [];
+        return data.pages.flatMap(page => page.results);
+    }, [data]);
+
+    const createVersion = useCallback(async () => {
             try {
-                if(!crdt){
+                if(!crdtRef.current){
                     throw new Error('Document state is not available')
                 }
-                const response = await api.post('/api/versions/', 
+                await api.post('/api/versions/', 
                     { title: versionTitle,
                       docId: docId,
-                      state: crdt.state
+                      state: crdtRef.current.state
                      });
-                const newVer = response.data;
                 queryClient.invalidateQueries({ queryKey: ["versions", docId] });
-                setVersions(prev => [newVer, ...(prev ?? [])]);
                 setIsCreating(false);
 
                 Swal.fire({
@@ -84,10 +98,10 @@ function VersionHistory(): JSX.Element {
                     position: 'top',
                 })
             }
-        }
+        }, [crdtRef, docId, queryClient, versionTitle]);
 
 
-    const deleteVersion = async (versionId: number) => {
+    const deleteVersion = useCallback(async (versionId: number) => {
         Swal.fire({
             title: `Are you sure?`,
             text: 'Click confirm to delete this version',
@@ -99,7 +113,7 @@ function VersionHistory(): JSX.Element {
             if(result.isConfirmed){
                 try {
                     await api.delete(`/api/versions/${versionId}/`);
-                    setVersions(prev => prev.filter(version => version.id !== versionId));
+                    queryClient.invalidateQueries({ queryKey: ["versions", docId] });
                     Swal.fire({
                         title: 'Success!',
                         text: 'Deleted version',
@@ -123,7 +137,7 @@ function VersionHistory(): JSX.Element {
                 }
             }
         })
-    }
+    }, [docId, queryClient]);
 
     const downloadVersion = async (versionId: number) => {
         try {
@@ -145,7 +159,7 @@ function VersionHistory(): JSX.Element {
     }
 
 
-    const restoreVersion = async (versionId: number, versionTitle: string) => {
+    const restoreVersion = useCallback(async (versionId: number, versionTitle: string) => {
         Swal.fire({
             title: `Restore '${versionTitle}'?`,
             text: 'Click confirm to restore this version',
@@ -155,7 +169,7 @@ function VersionHistory(): JSX.Element {
             position: 'top',
         }).then((result) => {
             if(result.isConfirmed){
-                if(!ws){
+                if(!wsRef.current){
                     Swal.fire({
                         title: 'Error!',
                         text: 'Could not restore version :(',
@@ -166,7 +180,7 @@ function VersionHistory(): JSX.Element {
                         position: 'top',
                     })
                 } else {
-                    ws.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
+                    wsRef.current.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
                     Swal.fire({
                         title: 'Success!',
                         text: `Restored version '${versionTitle}'`,
@@ -179,9 +193,9 @@ function VersionHistory(): JSX.Element {
                 }
             }
         })
-    }
+    }, [wsRef]);
 
-    const versionCard = (ver: Version) => {
+    const versionCard = useCallback((ver: Version) => {
         return(
             <li key={ver.id} className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200">
                 <div className='flex items-center justify-center gap-5'>
@@ -226,31 +240,10 @@ function VersionHistory(): JSX.Element {
                 </DropdownMenu>
             </li>
         )
-    }
-
-
-    
-
-    useEffect(() => {
-            if (!data) return;
-            const allVersions = data.pages.flatMap(page => page.results);
-            setVersions(allVersions);
-        }, [data, setVersions]);
+    }, [deleteVersion, isEditable, restoreVersion])
 
     return(
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <div tabIndex={0}
-                    className="
-                        relative flex cursor-default select-none items-center rounded-sm
-                        px-2 py-1.5 text-sm outline-none transition-colors
-                        hover:bg-accent hover:text-accent-foreground
-                        focus:bg-accent focus:text-accent-foreground m-0
-                    ">
-                    <History className='mr-2 h-4 w-4' /> 
-                    Version History
-                </div>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={onClose}>
             <DialogPortal>
                 <DialogOverlay />
                 <DialogContent className='max-w-lg'>
@@ -308,4 +301,4 @@ function VersionHistory(): JSX.Element {
     )
 }
 
-export default VersionHistory;
+export default memo(VersionHistory);

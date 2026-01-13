@@ -9,7 +9,7 @@ class CRDT {
         this.state = [];
     }
 
-    private generateChar(row: number, col: number): Identifier[]{
+    generateChar(row: number, col: number): Identifier[]{
         const prevIndex: Identifier[] = this.state[row][col-1] ? this.state[row][col-1].position : [];
         const nextIndex: Identifier[] = this.state[row][col] ? this.state[row][col].position : [];
 

@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState, type JSX } from "react";
+import { ChangeEvent, useEffect, useMemo, useState, useCallback, type JSX } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Input } from "@/Components/input";
 import api from "../../Auth/api";
@@ -7,9 +7,11 @@ import { Share2, User, Copy, Check } from "lucide-react";
 import Swal from "sweetalert2";
 import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
 import { cn } from "@/lib/utils";
-import { useEditor } from "../Provider/useEditor";
+import { useEditorMeta } from "../Provider/hooks";
 import { Virtuoso } from "react-virtuoso";
 import { Card, CardContent } from "@/Components/card";
+import useProfiler from "../profiler";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 interface FormFields {
     username: string,
@@ -26,16 +28,37 @@ interface User {
     email: string
 }
 
+interface UserPage {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: User[]
+}
+
 const wait = () => new Promise((resolve) => setTimeout(resolve, 1000));
 
 function ShareDoc(): JSX.Element {
     const [query, setQuery] = useState<string>('');
     const [shareLink, setShareLink] = useState<string>('');
-    const [results, setResults] = useState<User[]>([]);
     const [selectedUser, setSelectedUser] = useState<string>('');
-    const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
-    const { docId } = useEditor();
+    const { docId } = useEditorMeta();
+    const queryClient = useQueryClient();
+
+
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+    } = useInfiniteQuery<UserPage>({
+        queryKey: ["users", query],
+        queryFn: async({ pageParam = `/api/accounts/searchUsers/?q=${query}`}) => {
+            const res = await api.get(pageParam as string);
+            return res.data;
+        },
+        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        initialPageParam: `/api/accounts/searchUsers/?q=${query}`
+    })
 
     const { register,
             handleSubmit,
@@ -44,17 +67,17 @@ function ShareDoc(): JSX.Element {
             formState: { isSubmitting },
     } = useForm<FormFields>();
 
+    useProfiler('Editor Navbar');
+
 
     //Submit handler for share document form
-    const onSubmit: SubmitHandler<FormFields> = async (data) => {
+    const onSubmit: SubmitHandler<FormFields> = useCallback(async (data) => {
         const userId = data.user_id;
         const access = data.access;
         const payload = { docId: docId, userId: userId, level: access}
 
         try{
             await api.post('/api/permissions/share/', payload);
-            wait().then(() => setOpen(false));
-            // dialogRef.current?.close();
             Swal.fire({
                 title: 'Success!',
                 text: 'Document shared',
@@ -76,7 +99,7 @@ function ShareDoc(): JSX.Element {
                 position: 'top',
             })
         }
-    }
+    }, [docId]);
 
     const access = watch('access', 'editor');
 
@@ -104,44 +127,16 @@ function ShareDoc(): JSX.Element {
 
     
 
-    //Used to display search results in share form
-    useEffect(() => {
-        const getData = async () => {
-        try{
-            const response = await api.get(`/api/accounts/searchUsers/?q=${query}`);
-            const data = response.data;
-            setResults(data.results);
-        } catch(e){
-            console.error(e);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Could not search for users :(',
-                icon: 'error',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top',
-            })
-}
-       }
 
-       if(!query){
-        setResults([]);
-       } else {
-            getData();
-       }
- 
-    }, [query, docId]);
-
-
-    const onChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const onChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        queryClient.invalidateQueries({ queryKey: ["users", query]})
         setQuery(e.target.value);
         if(e.target.value == ''){
             setSelectedUser('');
         }
-    }
+    }, [query, queryClient]);
 
-    const userCard = (user: User) => {
+    const userCard = useCallback((user: User) => {
         return (
             <li key={user.id} className={cn("flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200", 
                 selectedUser === user.id && "bg-blue-100")}
@@ -159,10 +154,15 @@ function ShareDoc(): JSX.Element {
                 </div>
             </li>
         )
-    }
+    }, [selectedUser, setValue]);
+
+    const results = useMemo(() => {
+        if (!data) return [];
+        return data.pages.flatMap(page => page.results);
+    }, [data]);
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog>
             <DialogTrigger asChild>
                 <Share2 className="h-4 w-4  hover:cursor-pointer" />
             </DialogTrigger>
@@ -193,7 +193,9 @@ function ShareDoc(): JSX.Element {
                             query && results.length > 0 && (
                                     <Card className="my-3 rounded-lg border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
                                         <CardContent className="p-0 h-[150px]">
-                                            <Virtuoso className="divide-y divide-border" data={results} 
+                                            <Virtuoso className="divide-y divide-border" data={results} endReached={() => {
+                                                if(hasNextPage) fetchNextPage()
+                                            }}
                                                 itemContent={(_, user) => userCard(user)}
                                             />
                                         </CardContent>

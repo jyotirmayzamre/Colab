@@ -91,7 +91,7 @@ class AcceptShareView(APIView):
 
         DocumentAccessService.create_or_update_access(document.id, request.user.id, role) # type: ignore
 
-        redirect_link = f'/documents/{document.id}?title={document.title}&isEditable={role == "editor"}'
+        redirect_link = f'/documents/{document.id}?isEditable={role == "editor"}'
         return Response(redirect_link, status.HTTP_200_OK)
 
 

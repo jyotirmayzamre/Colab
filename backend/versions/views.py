@@ -10,8 +10,8 @@ from rest_framework.decorators import action
 
 # Create your views here.
 class VersionPagination(LimitOffsetPagination):
-    default_limit = 5
-    max_limit = 5
+    default_limit = 10
+    max_limit = 10
 
 
 class VersionViewSet(viewsets.ModelViewSet):

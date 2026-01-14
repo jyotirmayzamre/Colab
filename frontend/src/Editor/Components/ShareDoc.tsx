@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useState, useCallback, type JSX } from "react";
+import { ChangeEvent, useEffect, useState, useCallback, type JSX } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Input } from "@/Components/input";
 import api from "../../Auth/api";
@@ -11,7 +11,7 @@ import { useEditorMeta } from "../Provider/hooks";
 import { Virtuoso } from "react-virtuoso";
 import { Card, CardContent } from "@/Components/card";
 import useProfiler from "../profiler";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import useInfiniteApi from "../../lib/reactQueryHook";
 
 interface FormFields {
     username: string,
@@ -28,12 +28,7 @@ interface User {
     email: string
 }
 
-interface UserPage {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: User[]
-}
+
 
 const wait = () => new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -43,22 +38,18 @@ function ShareDoc(): JSX.Element {
     const [selectedUser, setSelectedUser] = useState<string>('');
     const [copied, setCopied] = useState(false);
     const { docId } = useEditorMeta();
-    const queryClient = useQueryClient();
-
 
     const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-    } = useInfiniteQuery<UserPage>({
-        queryKey: ["users", query],
-        queryFn: async({ pageParam = `/api/accounts/searchUsers/?q=${query}`}) => {
-            const res = await api.get(pageParam as string);
-            return res.data;
-        },
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-        initialPageParam: `/api/accounts/searchUsers/?q=${query}`
-    })
+            fetchNextPage,
+            hasNextPage,
+            results
+        } = useInfiniteApi<User>({
+            param: `/api/accounts/searchUsers/?q=${query}`,
+            initialPageParam: `/api/accounts/searchUsers/?q=${query}`,
+            queryKey: ["users", query]
+        }
+        )
+
 
     const { register,
             handleSubmit,
@@ -129,12 +120,11 @@ function ShareDoc(): JSX.Element {
 
 
     const onChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-        queryClient.invalidateQueries({ queryKey: ["users", query]})
         setQuery(e.target.value);
         if(e.target.value == ''){
             setSelectedUser('');
         }
-    }, [query, queryClient]);
+    }, []);
 
     const userCard = useCallback((user: User) => {
         return (
@@ -156,10 +146,6 @@ function ShareDoc(): JSX.Element {
         )
     }, [selectedUser, setValue]);
 
-    const results = useMemo(() => {
-        if (!data) return [];
-        return data.pages.flatMap(page => page.results);
-    }, [data]);
 
     return (
         <Dialog>

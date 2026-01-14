@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useParams } from "react-router-dom";
-import { useCallback, useMemo, memo } from "react";
+import { useCallback, memo } from "react";
 import api from "@/Auth/api";
 import Swal from "sweetalert2";
 import { Dialog, DialogPortal, DialogOverlay, DialogTitle, DialogContent, DialogDescription } from "@/Components/dialog";
@@ -9,23 +9,11 @@ import { User2 } from "lucide-react";
 import { Virtuoso } from "react-virtuoso";
 import { Button } from "@/Components/button";
 import useProfiler from "../profiler";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import type { Access } from "../types";
+import useInfiniteApi from "../../lib/reactQueryHook";
 
 
-interface Access {
-    user: string,
-    username: string,
-    document: string,
-    level: string,
-    id: number
-}
-
-interface AccessPage {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: Access[]
-}
 
 interface PermissionsProps {
   open: boolean;
@@ -38,28 +26,17 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
 
     useProfiler('Permissions');
 
+    
     const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-    } = useInfiniteQuery<AccessPage>({
-        queryKey: ["permissions", docId],
-        queryFn: async({ pageParam = `/api/permissions/share?docId=${docId}`}) => {
-            try{
-                const res = await api.get(pageParam as string);
-                return res.data
-            } catch(e){
-                console.error(e);
-            }     
-        },
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-        initialPageParam: `/api/permissions/share?docId=${docId}`
-    });
-
-     const results = useMemo(() => {
-            if (!data) return [];
-            return data.pages.flatMap(page => page.results);
-        }, [data]);
+            fetchNextPage,
+            hasNextPage,
+            results
+        } = useInfiniteApi<Access>({
+            param: `/api/versions?docId=${docId}`,
+            initialPageParam: `/api/versions?docId=${docId}`,
+            queryKey: ["versions", docId]
+        }
+        )
 
 
     const revokeAccess = useCallback(async (accessId: number) => {

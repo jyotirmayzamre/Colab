@@ -1,8 +1,7 @@
 import type { JSX } from "react";
 import { createSearchParams, useNavigate } from "react-router-dom";
-import { useMemo, forwardRef, useState } from "react";
+import { forwardRef, useState } from "react";
 import api from "@/Auth/api";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
 import { FileText, Users, Trash2, MoreVertical, ArrowUpRight } from "lucide-react";
 import {
@@ -16,12 +15,10 @@ import { Button } from "@/Components/button";
 import { VirtuosoGrid } from "react-virtuoso";
 import Swal from "sweetalert2";
 import SearchDocument from "./SearchDocument";
-import { Document, DocumentPage } from "../types";
+import { Document } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-
-
-
+import useInfiniteApi from "@/lib/reactQueryHook";
 
 
 function DocumentList(): JSX.Element {
@@ -29,19 +26,16 @@ function DocumentList(): JSX.Element {
     const [query, setQuery] = useState<string>('');
     const queryClient = useQueryClient();
  
-    const { 
-        data, 
-        fetchNextPage,
-        hasNextPage,
-    } = useInfiniteQuery<DocumentPage>({
-        queryKey: ["documents"],
-        queryFn: async ({ pageParam = '/api/documents/' }) => {
-            const res = await api.get(pageParam as string);
-            return res.data;
-        },
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-        initialPageParam: '/api/documents/'
-    });
+    const {
+            fetchNextPage,
+            hasNextPage,
+            results
+        } = useInfiniteApi<Document>({
+            param: '/api/documents/',
+            initialPageParam: '/api/documents/',
+            queryKey: ["documents"]
+        }
+        )
 
     const deleteDoc = useCallback(async (docId: string) => {
         Swal.fire({
@@ -73,10 +67,6 @@ function DocumentList(): JSX.Element {
         
     }, [queryClient]);
 
-    const documents = useMemo(() => {
-            if (!data) return [];
-            return data.pages.flatMap(page => page.results);
-        }, [data]);
 
     const documentCard = useCallback((doc: Document) => {
         return (<Card key={doc.id} className="hover:shadow-lg transition-smooth cursor-pointer group">
@@ -139,14 +129,14 @@ function DocumentList(): JSX.Element {
     }, [deleteDoc, navigate]);
 
     const filterDocuments = useCallback(() => {
-        return documents.filter((doc) => doc.title.includes(query));
-    }, [documents, query]);
+        return results.filter((doc) => doc.title.includes(query));
+    }, [results, query]);
 
 
     return (
         <div>
             <SearchDocument query={query} setQuery={setQuery} />
-            {documents && <VirtuosoGrid
+            {results && <VirtuosoGrid
                 data={filterDocuments()}
                 endReached={() => {
                     if(hasNextPage) fetchNextPage()

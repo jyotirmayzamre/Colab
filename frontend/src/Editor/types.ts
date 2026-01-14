@@ -45,9 +45,10 @@ export interface Version {
     creator_username: string;
 }
 
-export interface VersionPage {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: Version[]
+export interface Access {
+    user: string,
+    username: string,
+    document: string,
+    level: string,
+    id: number
 }

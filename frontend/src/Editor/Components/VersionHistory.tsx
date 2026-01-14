@@ -1,9 +1,9 @@
 import type { JSX } from 'react';
 import { Download, History, Plus } from "lucide-react";
 import { Dialog, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Card, CardContent } from '@/Components/card';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '@/Auth/api';
 import Swal from 'sweetalert2';
 import {
@@ -20,15 +20,14 @@ import { crdtToString } from "@/CRDT/utils";
 import handleDownload from '../Utils/downloadUtil';
 import { useEditorMeta } from '../Provider/hooks';
 import { Virtuoso } from 'react-virtuoso';
-import { Version, VersionPage } from '../types';
+import { Version } from '../types';
 import useProfiler from '../profiler';
+import useInfiniteApi from '../../lib/reactQueryHook';
 
 interface VersionHistoryProps {
   open: boolean;
   onClose: () => void;
 }
-
-
 
 
 function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
@@ -40,28 +39,15 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
     useProfiler('Version History');
 
     const {
-        data,
         fetchNextPage,
         hasNextPage,
-    } = useInfiniteQuery<VersionPage>({
-        queryKey: ["versions", docId],
-        queryFn: async({ pageParam = `/api/versions?docId=${docId}`}) => {
-            try{
-                const res = await api.get(pageParam as string);
-                return res.data
-            } catch(e){
-                console.error(e);
-            }
-            
-        },
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-        initialPageParam: `/api/versions?docId=${docId}`
-    });
-
-    const versions = useMemo(() => {
-        if (!data) return [];
-        return data.pages.flatMap(page => page.results);
-    }, [data]);
+        results
+    } = useInfiniteApi<Version>({
+        param: `/api/versions?docId=${docId}`,
+        initialPageParam: `/api/versions?docId=${docId}`,
+        queryKey: ["versions", docId]
+    }
+    )
 
     const createVersion = useCallback(async () => {
             try {
@@ -284,11 +270,11 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
                             </CardContent>
                         </Card>
                     )}
-                    {versions.length > 0 && (
+                    {results.length > 0 && (
                         <Card className="rounded-lg w-full border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
                             <CardContent className='p-0 h-[200px]'>
-                                    {versions && 
-                                        <Virtuoso className='divide-y divide-border' data={versions} endReached={() => {
+                                    {results && 
+                                        <Virtuoso className='divide-y divide-border' data={results} endReached={() => {
                                             if(hasNextPage) fetchNextPage()
                                         }} itemContent={(_, ver) => versionCard(ver)} />
                                     }

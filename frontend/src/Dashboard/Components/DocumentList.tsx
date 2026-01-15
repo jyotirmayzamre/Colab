@@ -17,7 +17,6 @@ import Swal from "sweetalert2";
 import SearchDocument from "./SearchDocument";
 import { Document } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
 import useInfiniteApi from "@/lib/reactQueryHook";
 
 
@@ -37,7 +36,7 @@ function DocumentList(): JSX.Element {
         }
         )
 
-    const deleteDoc = useCallback(async (docId: string) => {
+    const deleteDoc = async (docId: string) => {
         Swal.fire({
             title: 'Are you sure?',
             text: 'Click confirm to delete this document',
@@ -65,10 +64,10 @@ function DocumentList(): JSX.Element {
                     }
                 })
         
-    }, [queryClient]);
+    };
 
 
-    const documentCard = useCallback((doc: Document) => {
+    const documentCard = (doc: Document) => {
         return (<Card key={doc.id} className="hover:shadow-lg transition-smooth cursor-pointer group">
             <CardHeader>
                 <div className="flex items-start justify-between">
@@ -126,11 +125,11 @@ function DocumentList(): JSX.Element {
                 </div>
             </CardContent>
         </Card>)
-    }, [deleteDoc, navigate]);
+    };
 
-    const filterDocuments = useCallback(() => {
+    const filterDocuments = () => {
         return results.filter((doc) => doc.title.includes(query));
-    }, [results, query]);
+    };
 
 
     return (

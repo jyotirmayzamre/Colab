@@ -94,39 +94,41 @@ function ShareDoc(): JSX.Element {
 
     const access = watch('access', 'editor');
 
-    useEffect(() => {
-        const fetchShare = async () => {
-            const data = { docId: docId, role: access }
-            try {
-                const response = await api.post('/api/permissions/create-share-link/', data);
-                setShareLink(response.data.link);
-            } catch(e){
-                console.error(e);
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Could not create share link :(',
-                    icon: 'error',
-                    showConfirmButton: false,
-                    toast: true,
-                    timer: 3000,
-                    position: 'top',
-                })
-            }
+    const fetchShare = useCallback(async () => {
+        const data = { docId: docId, role: access }
+        try {
+            const response = await api.post('/api/permissions/create-share-link/', data);
+            setShareLink(response.data.link);
+        } catch(e){
+            console.error(e);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Could not create share link :(',
+                icon: 'error',
+                showConfirmButton: false,
+                toast: true,
+                timer: 3000,
+                position: 'top',
+            })
         }
-        fetchShare();
-    }, [docId, access])
+    }, [access, docId]);
 
     
 
+    useEffect(() => {
+        fetchShare();
+    }, [fetchShare])
 
-    const onChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    
+
+    const onChange = (e: ChangeEvent<HTMLInputElement>) => {
         setQuery(e.target.value);
         if(e.target.value == ''){
             setSelectedUser('');
         }
-    }, []);
+    };
 
-    const userCard = useCallback((user: User) => {
+    const userCard = (user: User) => {
         return (
             <li key={user.id} className={cn("flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200", 
                 selectedUser === user.id && "bg-blue-100")}
@@ -144,7 +146,7 @@ function ShareDoc(): JSX.Element {
                 </div>
             </li>
         )
-    }, [selectedUser, setValue]);
+    };
 
 
     return (

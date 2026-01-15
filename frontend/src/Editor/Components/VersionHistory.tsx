@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { Download, History, Plus } from "lucide-react";
 import { Dialog, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
-import { useState, useCallback, memo } from 'react';
+import { useState, memo } from 'react';
 import { Card, CardContent } from '@/Components/card';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/Auth/api';
@@ -49,7 +49,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
     }
     )
 
-    const createVersion = useCallback(async () => {
+    const createVersion = async () => {
             try {
                 if(!crdtRef.current){
                     throw new Error('Document state is not available')
@@ -84,10 +84,10 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
                     position: 'top',
                 })
             }
-        }, [crdtRef, docId, queryClient, versionTitle]);
+        };
 
 
-    const deleteVersion = useCallback(async (versionId: number) => {
+    const deleteVersion = async (versionId: number) => {
         Swal.fire({
             title: `Are you sure?`,
             text: 'Click confirm to delete this version',
@@ -123,7 +123,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
                 }
             }
         })
-    }, [docId, queryClient]);
+    };
 
     const downloadVersion = async (versionId: number) => {
         try {
@@ -145,7 +145,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
     }
 
 
-    const restoreVersion = useCallback(async (versionId: number, versionTitle: string) => {
+    const restoreVersion = async (versionId: number, versionTitle: string) => {
         Swal.fire({
             title: `Restore '${versionTitle}'?`,
             text: 'Click confirm to restore this version',
@@ -179,9 +179,9 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
                 }
             }
         })
-    }, [wsRef]);
+    };
 
-    const versionCard = useCallback((ver: Version) => {
+    const versionCard = (ver: Version) => {
         return(
             <li key={ver.id} className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors hover:bg-gray-200">
                 <div className='flex items-center justify-center gap-5'>
@@ -226,7 +226,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
                 </DropdownMenu>
             </li>
         )
-    }, [deleteVersion, isEditable, restoreVersion])
+    };
 
     return(
         <Dialog open={open} onOpenChange={onClose}>

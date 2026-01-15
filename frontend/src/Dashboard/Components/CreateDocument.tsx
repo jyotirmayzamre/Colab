@@ -5,14 +5,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "../../Components/card";
 import { Plus} from "lucide-react";
 import Swal from 'sweetalert2';
-import { useCallback } from "react";
 
 
 function CreateDocument(): JSX.Element {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
-    const createDoc = useCallback(async () => {
+    const createDoc = async () => {
         try {
             const response = await api.post('/api/documents/', {title: 'Untitled Document'});
             const newDoc = response.data;
@@ -36,7 +35,7 @@ function CreateDocument(): JSX.Element {
             position: 'top',
           })
         }
-    }, [navigate, queryClient]);
+    };
 
     return (
         <Card className="mb-8 border-2 border-dashed hover:border-primary transition-smooth cursor-pointer group" onClick={createDoc}>

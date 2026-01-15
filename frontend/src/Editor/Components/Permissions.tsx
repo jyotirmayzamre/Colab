@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useParams } from "react-router-dom";
-import { useCallback, memo } from "react";
+import { memo } from "react";
 import api from "@/Auth/api";
 import Swal from "sweetalert2";
 import { Dialog, DialogPortal, DialogOverlay, DialogTitle, DialogContent, DialogDescription } from "@/Components/dialog";
@@ -39,7 +39,7 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
         )
 
 
-    const revokeAccess = useCallback(async (accessId: number) => {
+    const revokeAccess = async (accessId: number) => {
         try {
             Swal.fire({
                 title: `Are you sure?`,
@@ -89,9 +89,9 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
                 position: 'top'
             })
         }
-    }, [docId, queryClient]);
+    };
 
-    const updateAccess = useCallback(async (accessId: number, newLevel: string) => {
+    const updateAccess = (async (accessId: number, newLevel: string) => {
         queryClient.invalidateQueries({ queryKey: ['permissions', docId]});
         setTimeout(async () => {
             try {
@@ -120,10 +120,10 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
                 })
             }
         }, 1000);
-    }, [docId, queryClient]);
+    });
 
 
-    const accessCard = useCallback((access: Access) => (
+    const accessCard = (access: Access) => (
          <li key={access.user} className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors">
             <div className='flex items-center justify-center gap-5'>
                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">
@@ -141,7 +141,7 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
             </select>
             <Button size="default" className="bg-red-500 hover:bg-red-500" onClick={() => revokeAccess(access.id)}>Revoke</Button>
         </li>
-    ), [revokeAccess, updateAccess]);
+    );
 
     return (
         <Dialog open={open} onOpenChange={onClose}>

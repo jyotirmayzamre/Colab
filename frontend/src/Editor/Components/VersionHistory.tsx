@@ -23,6 +23,7 @@ import { Virtuoso } from 'react-virtuoso';
 import { Version } from '../types';
 import useProfiler from '../profiler';
 import useInfiniteApi from '../../lib/reactQueryHook';
+import { sendNotif } from '@/lib/utils';
 
 interface VersionHistoryProps {
   open: boolean;
@@ -50,41 +51,23 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
     )
 
     const createVersion = async () => {
-            try {
-                if(!crdtRef.current){
-                    throw new Error('Document state is not available')
-                }
-                await api.post('/api/versions/', 
-                    { title: versionTitle,
-                      docId: docId,
-                      state: crdtRef.current.state
-                     });
-                queryClient.invalidateQueries({ queryKey: ["versions", docId] });
-                setIsCreating(false);
-
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Successfully created version :)',
-                    icon: 'success',
-                    showConfirmButton: false,
-                    toast: true,
-                    timer: 3000,
-                    position: 'top',
-                })
-            } catch(e){
-                console.error(e);
-
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Could not create version :(',
-                    icon: 'error',
-                    showConfirmButton: false,
-                    toast: true,
-                    timer: 3000,
-                    position: 'top',
-                })
+        try {
+            if(!crdtRef.current){
+                throw new Error('Document state is not available')
             }
-        };
+            await api.post('/api/versions/', 
+                { title: versionTitle,
+                    docId: docId,
+                    state: crdtRef.current.state
+                    });
+            queryClient.invalidateQueries({ queryKey: ["versions", docId] });
+            setIsCreating(false);
+            sendNotif('success', 'Created version!')
+        } catch(e){
+            console.error(e);
+            sendNotif('error', 'Could not create version :(');
+        }
+    };
 
 
     const deleteVersion = async (versionId: number) => {
@@ -100,26 +83,10 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
                 try {
                     await api.delete(`/api/versions/${versionId}/`);
                     queryClient.invalidateQueries({ queryKey: ["versions", docId] });
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Deleted version',
-                        icon: 'success',
-                        showConfirmButton: false,
-                        toast: true,
-                        timer: 3000,
-                        position: 'top',
-                    })
+                    sendNotif('success', 'Deleted version');
                 } catch(e) {
                     console.error(e);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Could not delete version :(',
-                        icon: 'error',
-                        showConfirmButton: false,
-                        toast: true,
-                        timer: 3000,
-                        position: 'top',
-                    })
+                    sendNotif('error', 'Could not delete version :(')
                 }
             }
         })
@@ -131,16 +98,9 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
             const state = response.data.state;
             const value = crdtToString(state);
             handleDownload(value);
-        } catch {
-            Swal.fire({
-                title: 'Error!',
-                text: 'Could not download version :(',
-                icon: 'error',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top',
-            })
+        } catch(e) {
+            console.error(e);
+            sendNotif('error', 'Could not download version :(');
         }  
     }
 
@@ -156,26 +116,10 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
         }).then((result) => {
             if(result.isConfirmed){
                 if(!wsRef.current){
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Could not restore version :(',
-                        icon: 'error',
-                        showConfirmButton: false,
-                        toast: true,
-                        timer: 3000,
-                        position: 'top',
-                    })
+                    sendNotif('error', 'Could not restore version :(');
                 } else {
                     wsRef.current.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
-                    Swal.fire({
-                        title: 'Success!',
-                        text: `Restored version '${versionTitle}'`,
-                        icon: 'success',
-                        showConfirmButton: false,
-                        toast: true,
-                        timer: 3000,
-                        position: 'top',
-                    })
+                    sendNotif('success', `Restored version ${versionTitle}`);
                 }
             }
         })

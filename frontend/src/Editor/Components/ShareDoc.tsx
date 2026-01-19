@@ -4,9 +4,8 @@ import { Input } from "@/Components/input";
 import api from "../../Auth/api";
 import { Button } from "@/Components/button";
 import { Share2, User, Copy, Check } from "lucide-react";
-import Swal from "sweetalert2";
 import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
-import { cn } from "@/lib/utils";
+import { cn, sendNotif } from "@/lib/utils";
 import { useEditorMeta } from "../Provider/hooks";
 import { Virtuoso } from "react-virtuoso";
 import { Card, CardContent } from "@/Components/card";
@@ -69,26 +68,10 @@ function ShareDoc(): JSX.Element {
 
         try{
             await api.post('/api/permissions/share/', payload);
-            Swal.fire({
-                title: 'Success!',
-                text: 'Document shared',
-                icon: 'success',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top'
-            })
+            sendNotif('success', 'Document shared');
         } catch(e){
             console.error(e);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Could not share document :(',
-                icon: 'error',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top',
-            })
+            sendNotif('error', 'Could not share document :(');
         }
     }, [docId]);
 
@@ -101,15 +84,7 @@ function ShareDoc(): JSX.Element {
             setShareLink(response.data.link);
         } catch(e){
             console.error(e);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Could not create share link :(',
-                icon: 'error',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top',
-            })
+            sendNotif('error', 'Could not create share link :(')
         }
     }, [access, docId]);
 

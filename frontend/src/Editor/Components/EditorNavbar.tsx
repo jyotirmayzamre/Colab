@@ -8,12 +8,12 @@ import { Button } from "@/Components/button";
 import { ArrowLeft, FileText, Clock, Users, Download, MoreVertical, History, User2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger,  DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem} from "@/Components/dropdown";
 import { Input } from "@/Components/input";
-import Swal from "sweetalert2";
 import VersionHistory from "./VersionHistory";
 import handleDownload from "../Utils/downloadUtil";
 import { useEditorMeta } from "../Provider/hooks";
 import Permissions from "./Permissions";
 import useProfiler from "../profiler";
+import { sendNotif } from "@/lib/utils";
 
 const dropdownClass = `relative flex cursor-default select-none items-center rounded-sm
                         px-2 py-1.5 text-sm outline-none transition-colors
@@ -34,30 +34,12 @@ function EditorNavbar(): JSX.Element {
     const renameDocument = useCallback(async (newTitle: string) => {
         try {
             await api.patch(`/api/documents/${docId}/`, { title: newTitle});
-
-            Swal.fire({
-              title: 'Success!',
-              text: `Renamed document to "${newTitle}" :)`,
-              icon: 'success',
-              showConfirmButton: false,
-              toast: true,
-              timer: 3000,
-              position: 'top',
-            })
-
+            sendNotif('success', `Renamed document to "${newTitle}"`)
             wsRef.current.send(JSON.stringify({ type: 'document_rename', newTitle: newTitle }));
             
         } catch(e){
             console.error(e);
-            Swal.fire({
-              title: 'Error!',
-              text: 'Could not rename document :(',
-              icon: 'error',
-              showConfirmButton: false,
-              toast: true,
-              timer: 3000,
-              position: 'top',
-            })
+            sendNotif('error', 'Could not rename document :(');
         }
     }, [docId, wsRef]);
 

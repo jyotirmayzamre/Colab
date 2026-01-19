@@ -12,6 +12,7 @@ import useProfiler from "../profiler";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Access } from "../types";
 import useInfiniteApi from "../../lib/reactQueryHook";
+import { sendNotif } from "@/lib/utils";
 
 
 
@@ -40,55 +41,26 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
 
 
     const revokeAccess = async (accessId: number) => {
-        try {
-            Swal.fire({
-                title: `Are you sure?`,
-                text: 'Click confirm to revoke access',
-                icon: 'warning',
-                showConfirmButton: true,
-                toast: true,
-                position: 'top',
-            }).then(async (result) => {
-                if(result.isConfirmed){
-                    try {
-                        await api.delete(`/api/permissions/share/${accessId}/?docId=${docId}`);
-                        queryClient.invalidateQueries({ queryKey: ['permissions', docId]});
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'Access revoked',
-                            icon: 'success',
-                            showConfirmButton: false,
-                            toast: true,
-                            timer: 3000,
-                            position: 'top',
-                        })
-                    } catch(e) {
-                        console.error(e);
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Could not delete version :(',
-                            icon: 'error',
-                            showConfirmButton: false,
-                            toast: true,
-                            timer: 3000,
-                            position: 'top',
-                        })
-                    }
+        Swal.fire({
+            title: `Are you sure?`,
+            text: 'Click confirm to revoke access',
+            icon: 'warning',
+            showConfirmButton: true,
+            toast: true,
+            position: 'top',
+        }).then(async (result) => {
+            if(result.isConfirmed){
+                try {
+                    await api.delete(`/api/permissions/share/${accessId}/?docId=${docId}`);
+                    queryClient.invalidateQueries({ queryKey: ['permissions', docId]});
+                    sendNotif('success', 'Access revoked!');
+                } catch(e){
+                    console.error(e);
+                    sendNotif('error', 'Could not revoke access :(');
                 }
-            })
-        }
-        catch(e){
-            console.error(e);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Could not revoke access :(',
-                icon: 'error',
-                showConfirmButton: false,
-                toast: true,
-                timer: 3000,
-                position: 'top'
-            })
-        }
+                
+            }
+        }) 
     };
 
     const updateAccess = (async (accessId: number, newLevel: string) => {
@@ -98,26 +70,10 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
                 await api.patch(`/api/permissions/share/${accessId}/?docId=${docId}`, {
                     'level': newLevel
                 });
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Updated access :)',
-                    icon: 'success',
-                    showConfirmButton: false,
-                    toast: true,
-                    timer: 3000,
-                    position: 'top'
-                })
+                sendNotif('success', 'Updated access!');
             } catch(e){
                 console.error(e);
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Could not update access :(',
-                    icon: 'error',
-                    showConfirmButton: false,
-                    toast: true,
-                    timer: 3000,
-                    position: 'top'
-                })
+                sendNotif('error', 'Could not update access :(');
             }
         }, 1000);
     });

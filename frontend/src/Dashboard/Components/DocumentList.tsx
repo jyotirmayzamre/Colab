@@ -18,6 +18,7 @@ import SearchDocument from "./SearchDocument";
 import { Document } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
 import useInfiniteApi from "@/lib/reactQueryHook";
+import { sendNotif } from "@/lib/utils";
 
 
 function DocumentList(): JSX.Element {
@@ -48,18 +49,11 @@ function DocumentList(): JSX.Element {
             if(result.isConfirmed){
                 try {
                     await api.delete(`/api/documents/${docId}/`);
-                    queryClient.invalidateQueries({ queryKey: ["documents"] })
+                    queryClient.invalidateQueries({ queryKey: ["documents"] });
+                    sendNotif('success', 'Document deleted!');
                 } catch(e) {
                     console.error(e);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Could not delete document :(',
-                        icon: 'error',
-                        showConfirmButton: false,
-                        toast: true,
-                        timer: 3000,
-                        position: 'top',
-                    })
+                    sendNotif('error', 'Could not delete document :(');
                 }
                     }
                 })

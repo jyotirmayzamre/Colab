@@ -3,8 +3,8 @@ import { useEffect, type JSX } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import api from "@/Auth/api";
-import Swal from "sweetalert2";
 import useProfiler from "../profiler";
+import { sendNotif } from "@/lib/utils";
 
 function ShareLinkComponent(): JSX.Element {
     const [searchParams] = useSearchParams();
@@ -26,15 +26,7 @@ function ShareLinkComponent(): JSX.Element {
                 navigate(response.data, { replace: true });
             } catch(e){
                 console.error(e);
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Could not share document via link :(',
-                    icon: 'error',
-                    showConfirmButton: false,
-                    toast: true,
-                    timer: 3000,
-                    position: 'top',
-                })
+                sendNotif('error', 'Could not share document via link :(');
             }
         };
 

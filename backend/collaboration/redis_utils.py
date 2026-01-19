@@ -65,13 +65,14 @@ async def redis_update_crdt(docId, content):
         return
     
     state = json.loads(state_json)
+    
+    for operation in content['data']:
+        if operation['oper'] == 'Insert':
+            state = remoteInsert(operation['row'], operation['char'], state)
+        else:
+            state = remoteDelete(operation['row'], operation['char'], state)
 
-    if content['oper'] == 'Insert':
-        newState = remoteInsert(content['row'], content['char'], state)
-    else:
-        newState = remoteDelete(content['row'], content['char'], state)
-
-    await client.set(f'crdt:{docId}', json.dumps(newState))
+    await client.set(f'crdt:{docId}', json.dumps(state))
 
 
 async def redis_restore_version(versionId):

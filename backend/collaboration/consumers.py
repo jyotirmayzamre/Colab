@@ -44,7 +44,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
          
         if(remaining_count > 0):
             await self.channel_layer.group_send(
-                self.group_name, {'type': 'userCount.updated', 'user_count': remaining_count}
+                self.group_name, {'type': 'userCount.updated', 'sender': self.channel_name, 'user_count': remaining_count}
             )
         else:
             await redis_remove_colours(self.doc_id)

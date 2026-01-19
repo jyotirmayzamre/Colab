@@ -4,11 +4,9 @@ import { basicLight } from "@uiw/codemirror-theme-basic";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ViewUpdate, EditorView } from '@uiw/react-codemirror';
 import { getCursorPos, getChangeObj } from "../Utils/EditorUtils";
-import type { Char } from "../../CRDT/utils";
 import { remoteCursorPlugin } from "./Cursors/CursorViewPlugin";
 import { useAuth } from "@/Auth/useAuth";
 import { CursorPosition, EditorChange } from "../types";
-import useProfiler from "../profiler";
 
 const editorPadding = EditorView.theme({
     ".cm-content": {
@@ -24,7 +22,6 @@ function EditorComponent(){
     const { value, remoteCursors, setValue } = useEditorData();
     const { isEditable, editorRef, setEditorRef, wsRef, crdtRef } = useEditorMeta(); 
 
-    useProfiler('Editor Component');
 
     const cursorUpdateTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -58,52 +55,53 @@ function EditorComponent(){
     }, [setCursorPos, sendCursorUpdate]);
 
 
+
     const onChange = useCallback((val: string, viewUpdate: ViewUpdate): void => {
         setValue(val);
         const newCursorPos = getCursorPos(viewUpdate);
         setCursorPos(newCursorPos);
 
-        const change: EditorChange | null = getChangeObj(viewUpdate);
+        const changes: EditorChange[] = getChangeObj(viewUpdate);
         
-        if(!change) return;
-
+        if(changes.length == 0) return;
 
         const isRemote = viewUpdate.transactions[0].isUserEvent('remote');
+        const operArray = [];
 
         if (!isRemote) {
-            if (change.oper === 'Insert') {
-                const char: Char = crdtRef.current.localInsert(change.text, change.row, change.col);
+            for(const change of changes){
+                if (change.oper === 'Insert') {
+                    const char = crdtRef.current.localInsert(change.text, change.row, change.col);
+                    const data = {
+                        'oper': 'Insert',
+                        'char': char,
+                        'row': change.row,
+                        'col': change.col
+                    }
+                    operArray.push(data);
 
-                const data = JSON.stringify({
-                    type: 'char',
-                    oper: 'Insert',
-                    char: char,
-                    row: change.row,
-                    col: change.col,
-                });
+                } else {
+                    const char = crdtRef.current.localDelete(change.row, change.col);
+                    const data = {
+                        'oper': 'Delete',
+                        'char': char,
+                        'row': change.row,
+                        'col': change.col
+                    }
+                    operArray.push(data);
 
-                wsRef.current.send(data);
-                sendCursorUpdate(newCursorPos.col, newCursorPos.row);
-            } else {
-                const char: Char = crdtRef.current.localDelete(change.row, change.col);
-
-                const data = JSON.stringify({
-                    type: 'char',
-                    oper: 'Delete',
-                    char: char,
-                    row: change.row,
-                    col: change.col
-                });
-
-                sendCursorUpdate(newCursorPos.col, newCursorPos.row);
-                wsRef.current.send(data);
-            }   
+                }   
+            }
+            wsRef.current.send(JSON.stringify({ type: 'char', data: operArray }));
+            sendCursorUpdate(newCursorPos.col, newCursorPos.row);
+            
         } else{
             //used for when another user's operations shift the cursor
             sendCursorUpdate(newCursorPos.col, newCursorPos.row);
         }
         
     }, [crdtRef, setCursorPos, wsRef, setValue, sendCursorUpdate]);
+
 
     const remoteCursorList = useMemo(() => {
         if (!editorRef.current) return []

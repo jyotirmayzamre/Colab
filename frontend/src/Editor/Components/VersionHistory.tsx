@@ -37,7 +37,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
 
     
 
-    useProfiler('Version History');
+    //useProfiler('Version History');
 
     const {
         fetchNextPage,

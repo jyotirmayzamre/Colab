@@ -23,7 +23,7 @@ interface PermissionsProps {
 function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
     const { docId } = useParams();
 
-    useProfiler('Permissions');
+    //useProfiler('Permissions');
 
     
     const {

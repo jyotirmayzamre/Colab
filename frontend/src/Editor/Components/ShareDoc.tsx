@@ -57,7 +57,7 @@ function ShareDoc(): JSX.Element {
             formState: { isSubmitting },
     } = useForm<FormFields>();
 
-    useProfiler('Editor Navbar');
+    //useProfiler('Editor Navbar');
 
 
     //Submit handler for share document form

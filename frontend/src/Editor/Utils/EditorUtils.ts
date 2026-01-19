@@ -13,24 +13,46 @@ export const getCursorPos = (viewUpdate: ViewUpdate): CursorPosition => {
 
 
 
-export const getChangeObj = (viewUpdate: ViewUpdate): EditorChange | null => {
+export const getChangeObj = (viewUpdate: ViewUpdate): EditorChange[] | null => {
     const oldDoc = viewUpdate.startState.doc;
     const newDoc = viewUpdate.state.doc;
-    let obj: EditorChange | null = null;
-    viewUpdate.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-            if(inserted.length === 0){
-                const deletedChar = oldDoc.sliceString(fromA, toA);
-                const oldLine = oldDoc.lineAt(fromA);
+    const objects: EditorChange[] = [];
+    viewUpdate.changes.iterChanges((fromA, toA, fromB, toB) => {
+
+        //delete
+        if(fromB == toB){
+            const deletedText = oldDoc.sliceString(fromA, toA);
+            for(let i = deletedText.length-1; i >= 0; i--){
+                const deletedChar = deletedText[i];
+                const pos = fromA + i;
+                const oldLine = oldDoc.lineAt(pos);
                 const row = oldLine.number - 1;
-                const col = fromA - oldLine.from;
-                obj = {oper: 'Delete', text: deletedChar, row: row, col: col};
-            } else {
-                const newLine = newDoc.lineAt(fromB);
-                const row = newLine.number - 1;
-                const col = fromB - newLine.from;
-                obj = {oper: 'Insert', text: inserted.text.length !== 2 ? inserted.text[0] : '\n', row: row, col: col};
+                const col = pos - oldLine.from;
+                objects.push({
+                    oper: 'Delete', 
+                    text: deletedChar, 
+                    row: row, 
+                    col: col
+                })
             }
-        
+
+        //insert
+        } else if (fromA == toA){
+            const insertedText = newDoc.sliceString(fromB, toB);
+            for(let i = 0; i < insertedText.length; i++){
+                const insertedChar = insertedText[i];
+                const pos = fromB + i;
+                const newLine = newDoc.lineAt(pos);
+                const row = newLine.number - 1;
+                const col = pos - newLine.from;
+                objects.push({
+                    oper: 'Insert',
+                    text: insertedChar,
+                    row: row,
+                    col: col
+                })
+            }
+        } 
     }, true);
-    return obj;
+    return objects;
 }

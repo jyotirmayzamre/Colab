@@ -15,7 +15,7 @@ function ShareLinkComponent(): JSX.Element {
     const role = useMemo(() => searchParams.get("role"), [searchParams]);
     const { token } = useParams();
 
-    useProfiler('Share Link component')
+    //useProfiler('Share Link component')
 
 
     useEffect(() => {

@@ -71,25 +71,28 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
                 case 'crdt.oper': {
                     const content = data.content;
                     const doc = editorRef.current.state.doc;
-                    const line = doc.line(content.row + 1); 
-                    const pos = line.from + content.col;
+                    const changes = [];
+                    for(const change of content.data){
+                        const line = doc.line(change.row + 1); 
+                        const pos = line.from + change.col;
 
-                    //handle remote changes
-
-                    if(content.oper === 'Insert'){
-                        crdtRef.current.remoteInsert(content.row, content.char);
+                        //handle remote changes
+                        if(change.oper === 'Insert'){
+                            crdtRef.current.remoteInsert(change.row, change.char);
+                            changes.push({from: pos, insert: change.char.value});
+                        } else{
+                            crdtRef.current.remoteDelete(change.row, change.char);
+                            changes.push({from: pos, to: pos+1});
+                        }
+                    }
+                    
+                    if(changes.length > 0){
                         editorRef.current.dispatch({
-                            changes: {from: pos, insert: content.char.value},
-                            userEvent: 'remote'
-                        })
-
-                    } else{
-                        crdtRef.current.remoteDelete(content.row, content.char);
-                        editorRef.current.dispatch({
-                            changes: {from: pos, to: pos+1},
+                            changes: changes,
                             userEvent: 'remote'
                         })
                     }
+
                     break;
                 }
 

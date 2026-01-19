@@ -3,7 +3,6 @@ import { Download, History, Plus } from "lucide-react";
 import { Dialog, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
 import { useState, memo } from 'react';
 import { Card, CardContent } from '@/Components/card';
-import { useQueryClient } from '@tanstack/react-query';
 import api from '@/Auth/api';
 import Swal from 'sweetalert2';
 import {
@@ -35,14 +34,16 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
     const [isCreating, setIsCreating] = useState<boolean>(false);
     const [versionTitle, setVersionTitle] = useState<string>('');
     const { docId, isEditable,  wsRef, crdtRef } = useEditorMeta();
-    const queryClient = useQueryClient();
+
+    
 
     useProfiler('Version History');
 
     const {
         fetchNextPage,
         hasNextPage,
-        results
+        results,
+        invalidateCache
     } = useInfiniteApi<Version>({
         param: `/api/versions?docId=${docId}`,
         initialPageParam: `/api/versions?docId=${docId}`,
@@ -54,13 +55,13 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
         try {
             if(!crdtRef.current){
                 throw new Error('Document state is not available')
-            }
-            await api.post('/api/versions/', 
-                { title: versionTitle,
-                    docId: docId,
-                    state: crdtRef.current.state
-                    });
-            queryClient.invalidateQueries({ queryKey: ["versions", docId] });
+            }                
+            await api.post('/api/versions/', { 
+                title: versionTitle,
+                docId: docId,
+                state: crdtRef.current.state
+            });
+            invalidateCache(['versions', docId]);
             setIsCreating(false);
             sendNotif('success', 'Created version!')
         } catch(e){
@@ -82,7 +83,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
             if(result.isConfirmed){
                 try {
                     await api.delete(`/api/versions/${versionId}/`);
-                    queryClient.invalidateQueries({ queryKey: ["versions", docId] });
+                    invalidateCache(['versions', docId]);
                     sendNotif('success', 'Deleted version');
                 } catch(e) {
                     console.error(e);

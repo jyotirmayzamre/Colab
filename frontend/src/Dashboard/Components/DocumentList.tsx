@@ -16,7 +16,6 @@ import { VirtuosoGrid } from "react-virtuoso";
 import Swal from "sweetalert2";
 import SearchDocument from "./SearchDocument";
 import { Document } from "../types";
-import { useQueryClient } from "@tanstack/react-query";
 import useInfiniteApi from "@/lib/reactQueryHook";
 import { sendNotif } from "@/lib/utils";
 
@@ -24,12 +23,12 @@ import { sendNotif } from "@/lib/utils";
 function DocumentList(): JSX.Element {
     const navigate = useNavigate();
     const [query, setQuery] = useState<string>('');
-    const queryClient = useQueryClient();
  
     const {
             fetchNextPage,
             hasNextPage,
-            results
+            results,
+            invalidateCache
         } = useInfiniteApi<Document>({
             param: '/api/documents/',
             initialPageParam: '/api/documents/',
@@ -49,7 +48,7 @@ function DocumentList(): JSX.Element {
             if(result.isConfirmed){
                 try {
                     await api.delete(`/api/documents/${docId}/`);
-                    queryClient.invalidateQueries({ queryKey: ["documents"] });
+                    invalidateCache(['documents']);
                     sendNotif('success', 'Document deleted!');
                 } catch(e) {
                     console.error(e);

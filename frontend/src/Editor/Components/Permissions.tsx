@@ -9,7 +9,6 @@ import { User2 } from "lucide-react";
 import { Virtuoso } from "react-virtuoso";
 import { Button } from "@/Components/button";
 import useProfiler from "../profiler";
-import { useQueryClient } from "@tanstack/react-query";
 import type { Access } from "../types";
 import useInfiniteApi from "../../lib/reactQueryHook";
 import { sendNotif } from "@/lib/utils";
@@ -23,7 +22,6 @@ interface PermissionsProps {
 
 function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
     const { docId } = useParams();
-    const queryClient = useQueryClient();
 
     useProfiler('Permissions');
 
@@ -31,7 +29,8 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
     const {
             fetchNextPage,
             hasNextPage,
-            results
+            results,
+            invalidateCache
         } = useInfiniteApi<Access>({
             param: `/api/versions?docId=${docId}`,
             initialPageParam: `/api/versions?docId=${docId}`,
@@ -52,7 +51,7 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
             if(result.isConfirmed){
                 try {
                     await api.delete(`/api/permissions/share/${accessId}/?docId=${docId}`);
-                    queryClient.invalidateQueries({ queryKey: ['permissions', docId]});
+                    invalidateCache(['permissions', docId]);
                     sendNotif('success', 'Access revoked!');
                 } catch(e){
                     console.error(e);
@@ -64,7 +63,7 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
     };
 
     const updateAccess = (async (accessId: number, newLevel: string) => {
-        queryClient.invalidateQueries({ queryKey: ['permissions', docId]});
+        invalidateCache(['permissions', docId]);
         setTimeout(async () => {
             try {
                 await api.patch(`/api/permissions/share/${accessId}/?docId=${docId}`, {

@@ -11,7 +11,7 @@ type NotifType = "success" | "error"
 
 export function sendNotif(type: NotifType, message: string): void {
     Swal.fire({
-      title: type.toUpperCase() + '!',
+      title: type.charAt(0).toUpperCase()  + `${type.slice(1)}!`,
       text: message,
       icon: type,
       showConfirmButton: false,

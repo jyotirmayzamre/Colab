@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/Auth/api"
 import { useMemo } from "react"
 import type { InfiniteData, FetchNextPageOptions, InfiniteQueryObserverResult } from "@tanstack/react-query"
@@ -6,7 +6,7 @@ import type { InfiniteData, FetchNextPageOptions, InfiniteQueryObserverResult } 
 interface InfiniteApiProps {
     param: string
     initialPageParam: string
-    queryKey: unknown[]
+    queryKey: readonly unknown[]
 
 }
 
@@ -21,13 +21,15 @@ interface InfiniteApiReturnType<T> {
     fetchNextPage: (options?: FetchNextPageOptions) 
         => Promise<InfiniteQueryObserverResult<InfiniteData<InfinitePage<T>, unknown>, Error>>
     hasNextPage: boolean
-    results: T[]
+    results: T[],
+    invalidateCache(queryKey: readonly unknown[]): void
 }
 
 
 //Custom hook for using react query's infinite query in my projects
 export default function useInfiniteApi<T>({ param, initialPageParam, queryKey }: InfiniteApiProps)
 : InfiniteApiReturnType<T>{
+    const queryClient = useQueryClient();
     const { data, 
         fetchNextPage, 
         hasNextPage} = useInfiniteQuery<InfinitePage<T>>({
@@ -37,7 +39,10 @@ export default function useInfiniteApi<T>({ param, initialPageParam, queryKey }:
                 return res.data;
             },
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-        initialPageParam: initialPageParam
+        initialPageParam: initialPageParam,
+        staleTime: 5 * 60 * 1000,          
+        refetchOnWindowFocus: false,
+        refetchOnMount: false
         })
 
     const results = useMemo(
@@ -45,5 +50,10 @@ export default function useInfiniteApi<T>({ param, initialPageParam, queryKey }:
         [data]
     );
 
-    return { fetchNextPage, hasNextPage, results }
+    function invalidateCache(queryKey: readonly unknown[]){
+        queryClient.invalidateQueries({ queryKey: queryKey});
+    }
+
+   
+    return { fetchNextPage, hasNextPage, results, invalidateCache }
 }

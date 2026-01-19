@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "../../Components/card";
 import { Plus} from "lucide-react";
-import Swal from 'sweetalert2';
+import { sendNotif } from "@/lib/utils";
 
 
 function CreateDocument(): JSX.Element {
@@ -25,15 +25,7 @@ function CreateDocument(): JSX.Element {
 
         } catch(e){
           console.error(e);
-          Swal.fire({
-            title: 'Error!',
-            text: 'Could not create document :(',
-            icon: 'error',
-            showConfirmButton: false,
-            toast: true,
-            timer: 3000,
-            position: 'top',
-          })
+          sendNotif('error', 'Could not create document :(');
         }
     };
 

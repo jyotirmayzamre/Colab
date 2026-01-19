@@ -68,7 +68,7 @@ function ShareDoc(): JSX.Element {
 
         try{
             await api.post('/api/permissions/share/', payload);
-            sendNotif('success', 'Document shared');
+            sendNotif('success', 'Document shared!');
         } catch(e){
             console.error(e);
             sendNotif('error', 'Could not share document :(');

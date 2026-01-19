@@ -104,7 +104,12 @@ export const AuthProvider = ({ children }: Props) => {
     }, [getUser]);
 
     const contextValue = useMemo(
-        () => ({ user: state.user, login, logout, authenticated: state.authenticated, authChecked: state.authChecked}),
+        () => ({ 
+            user: state.user, 
+            login, 
+            logout, 
+            authenticated: state.authenticated, 
+            authChecked: state.authChecked}),
         [state.user, login, logout, state.authenticated, state.authChecked]
     );
 

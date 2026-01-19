@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { useAuth } from "../../Auth/useAuth";
 import { useNavigate } from "react-router-dom";
 import ShareDoc from "./ShareDoc";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../Auth/api";
 import { Button } from "@/Components/button";
 import { ArrowLeft, FileText, Clock, Users, Download, MoreVertical, History, User2 } from "lucide-react";
@@ -44,8 +44,11 @@ function EditorNavbar(): JSX.Element {
     }, [docId, wsRef]);
 
     useEffect(() => {
-      setLocalTitle(docTitle);
-    }, [docTitle]);
+      if(localTitle != docTitle){
+        setLocalTitle(docTitle);
+      }
+      
+    }, [docTitle, localTitle]);
 
 
     useEffect(() => {

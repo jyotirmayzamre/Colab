@@ -1,6 +1,5 @@
 export interface Document {
-    access: string;
-    authors: string[];
+    permission: string;
     id: string;
     title: string;
     updated_at: string;

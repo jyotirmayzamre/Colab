@@ -1,22 +1,20 @@
 from django.db import models
-from accounts.models import User
 import uuid
-from uuid import UUID
-from django.utils import timezone
+from django.db.models import Count
 
-class DocumentManager(models.Manager):
-    def create_document(self, title: str = 'Untitled Document') -> 'Document':
-            return super().create(title=title)
-    
-    def update_state(self, docId: UUID, state):
-         Document.objects.filter(id=docId).update(
-            state=state, 
-            updated_at=timezone.now())
-         
-    
-    def get_user_documents(self, user):
-        return Document.objects.filter(authors=user).order_by('-updated_at')
-    
+
+class DocumentManager(models.Manager): 
+    def for_user_with_metadata(self, user):
+        return (
+            self.filter(permissions__user=user)
+            .annotate(
+                permission=models.F("permissions__level"),
+                num_users=Count("permissions", distinct=True),
+            )
+            .order_by("-updated_at")
+        )
+
+
     
 
 def default_state():
@@ -25,7 +23,6 @@ def default_state():
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     title = models.CharField(max_length=50)
-    authors = models.ManyToManyField(User, related_name='documents')
     state = models.JSONField(default=default_state)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

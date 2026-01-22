@@ -1,12 +1,20 @@
-import { type JSX } from "react";
+import { type JSX, useCallback, useState } from "react";
 import { useAuth } from "../../Auth/useAuth";
 import { Link } from "react-router-dom";
 import { FileText, User, LogOut } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger,DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem  } from "@/Components/dropdown";
 import { Button } from "@/Components/button";
+import UserProfile from "./UserProfile";
+import { Settings } from "lucide-react";
+
 
 function DashboardNavbar(): JSX.Element {
     const { logout, user } = useAuth();
+    const [showProfile, setShowProfile] = useState<boolean>(false);
+
+    const handleCloseProfile = useCallback(() => {
+      setShowProfile(false);
+    }, []);
 
     return (
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -19,13 +27,13 @@ function DashboardNavbar(): JSX.Element {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
-                  <User className="h-5 w-5" />
+                  <Settings />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setShowProfile(true)}>
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
@@ -37,6 +45,10 @@ function DashboardNavbar(): JSX.Element {
             </DropdownMenu>
           </div>
         </div>
+        <UserProfile 
+          open={showProfile}
+          onClose={handleCloseProfile}
+        />
       </nav>
     )
 }

@@ -76,7 +76,7 @@ function DocumentList(): JSX.Element {
                                     <Users className="h-3 w-3" />
                                     {doc.num_users}
                                 </span>
-                                <span>{doc.access.charAt(0).toUpperCase() + doc.access.slice(1)}</span>
+                                <span>{doc.permission.charAt(0).toUpperCase() + doc.permission.slice(1)}</span>
                             </CardDescription> 
                         </div>
                     </div>
@@ -91,7 +91,7 @@ function DocumentList(): JSX.Element {
                             <DropdownMenuItem onClick={() => navigate({
                                 pathname: `/documents/${doc.id}`,
                                 search: createSearchParams({
-                                    isEditable: (doc.access !== 'viewer').toString()
+                                    isEditable: (doc.permission !== 'viewer').toString()
                                 }).toString()
                                 })}>
                                     
@@ -110,7 +110,7 @@ function DocumentList(): JSX.Element {
             <CardContent onClick={() => navigate({
                         pathname: `/documents/${doc.id}`,
                         search: createSearchParams({
-                            isEditable: (doc.access !== 'viewer').toString()
+                            isEditable: (doc.permission !== 'viewer').toString()
                         }).toString()
                     })}>
                 <div className="text-sm text-muted-foreground">

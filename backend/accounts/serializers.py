@@ -15,6 +15,19 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'site_id', 'first_name', 'last_name', 'username', 'email'] 
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    documents_owned = serializers.IntegerField()
+    documents_shared = serializers.IntegerField()
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'username', 'email', 'documents_owned', 'documents_shared']
+        read_only_fields = ['id', 'email']
+
+    def get_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
+
 '''
 Serializer for registering a user
 '''
@@ -101,3 +114,31 @@ class CookieJWTAuthentication(JWTAuthentication):
         
         validated_token = self.get_validated_token(token)
         return self.get_user(validated_token), validated_token
+    
+
+
+class UpdatePasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(min_length=8, write_only=True)
+    confirm_password = serializers.CharField(min_length=8, write_only=True)
+    
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({
+                'confirm_password': "New passwords do not match."
+            })
+        return data
+
+
+class UpdateUsernameSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=50)
+    
+    def validate_username(self, value: str):
+        user = self.context.get('user')
+        
+        if user and user.username == value:
+            raise serializers.ValidationError("This is already your username.")
+        
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already exists.")
+        
+        return value

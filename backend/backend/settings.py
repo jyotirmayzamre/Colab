@@ -197,3 +197,7 @@ CSRF_COOKIE_SAMESITE = 'None'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'colab.notifs@gmail.com'
+
+
+OLD_PASSWORD_FIELD_ENABLED = True
+LOGOUT_ON_PASSWORD_CHANGE = False

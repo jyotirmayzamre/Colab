@@ -45,7 +45,7 @@ export interface Version {
     creator_username: string;
 }
 
-export interface Access {
+export interface Permission {
     user: string,
     username: string,
     document: string,

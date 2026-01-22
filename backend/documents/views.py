@@ -1,11 +1,12 @@
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
-from .serializers import DocumentInputSerializer, DocumentOutputSerializer
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.exceptions import PermissionDenied
+
+from .serializers import DocumentInputSerializer, DocumentOutputSerializer
 from accounts.serializers import CookieJWTAuthentication
-from rest_framework.response import Response
-from rest_framework import status
 from documents.services import DocumentService
+from .models import Document
 
 
 class DocumentPagination(LimitOffsetPagination):
@@ -20,13 +21,11 @@ class DocumentViewSet(viewsets.ModelViewSet):
     search_fields = ['title']
     
     def get_queryset(self):
-        user = self.request.user
-        return DocumentService.get_user_documents(user) #type: ignore
+        return Document.objects.for_user_with_metadata(self.request.user)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        user = self.request.user 
-        context['user_id'] = user.id #type: ignore
+        context['user_id'] = self.request.user.id #type: ignore
         return context
     
     def get_serializer_class(self):
@@ -34,38 +33,27 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return DocumentInputSerializer
         return DocumentOutputSerializer
     
-    def _upsert_access(self, request, status_code=status.HTTP_200_OK):
-        input_serializer = self.get_serializer(data=request.data)
-        input_serializer.is_valid(raise_exception=True)
-        data = input_serializer.validated_data
-
-        if self.action == 'create':
-            document = DocumentService.create_document(
-                userId=request.user.id,
-                title=data['title']
-            )
-        else:  
-            document = self.get_object()
-            for key, value in data.items():
-                setattr(document, key, value)
-            document.save()
-
-        output_serializer = DocumentOutputSerializer(
-            document, 
-            context=self.get_serializer_context()
+    def perform_create(self, serializer):
+        user_id = self.request.user.id # type: ignore
+        if user_id is None:
+            raise PermissionDenied("User must be authenticated")
+        
+        document = DocumentService.create_document(
+            user_id=user_id, #type: ignore
+            title=serializer.validated_data['title']
         )
-        return Response(output_serializer.data, status=status_code)
+
+        serializer.instance = document
+        serializer.save()
+
+        
+    def perform_update(self, serializer):
+        serializer.save()
+        
+    def perform_destroy(self, instance):
+        DocumentService.delete_document(
+            document=instance,
+            user=self.request.user # type: ignore
+        )
     
-    def create(self, request, *args, **kwargs):
-        return self._upsert_access(request, status.HTTP_201_CREATED)
     
-    def update(self, request, *args, **kwargs):
-        return self._upsert_access(request)
-    
-    def partial_update(self, request, *args, **kwargs):
-        return self._upsert_access(request)
-    
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        DocumentService.delete_document(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)

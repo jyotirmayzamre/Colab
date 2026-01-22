@@ -8,8 +8,7 @@ import { Card, CardContent } from "@/Components/card";
 import { User2 } from "lucide-react";
 import { Virtuoso } from "react-virtuoso";
 import { Button } from "@/Components/button";
-import useProfiler from "../profiler";
-import type { Access } from "../types";
+import type { Permission } from "../types";
 import useInfiniteApi from "../../lib/reactQueryHook";
 import { sendNotif } from "@/lib/utils";
 
@@ -22,27 +21,24 @@ interface PermissionsProps {
 
 function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
     const { docId } = useParams();
-
-    //useProfiler('Permissions');
-
     
     const {
             fetchNextPage,
             hasNextPage,
             results,
             invalidateCache
-        } = useInfiniteApi<Access>({
-            param: `/api/versions?docId=${docId}`,
-            initialPageParam: `/api/versions?docId=${docId}`,
-            queryKey: ["versions", docId]
+        } = useInfiniteApi<Permission>({
+            param: `/api/permissions/share/?document_id=${docId}`,
+            initialPageParam: `/api/permissions/share/?document_id=${docId}`,
+            queryKey: ["permissions", docId]
         }
-        )
+    )
+    
 
-
-    const revokeAccess = async (accessId: number) => {
+    const revokePermission = async (permissionId: number) => {
         Swal.fire({
             title: `Are you sure?`,
-            text: 'Click confirm to revoke access',
+            text: 'Click confirm to revoke permission',
             icon: 'warning',
             showConfirmButton: true,
             toast: true,
@@ -50,51 +46,51 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
         }).then(async (result) => {
             if(result.isConfirmed){
                 try {
-                    await api.delete(`/api/permissions/share/${accessId}/?docId=${docId}`);
+                    await api.delete(`/api/permissions/share/${permissionId}/?document_id=${docId}`);
                     invalidateCache(['permissions', docId]);
-                    sendNotif('success', 'Access revoked!');
+                    sendNotif('success', 'Permission revoked!');
                 } catch(e){
                     console.error(e);
-                    sendNotif('error', 'Could not revoke access :(');
+                    sendNotif('error', 'Could not revoke permission :(');
                 }
                 
             }
         }) 
     };
 
-    const updateAccess = (async (accessId: number, newLevel: string) => {
-        invalidateCache(['permissions', docId]);
+    const updatePermission = (async (permissionId: number, newLevel: string) => {
         setTimeout(async () => {
             try {
-                await api.patch(`/api/permissions/share/${accessId}/?docId=${docId}`, {
+                await api.patch(`/api/permissions/share/${permissionId}/?document_id=${docId}`, {
                     'level': newLevel
                 });
-                sendNotif('success', 'Updated access!');
+                invalidateCache(['permissions', docId]);
+                sendNotif('success', 'Updated permission!');
             } catch(e){
                 console.error(e);
-                sendNotif('error', 'Could not update access :(');
+                sendNotif('error', 'Could not update permission :(');
             }
         }, 1000);
     });
 
 
-    const accessCard = (access: Access) => (
-         <li key={access.user} className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors">
+    const permissionCard = (permission: Permission) => (
+         <li key={permission.user} className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors">
             <div className='flex items-center justify-center gap-5'>
                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">
                     <User2 className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-medium text-md truncate">{access.username}</p>
+                    <p className="font-medium text-md truncate">{permission.username}</p>
                 </div>
             </div>
-            <select className='rounded-sm h-11 border border-black p-2 bg-white' value={access.level} 
-                onChange={(e) => updateAccess(access.id, e.target.value)}
+            <select className='rounded-sm h-11 border border-black p-2 bg-white' value={permission.level} 
+                onChange={(e) => updatePermission(permission.id, e.target.value)}
             >
                 <option value="editor">Editor</option>
                 <option value="viewer">Viewer</option>
             </select>
-            <Button size="default" className="bg-red-500 hover:bg-red-500" onClick={() => revokeAccess(access.id)}>Revoke</Button>
+            <Button size="default" className="bg-red-500 hover:bg-red-500" onClick={() => revokePermission(permission.id)}>Revoke</Button>
         </li>
     );
 
@@ -111,7 +107,7 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
                                     {results && 
                                         <Virtuoso className='divide-y divide-border' data={results} endReached={() => {
                                             if(hasNextPage) fetchNextPage()}}
-                                        itemContent={(_, acc) => accessCard(acc)} />
+                                        itemContent={(_, acc) => permissionCard(acc)} />
                                     }
                             </CardContent>
                         </Card>

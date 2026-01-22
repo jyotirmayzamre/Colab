@@ -20,7 +20,6 @@ import handleDownload from '../Utils/downloadUtil';
 import { useEditorMeta } from '../Provider/hooks';
 import { Virtuoso } from 'react-virtuoso';
 import { Version } from '../types';
-import useProfiler from '../profiler';
 import useInfiniteApi from '../../lib/reactQueryHook';
 import { sendNotif } from '@/lib/utils';
 
@@ -45,8 +44,8 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
         results,
         invalidateCache
     } = useInfiniteApi<Version>({
-        param: `/api/versions?docId=${docId}`,
-        initialPageParam: `/api/versions?docId=${docId}`,
+        param: `/api/versions?document_id=${docId}`,
+        initialPageParam: `/api/versions?document_id=${docId}`,
         queryKey: ["versions", docId]
     }
     )
@@ -56,9 +55,9 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
             if(!crdtRef.current){
                 throw new Error('Document state is not available')
             }                
-            await api.post('/api/versions/', { 
+            await api.post(`/api/versions/?document_id=${docId}`, { 
                 title: versionTitle,
-                docId: docId,
+                document_id: docId,
                 state: crdtRef.current.state
             });
             invalidateCache(['versions', docId]);
@@ -82,7 +81,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
         }).then(async (result) => {
             if(result.isConfirmed){
                 try {
-                    await api.delete(`/api/versions/${versionId}/`);
+                    await api.delete(`/api/versions/${versionId}/?document_id=${docId}`);
                     invalidateCache(['versions', docId]);
                     sendNotif('success', 'Deleted version');
                 } catch(e) {
@@ -95,7 +94,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
 
     const downloadVersion = async (versionId: number) => {
         try {
-            const response  = await api.get(`/api/versions/${versionId}/state`);
+            const response  = await api.get(`/api/versions/${versionId}/state?document_id=${docId}`);
             const state = response.data.state;
             const value = crdtToString(state);
             handleDownload(value);
@@ -107,23 +106,28 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
 
 
     const restoreVersion = async (versionId: number, versionTitle: string) => {
-        Swal.fire({
-            title: `Restore '${versionTitle}'?`,
-            text: 'Click confirm to restore this version',
-            icon: 'warning',
-            showConfirmButton: true,
-            toast: true,
-            position: 'top',
-        }).then((result) => {
-            if(result.isConfirmed){
-                if(!wsRef.current){
-                    sendNotif('error', 'Could not restore version :(');
-                } else {
-                    wsRef.current.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
-                    sendNotif('success', `Restored version ${versionTitle}`);
+        if(isEditable){
+            Swal.fire({
+                title: `Restore '${versionTitle}'?`,
+                text: 'Click confirm to restore this version',
+                icon: 'warning',
+                showConfirmButton: true,
+                toast: true,
+                position: 'top',
+            }).then((result) => {
+                if(result.isConfirmed){
+                    if(!wsRef.current){
+                        sendNotif('error', 'Could not restore version :(');
+                    } else {
+                        wsRef.current.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
+                        sendNotif('success', `Restored version ${versionTitle}`);
+                    }
                 }
-            }
-        })
+            })
+        } else{
+            sendNotif('error', 'You do not have the permission for this action');
+        }
+        
     };
 
     const versionCard = (ver: Version) => {

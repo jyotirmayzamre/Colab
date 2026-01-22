@@ -1,33 +1,51 @@
-from .models import Document
-from permissions.services import DocumentAccessService
 from uuid import UUID
+from django.utils import timezone
+from django.db import transaction
+from django.core.exceptions import PermissionDenied
+
+from .models import Document
+from permissions.models import Permission
 from accounts.models import User
+
 
 class DocumentService:
     @staticmethod
-    def create_document(userId: UUID, title: str = 'Untitled Document') -> 'Document':
-        doc = Document.objects.create_document(title=title)
-        DocumentAccessService.create_or_update_access(
-            docId=doc.id,
-            userId=userId,
+    @transaction.atomic
+    def create_document(user_id: UUID, title: str) -> Document:
+        user = User.objects.get(id=user_id)
+        document = Document.objects.create(title=title)
+        
+        Permission.objects.create(
+            document=document,
+            user=user,
             level='owner'
         )
-        return doc
+        
+        return document
     
     @staticmethod
-    def get_document(docId: UUID) -> 'Document':
-        return Document.objects.get(pk=docId)
+    def get_document(document_id: UUID) -> Document:
+        return Document.objects.get(id=document_id)
     
     @staticmethod
-    def delete_document(document: 'Document') -> None:
-        document.delete()
-
-    @staticmethod
-    def get_user_documents(user: User):
-        return Document.objects.get_user_documents(user)
-
+    def update_state(document_id: UUID, state) -> int:
+        return Document.objects.filter(id=document_id).update(
+            state=state, 
+            updated_at=timezone.now()
+        )
     
     @staticmethod
-    def update_state(docId: UUID, state):
-        return Document.objects.update_state(docId, state)
-    
+    @transaction.atomic
+    def delete_document(document: Document, user: User) -> None:
+        permission = Permission.objects.filter(
+            document=document, 
+            user=user
+        ).first()
+        
+        if not permission:
+            raise PermissionDenied("You do not have permission for this document.")
+        
+        if permission.level == 'owner':
+            document.delete()
+        else:
+            permission.delete()

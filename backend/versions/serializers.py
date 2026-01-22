@@ -1,33 +1,20 @@
 from rest_framework import serializers
 from .models import Version
-from permissions.services import DocumentAccessService
 from documents.models import Document
 
 
 class VersionInputSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50)
     state = serializers.JSONField()
-    docId = serializers.PrimaryKeyRelatedField(
+    document_id = serializers.PrimaryKeyRelatedField(
         source="document",
         queryset=Document.objects.all()
     )
 
     class Meta:
         model = Version
-        fields = ['docId', 'title', 'state']
+        fields = ['document_id', 'title', 'state']
 
-    def validate_document(self, value):
-        request = self.context.get("request")
-        user = request.user if request else None
-
-        if not user or not user.is_authenticated:
-            raise serializers.ValidationError("Authentication required.")
-
-        access = DocumentAccessService.get_access(value, user.id)
-        if access.level == 'viewer':
-            raise serializers.ValidationError("Current user is not an owner or an editor.")
-
-        return value
     
 
 class VersionOutputSerializer(serializers.ModelSerializer):

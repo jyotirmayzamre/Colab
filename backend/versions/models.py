@@ -3,22 +3,12 @@ from documents.models import Document
 from accounts.models import User
 from uuid import UUID
 
-# Create your models here.
 def default_state():
     return []
 
 class VersionManager(models.Manager):
-    def create_version(self,*, title: str, docId: UUID, state, creator: User,) -> "Version":
-        return Version.objects.create(
-            title=title,
-            document_id=docId,
-            creator=creator,
-            creator_username=creator.username,
-            state=state,
-        )
-    
-    def get_document_versions(self, docId: UUID):
-        return Version.objects.filter(document_id=docId).order_by('created_at')
+    def get_document_versions(self, document_id: UUID):
+        return Version.objects.filter(document_id=document_id).order_by('-created_at')
     
    
 

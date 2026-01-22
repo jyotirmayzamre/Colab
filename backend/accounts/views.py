@@ -1,5 +1,8 @@
 from rest_framework.views import APIView
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, MyTokenObtainPairSerializer, CookieJWTAuthentication
+
+from .services import UserService
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, MyTokenObtainPairSerializer, CookieJWTAuthentication, UserProfileSerializer
+from .serializers import UpdatePasswordSerializer, UpdateUsernameSerializer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,12 +10,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.db.models.functions import Concat
-from django.db.models import Value
 from .models import User
 from typing import cast
 from django.http import JsonResponse
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.exceptions import ValidationError
+
 
 '''
 Endpoint for registration of users
@@ -89,6 +92,17 @@ class MeAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class UserProfileAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes=[CookieJWTAuthentication]
+
+    def get(self, request: Request) -> Response:
+        user = User.objects.get_user_profile(request.user.id)
+
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
@@ -135,12 +149,51 @@ class SearchUserAPIView(APIView):
 
     def get(self, request: Request):
         query = request.query_params['q']
+        document_id = request.query_params['document_id']
         if not query:
             return Response({'results': []})
-
-        
-        q = User.objects.annotate(fullname=Concat('first_name', Value(' '), 'last_name'))
-        c = q.filter(fullname__icontains=query).exclude(id=request.user.id)
-        serializer = UserSerializer(c, many=True)
+        users = User.objects.search_for_users(query, document_id, request.user.id) # type: ignore
+        serializer = UserSerializer(users, many=True)
 
         return Response({'results': serializer.data})
+
+
+class UpdatePasswordAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = [CookieJWTAuthentication]
+    
+    def patch(self, request: Request) -> Response:
+        serializer = UpdatePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        
+        UserService.update_password(
+            user=request.user,
+            new_password=serializer.validated_data['new_password'] #type: ignore
+        )
+        
+        
+        return Response(
+            {'message': 'Password updated successfully'},
+            status=status.HTTP_200_OK
+        )
+
+
+class UpdateUsernameAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = [CookieJWTAuthentication]
+    
+    def patch(self, request: Request) -> Response:
+        serializer = UpdateUsernameSerializer(
+            data=request.data,
+            context={'user': request.user}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        user = UserService.update_username(
+            user=request.user,
+            new_username=serializer.validated_data['username'] #type: ignore
+        )
+        
+        user_data = UserSerializer(user).data
+        return Response(user_data, status=status.HTTP_200_OK)

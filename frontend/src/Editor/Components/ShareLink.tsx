@@ -3,7 +3,6 @@ import { useEffect, type JSX } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import api from "@/Auth/api";
-import useProfiler from "../profiler";
 import { sendNotif } from "@/lib/utils";
 
 function ShareLinkComponent(): JSX.Element {
@@ -15,9 +14,7 @@ function ShareLinkComponent(): JSX.Element {
     const role = useMemo(() => searchParams.get("role"), [searchParams]);
     const { token } = useParams();
 
-    //useProfiler('Share Link component')
-
-
+    
     useEffect(() => {
         const sendShare = async (): Promise<void> => {
             try {
@@ -39,7 +36,7 @@ function ShareLinkComponent(): JSX.Element {
         } else {
             sendShare();
         }
-    }, [authenticated, location, navigate, role, token])
+    }, [authenticated, location.pathname, location.search, navigate, role, token])
 
     return (
         <div className="flex justify-center items-center h-screen">

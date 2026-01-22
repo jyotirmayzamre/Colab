@@ -9,12 +9,12 @@ import { cn, sendNotif } from "@/lib/utils";
 import { useEditorMeta } from "../Provider/hooks";
 import { Virtuoso } from "react-virtuoso";
 import { Card, CardContent } from "@/Components/card";
-import useProfiler from "../profiler";
 import useInfiniteApi from "../../lib/reactQueryHook";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FormFields {
     username: string,
-    access: string,
+    permission: string,
     user_id: string
 }
 
@@ -37,14 +37,15 @@ function ShareDoc(): JSX.Element {
     const [selectedUser, setSelectedUser] = useState<string>('');
     const [copied, setCopied] = useState(false);
     const { docId } = useEditorMeta();
+    const queryClient = useQueryClient();
 
     const {
             fetchNextPage,
             hasNextPage,
             results
         } = useInfiniteApi<User>({
-            param: `/api/accounts/searchUsers/?q=${query}`,
-            initialPageParam: `/api/accounts/searchUsers/?q=${query}`,
+            param: `/api/accounts/searchUsers/?q=${query}&document_id=${docId}`,
+            initialPageParam: `/api/accounts/searchUsers/?q=${query}&document_id=${docId}`,
             queryKey: ["users", query]
         }
         )
@@ -63,22 +64,23 @@ function ShareDoc(): JSX.Element {
     //Submit handler for share document form
     const onSubmit: SubmitHandler<FormFields> = useCallback(async (data) => {
         const userId = data.user_id;
-        const access = data.access;
-        const payload = { docId: docId, userId: userId, level: access}
+        const permission = data.permission;
+        const payload = { document_id: docId, user_id: userId, level: permission}
 
         try{
             await api.post('/api/permissions/share/', payload);
             sendNotif('success', 'Document shared!');
+            queryClient.invalidateQueries({ queryKey: ['permissions', docId] })
         } catch(e){
             console.error(e);
             sendNotif('error', 'Could not share document :(');
         }
-    }, [docId]);
+    }, [docId, queryClient]);
 
-    const access = watch('access', 'editor');
+    const permission = watch('permission', 'editor');
 
     const fetchShare = useCallback(async () => {
-        const data = { docId: docId, role: access }
+        const data = { document_id: docId, role: permission }
         try {
             const response = await api.post('/api/permissions/create-share-link/', data);
             setShareLink(response.data.link);
@@ -86,7 +88,7 @@ function ShareDoc(): JSX.Element {
             console.error(e);
             sendNotif('error', 'Could not create share link :(')
         }
-    }, [access, docId]);
+    }, [permission, docId]);
 
     
 
@@ -146,7 +148,7 @@ function ShareDoc(): JSX.Element {
                                 placeholder="Search by name..."
                                 onChange={onChange}
                             />
-                            <select className='rounded-sm h-11 border border-black p-2 bg-white' {...register('access', { required: true })}>
+                            <select className='rounded-sm h-11 border border-black p-2 bg-white' {...register('permission', { required: true })}>
                                 <option value="editor" defaultChecked>Editor</option>
                                 <option value="viewer">Viewer</option>
                             </select>

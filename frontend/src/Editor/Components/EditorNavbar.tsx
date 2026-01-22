@@ -12,7 +12,6 @@ import VersionHistory from "./VersionHistory";
 import handleDownload from "../Utils/downloadUtil";
 import { useEditorMeta } from "../Provider/hooks";
 import Permissions from "./Permissions";
-import useProfiler from "../profiler";
 import { sendNotif } from "@/lib/utils";
 
 const dropdownClass = `relative flex cursor-default select-none items-center rounded-sm
@@ -44,11 +43,8 @@ function EditorNavbar(): JSX.Element {
     }, [docId, wsRef]);
 
     useEffect(() => {
-      if(localTitle != docTitle){
-        setLocalTitle(docTitle);
-      }
-      
-    }, [docTitle, localTitle]);
+      setLocalTitle(docTitle);
+    }, [docTitle]);
 
 
     useEffect(() => {
@@ -107,7 +103,9 @@ function EditorNavbar(): JSX.Element {
                 <Users className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">Active: {userCount}</span>
               </div>
-              <ShareDoc />
+              {isEditable && (
+                <ShareDoc />
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -143,10 +141,13 @@ function EditorNavbar(): JSX.Element {
           open={showVersionHistory}
           onClose={handleCloseVersionHistory}
         />
-        <Permissions
-          open={showPermissions}
-          onClose={handleClosePermissions}
-        />
+        {isEditable && (
+          <Permissions
+            open={showPermissions}
+            onClose={handleClosePermissions}
+          />
+        )}
+        
       </nav>
 
     )

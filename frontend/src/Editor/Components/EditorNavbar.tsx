@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { useAuth } from "../../Auth/useAuth";
 import { useNavigate } from "react-router-dom";
 import ShareDoc from "./ShareDoc";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../Auth/api";
 import { Button } from "@/Components/button";
 import { ArrowLeft, FileText, Clock, Users, Download, MoreVertical, History, User2 } from "lucide-react";
@@ -12,7 +12,7 @@ import VersionHistory from "./VersionHistory";
 import handleDownload from "../Utils/downloadUtil";
 import { useEditorMeta } from "../Provider/hooks";
 import Permissions from "./Permissions";
-import { sendNotif } from "@/lib/utils";
+import { sendNotification } from "@/lib/utils";
 
 const dropdownClass = `relative flex cursor-default select-none items-center rounded-sm
                         px-2 py-1.5 text-sm outline-none transition-colors
@@ -20,7 +20,7 @@ const dropdownClass = `relative flex cursor-default select-none items-center rou
                         focus:bg-accent focus:text-accent-foreground m-0`
 
 function EditorNavbar(): JSX.Element {
-    const { userCount, docId, isEditable, docTitle, editorRef, wsRef } = useEditorMeta();
+    const { userCount, docId, isEditable, docTitle, editorRef, wsRef, setDocTitle } = useEditorMeta();
     const { user } = useAuth();
     const [localTitle, setLocalTitle] = useState<string>(docTitle);
     const [showVersionHistory, setShowVersionHistory] = useState<boolean>(false);
@@ -29,37 +29,40 @@ function EditorNavbar(): JSX.Element {
 
     //useProfiler('Editor Navbar');
 
-    
-    const renameDocument = useCallback(async (newTitle: string) => {
-        try {
-            await api.patch(`/api/documents/${docId}/`, { title: newTitle});
-            sendNotif('success', `Renamed document to "${newTitle}"`)
-            wsRef.current.send(JSON.stringify({ type: 'document_rename', newTitle: newTitle }));
-            
-        } catch(e){
-            console.error(e);
-            sendNotif('error', 'Could not rename document :(');
-        }
-    }, [docId, wsRef]);
+    const renameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const renameDocument = async (newTitle: string) => {
+      try {
+        await api.patch(`/api/documents/${docId}/`, { title: newTitle});
+        sendNotification('success', `Renamed document to "${newTitle}"`)
+        wsRef.current.send(JSON.stringify({ type: 'document_rename', newTitle: newTitle }));
+        setDocTitle(newTitle)
+      } catch(e){
+        console.error(e);
+        sendNotification('error', 'Could not rename document :(');
+      }
+    }
+
+    const updateTitle = async(newTitle: string) => {
+      setLocalTitle(newTitle);
+      if(renameTimer.current) clearTimeout(renameTimer.current);
+
+      renameTimer.current = setTimeout(() => {
+        renameDocument(newTitle);
+      }, 1000);
+    }
+
 
     useEffect(() => {
-      setLocalTitle(docTitle);
+      setLocalTitle(docTitle)
+      return () => {
+        if (renameTimer.current) {
+          clearTimeout(renameTimer.current);
+        }
+      };
     }, [docTitle]);
 
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-          if(localTitle != docTitle){
-            renameDocument(localTitle);
-          }
-          
-        }, 2000);
-
-        return () => {
-            clearTimeout(handler);
-        }
-    }, [renameDocument, docTitle, localTitle]);
-
+    
     const handleCloseVersionHistory = useCallback(() => {
         setShowVersionHistory(false);
     }, []);
@@ -86,7 +89,8 @@ function EditorNavbar(): JSX.Element {
                 <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                 <Input
                   value={localTitle}
-                  onChange={(e) => setLocalTitle(e.target.value)}
+                  //onChange={(e) => setLocalTitle(e.target.value)}
+                  onChange={(e) => updateTitle(e.target.value)}
                   className="border-none shadow-none focus-visible:ring-0 font-semibold text-base px-2 py-1 h-auto max-w-xs"
                   readOnly={!isEditable}
                 />

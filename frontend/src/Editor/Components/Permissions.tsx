@@ -10,7 +10,7 @@ import { Virtuoso } from "react-virtuoso";
 import { Button } from "@/Components/button";
 import type { Permission } from "../types";
 import useInfiniteApi from "../../lib/reactQueryHook";
-import { sendNotif } from "@/lib/utils";
+import { sendNotification } from "@/lib/utils";
 
 
 
@@ -48,10 +48,10 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
                 try {
                     await api.delete(`/api/permissions/share/${permissionId}/?document_id=${docId}`);
                     invalidateCache(['permissions', docId]);
-                    sendNotif('success', 'Permission revoked!');
+                    sendNotification('success', 'Permission revoked!');
                 } catch(e){
                     console.error(e);
-                    sendNotif('error', 'Could not revoke permission :(');
+                    sendNotification('error', 'Could not revoke permission :(');
                 }
                 
             }
@@ -65,10 +65,10 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
                     'level': newLevel
                 });
                 invalidateCache(['permissions', docId]);
-                sendNotif('success', 'Updated permission!');
+                sendNotification('success', 'Updated permission!');
             } catch(e){
                 console.error(e);
-                sendNotif('error', 'Could not update permission :(');
+                sendNotification('error', 'Could not update permission :(');
             }
         }, 1000);
     });

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "../../Components/card";
 import { Plus} from "lucide-react";
-import { sendNotif } from "@/lib/utils";
+import { sendNotification } from "@/lib/utils";
 
 
 function CreateDocument(): JSX.Element {
@@ -25,7 +25,7 @@ function CreateDocument(): JSX.Element {
 
         } catch(e){
           console.error(e);
-          sendNotif('error', 'Could not create document :(');
+          sendNotification('error', 'Could not create document :(');
         }
     };
 

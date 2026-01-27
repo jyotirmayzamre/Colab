@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { Input } from "@/Components/input";
+import { useRef } from "react";
 
 
 interface Props {
@@ -10,6 +11,19 @@ interface Props {
 
 
 function SearchDocument({ query, setQuery }: Props){
+
+    const queryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const updateQuery = (newQuery: string) => {
+        if(queryTimer.current){
+            clearTimeout(queryTimer.current)
+        }
+
+        queryTimer.current = setTimeout(() => {
+            setQuery(newQuery);
+        }, 250);
+    }
+
     return (
         <div className="mb-6 flex flex-col justify-center items-center">
             <div className="relative max-w-md">
@@ -19,7 +33,7 @@ function SearchDocument({ query, setQuery }: Props){
                     placeholder="Search documents..."
                     value={query}
                     onChange={(e) => {
-                        setQuery(e.target.value)
+                        updateQuery(e.target.value)
                     }}
                     className="pl-10 h-12 w-full"
                 />

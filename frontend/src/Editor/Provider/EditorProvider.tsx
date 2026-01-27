@@ -142,6 +142,7 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
             editorRef,
             wsRef,
             setEditorRef,
+            setDocTitle
         }),
         [docId, docTitle, isEditable, userCount]
     )

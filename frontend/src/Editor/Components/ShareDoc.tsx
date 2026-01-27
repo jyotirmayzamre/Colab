@@ -5,12 +5,13 @@ import api from "../../Auth/api";
 import { Button } from "@/Components/button";
 import { Share2, User, Copy, Check } from "lucide-react";
 import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
-import { cn, sendNotif } from "@/lib/utils";
+import { cn, sendNotification } from "@/lib/utils";
 import { useEditorMeta } from "../Provider/hooks";
 import { Virtuoso } from "react-virtuoso";
 import { Card, CardContent } from "@/Components/card";
 import useInfiniteApi from "../../lib/reactQueryHook";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 
 interface FormFields {
     username: string,
@@ -69,11 +70,11 @@ function ShareDoc(): JSX.Element {
 
         try{
             await api.post('/api/permissions/share/', payload);
-            sendNotif('success', 'Document shared!');
+            sendNotification('success', 'Document shared!');
             queryClient.invalidateQueries({ queryKey: ['permissions', docId] })
         } catch(e){
             console.error(e);
-            sendNotif('error', 'Could not share document :(');
+            sendNotification('error', 'Could not share document :(');
         }
     }, [docId, queryClient]);
 
@@ -86,7 +87,7 @@ function ShareDoc(): JSX.Element {
             setShareLink(response.data.link);
         } catch(e){
             console.error(e);
-            sendNotif('error', 'Could not create share link :(')
+            sendNotification('error', 'Could not create share link :(')
         }
     }, [permission, docId]);
 
@@ -96,13 +97,18 @@ function ShareDoc(): JSX.Element {
         fetchShare();
     }, [fetchShare])
 
-    
+    const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const onChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setQuery(e.target.value);
-        if(e.target.value == ''){
-            setSelectedUser('');
-        }
+        if(searchTimer.current) clearTimeout(searchTimer.current);
+
+        searchTimer.current = setTimeout(() => {
+            setQuery(e.target.value);
+            if(e.target.value == ''){
+                setSelectedUser('');
+            }
+        }, 250)
+        
     };
 
     const userCard = (user: User) => {

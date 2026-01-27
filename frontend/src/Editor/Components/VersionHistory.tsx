@@ -21,7 +21,7 @@ import { useEditorMeta } from '../Provider/hooks';
 import { Virtuoso } from 'react-virtuoso';
 import { Version } from '../types';
 import useInfiniteApi from '../../lib/reactQueryHook';
-import { sendNotif } from '@/lib/utils';
+import { sendNotification } from '@/lib/utils';
 
 interface VersionHistoryProps {
   open: boolean;
@@ -62,10 +62,10 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
             });
             invalidateCache(['versions', docId]);
             setIsCreating(false);
-            sendNotif('success', 'Created version!')
+            sendNotification('success', 'Created version!')
         } catch(e){
             console.error(e);
-            sendNotif('error', 'Could not create version :(');
+            sendNotification('error', 'Could not create version :(');
         }
     };
 
@@ -83,10 +83,10 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
                 try {
                     await api.delete(`/api/versions/${versionId}/?document_id=${docId}`);
                     invalidateCache(['versions', docId]);
-                    sendNotif('success', 'Deleted version');
+                    sendNotification('success', 'Deleted version');
                 } catch(e) {
                     console.error(e);
-                    sendNotif('error', 'Could not delete version :(')
+                    sendNotification('error', 'Could not delete version :(')
                 }
             }
         })
@@ -100,7 +100,7 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
             handleDownload(value);
         } catch(e) {
             console.error(e);
-            sendNotif('error', 'Could not download version :(');
+            sendNotification('error', 'Could not download version :(');
         }  
     }
 
@@ -117,15 +117,15 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
             }).then((result) => {
                 if(result.isConfirmed){
                     if(!wsRef.current){
-                        sendNotif('error', 'Could not restore version :(');
+                        sendNotification('error', 'Could not restore version :(');
                     } else {
                         wsRef.current.send(JSON.stringify({type: 'version_restore', versionId: versionId}));
-                        sendNotif('success', `Restored version ${versionTitle}`);
+                        sendNotification('success', `Restored version ${versionTitle}`);
                     }
                 }
             })
         } else{
-            sendNotif('error', 'You do not have the permission for this action');
+            sendNotification('error', 'You do not have the permission for this action');
         }
         
     };

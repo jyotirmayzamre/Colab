@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 type NotifType = "success" | "error"
 
 
-export function sendNotif(type: NotifType, message: string): void {
+export function sendNotification(type: NotifType, message: string): void {
     Swal.fire({
       title: type.charAt(0).toUpperCase()  + `${type.slice(1)}!`,
       text: message,

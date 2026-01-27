@@ -17,7 +17,7 @@ import Swal from "sweetalert2";
 import SearchDocument from "./SearchDocument";
 import { Document } from "../types";
 import useInfiniteApi from "@/lib/reactQueryHook";
-import { sendNotif } from "@/lib/utils";
+import { sendNotification } from "@/lib/utils";
 
 
 function DocumentList(): JSX.Element {
@@ -49,17 +49,16 @@ function DocumentList(): JSX.Element {
                 try {
                     await api.delete(`/api/documents/${docId}/`);
                     invalidateCache(['documents']);
-                    sendNotif('success', 'Document deleted!');
+                    sendNotification('success', 'Document deleted!');
                 } catch(e) {
                     console.error(e);
-                    sendNotif('error', 'Could not delete document :(');
+                    sendNotification('error', 'Could not delete document :(');
                 }
                     }
                 })
         
     };
 
-    console.log(results);
 
 
     const documentCard = (doc: Document) => {

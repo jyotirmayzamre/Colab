@@ -7,7 +7,7 @@ import { Mail, Pencil, Check, X, Users, FileText, LogOut, Lock } from "lucide-re
 import { Label } from "@/Components/label";
 import { useEffect, useState } from "react";
 import api from "@/Auth/api";
-import { sendNotif } from "@/lib/utils";
+import { sendNotification } from "@/lib/utils";
 
 
 interface UserProfileProps {
@@ -39,7 +39,7 @@ function UserProfile({ open, onClose }: UserProfileProps){
             setDocumentsShared(data.documents_shared);
         } catch(e){
             console.error(e);
-            sendNotif('error', 'Could not fetch user details');
+            sendNotification('error', 'Could not fetch user details');
         }
     } 
 
@@ -50,10 +50,10 @@ function UserProfile({ open, onClose }: UserProfileProps){
                 username: username
             });
             setIsEditingUsername(false);
-            sendNotif('success', 'Updated username :)');
+            sendNotification('success', 'Updated username :)');
         } catch(e){
             console.error(e);
-            sendNotif('error', 'Could not update username')
+            sendNotification('error', 'Could not update username')
         }
     }
 
@@ -64,10 +64,10 @@ function UserProfile({ open, onClose }: UserProfileProps){
                 confirm_password: confirmPassword
             })
             setIsChangingPassword(false);
-            sendNotif('success', 'Updated password :)')
+            sendNotification('success', 'Updated password :)')
         } catch(e){
             console.error(e);
-            sendNotif('error', 'Could not update password')
+            sendNotification('error', 'Could not update password')
         }
     }
 

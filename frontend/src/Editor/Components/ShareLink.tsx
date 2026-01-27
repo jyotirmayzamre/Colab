@@ -3,7 +3,7 @@ import { useEffect, type JSX } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import api from "@/Auth/api";
-import { sendNotif } from "@/lib/utils";
+import { sendNotification } from "@/lib/utils";
 
 function ShareLinkComponent(): JSX.Element {
     const [searchParams] = useSearchParams();
@@ -23,7 +23,7 @@ function ShareLinkComponent(): JSX.Element {
                 navigate(response.data, { replace: true });
             } catch(e){
                 console.error(e);
-                sendNotif('error', 'Could not share document via link :(');
+                sendNotification('error', 'Could not share document via link :(');
             }
         };
 

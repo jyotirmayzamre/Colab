@@ -35,6 +35,7 @@ export interface EditorMetaType {
     editorRef: React.MutableRefObject<EditorView>
     wsRef: React.MutableRefObject<WebSocket>
     setEditorRef: (view: EditorView) => void,
+    setDocTitle: React.Dispatch<React.SetStateAction<string>>
 }
 
 

@@ -22,8 +22,10 @@ function EditorComponent(){
     const { value, remoteCursors, setValue } = useEditorData();
     const { isEditable, editorRef, setEditorRef, wsRef, crdtRef } = useEditorMeta(); 
 
+    const lastCursorRef = useRef<number>(0);
+    const pendingCursorRef = useRef<CursorPosition | null>(null);
+    const cursorTimerRef = useRef<NodeJS.Timeout | null>(null); 
 
-    const cursorUpdateTimeoutRef = useRef<NodeJS.Timeout>();
 
     const sendCursorUpdate = useCallback((col: number, row: number) => {
         wsRef.current.send(JSON.stringify({
@@ -32,27 +34,49 @@ function EditorComponent(){
             col: col, 
             row: row 
         }))
-
     }, [wsRef, user.username]);
 
+
+
+    const throttledSendCursor = useCallback((cursor: CursorPosition) => {
+        const now = Date.now();
+        const elapsed = now - lastCursorRef.current;
+        pendingCursorRef.current = cursor;
+
+        if(elapsed >= 50){
+            lastCursorRef.current = now;
+            sendCursorUpdate(cursor.col, cursor.row);
+            pendingCursorRef.current = null;
+        } else if (!cursorTimerRef.current){
+            cursorTimerRef.current = setTimeout(() => {
+                const latest = pendingCursorRef.current;
+                if(latest){
+                    lastCursorRef.current = Date.now();
+                    sendCursorUpdate(latest.col, latest.row);
+                    pendingCursorRef.current = null;
+                }
+                cursorTimerRef.current = null;
+            }, 50-elapsed)
+        }
+    }, [sendCursorUpdate])
+
+
+
+    
+
+    
     //only for handling mouse-keyboard related cursors changes
     const onUpdate = useCallback((viewUpdate: ViewUpdate): void => {
         if (viewUpdate.selectionSet && !viewUpdate.docChanged) {
-            const newCursorPos = getCursorPos(viewUpdate);
-            setCursorPos(newCursorPos);
-            
             const isRemote = viewUpdate.transactions.some(tr => tr.isUserEvent('remote'));
-            if (!isRemote) {
-                if (cursorUpdateTimeoutRef.current) {
-                    clearTimeout(cursorUpdateTimeoutRef.current);
-                }
-                
-                cursorUpdateTimeoutRef.current = setTimeout(() => {
-                    sendCursorUpdate(newCursorPos.col, newCursorPos.row);
-                }, 150);
-            }
+            if(isRemote) return;
+
+            const pos = getCursorPos(viewUpdate);
+            setCursorPos(pos);
+            throttledSendCursor(pos);
+
         }
-    }, [setCursorPos, sendCursorUpdate]);
+    }, [setCursorPos, throttledSendCursor]);
 
 
 
@@ -93,14 +117,10 @@ function EditorComponent(){
                 }   
             }
             wsRef.current.send(JSON.stringify({ type: 'char', data: operArray }));
-            sendCursorUpdate(newCursorPos.col, newCursorPos.row);
-            
-        } else{
-            //used for when another user's operations shift the cursor
-            sendCursorUpdate(newCursorPos.col, newCursorPos.row);
         }
+        throttledSendCursor(newCursorPos);
         
-    }, [crdtRef, setCursorPos, wsRef, setValue, sendCursorUpdate]);
+    }, [crdtRef, setCursorPos, wsRef, setValue, throttledSendCursor]);
 
 
     const remoteCursorList = useMemo(() => {

@@ -44,8 +44,13 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         remaining_count = await redis_get_user_count(self.document_id)
          
         if(remaining_count > 0):
+            
             await self.channel_layer.group_send(
                 self.group_name, {'type': 'userCount.updated', 'sender': self.channel_name, 'user_count': remaining_count}
+            )
+
+            await self.channel_layer.group_send(
+                self.group_name, {'type': 'cursor.remove', 'username': self.username, 'sender': self.channel_name}
             )
         else:
             await redis_flush_to_db(self.document_id)
@@ -54,7 +59,6 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content):
         match content['type']:
-
             case 'char':
                 await self.channel_layer.group_send(
                     self.group_name, {'type': 'crdt.oper', 'content': content, 'sender': self.channel_name}
@@ -94,7 +98,10 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
     async def crdt_oper(self, event):
         if(self.channel_name != event['sender']):
             await self.send_json({'event': 'crdt.oper', 'content': event['content']})
-        
+    
+    async def cursor_remove(self, event):
+        if(self.channel_name != event['sender']):
+            await self.send_json({'event': 'cursor.remove', 'username': event['username']})
 
     #User joined or left so send correct count
     async def userCount_updated(self, event):

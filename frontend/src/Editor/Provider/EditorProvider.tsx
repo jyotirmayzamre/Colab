@@ -55,6 +55,16 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
                     }, 0);
                     break;
 
+                case 'cursor.remove':
+                    setTimeout(() => {
+                        setRemoteCursors(prev => {
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                            const { [data.username]: _, ...rest} = prev;
+                            return rest
+                        })
+                    }, 0);
+                    break;
+
                 case 'version.restore':
                     crdtRef.current.state = data.state;
                     setValue(crdtToString(data.state));

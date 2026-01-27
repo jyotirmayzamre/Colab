@@ -23,6 +23,7 @@ import { sendNotification } from "@/lib/utils";
 function DocumentList(): JSX.Element {
     const navigate = useNavigate();
     const [query, setQuery] = useState<string>('');
+    const [viewOwned, setViewOwned] = useState<boolean>(true);
  
     const {
             fetchNextPage,
@@ -121,14 +122,38 @@ function DocumentList(): JSX.Element {
         </Card>)
     };
 
+
     const filterDocuments = () => {
-        return results.filter((doc) => doc.title.includes(query));
+        return results.filter((doc) => (doc.title.includes(query) && (
+                viewOwned ? doc.permission === 'owner' : doc.permission !== 'owner'
+            ))
+        )
     };
 
 
     return (
         <div>
             <SearchDocument query={query} setQuery={setQuery} />
+            <div className="mb-6 flex justify-center items-center gap-2">
+                <Button
+                    variant={viewOwned ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewOwned(true)}
+                    className="gap-2"
+                >
+                    <FileText className="h-4 w-4" />
+                    Owned
+                </Button>
+                <Button
+                    variant={!viewOwned ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewOwned(false)}
+                    className="gap-2"
+                >
+                    <Users className="h-4 w-4" />
+                    Shared
+                </Button>
+            </div>
             {results && <VirtuosoGrid
                 data={filterDocuments()}
                 endReached={() => {

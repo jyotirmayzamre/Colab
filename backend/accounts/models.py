@@ -61,13 +61,13 @@ class UserManager(BaseUserManager):
             .filter(id=user_id)
             .annotate(
                 documents_owned=Count(
-                    'user_access__document',
-                    filter=Q(user_access__level='owner'),
+                    'user_permission__document',
+                    filter=Q(user_permission__level='owner'),
                     distinct=True
                 ),
                 documents_shared=Count(
-                    'user_access__document',
-                    filter=Q(user_access__level__in=['viewer', 'editor']),
+                    'user_permission__document',
+                    filter=Q(user_permission__level__in=['viewer', 'editor']),
                     distinct=True
                 )
             )

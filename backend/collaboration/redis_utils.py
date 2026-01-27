@@ -9,7 +9,9 @@ import colorsys
 # client: redis.Redis = redis.Redis(host='redis', port=6379, db=0)
 client: redis.Redis = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
-
+'''
+Used for cursor labels
+'''
 async def redis_generate_colours(document_id, n=200, saturation=0.65, value=0.95):
     set_exists = await client.exists(f'colours:{document_id}')
     if not set_exists:
@@ -33,14 +35,15 @@ async def redis_add_colour(document_id, colour):
 async def redis_remove_colours(document_id):
     await client.delete(f'colours:{document_id}')
 
-# Loads CRDT from redis, used for users joining on active document
+
+
+
 async def redis_load_crdt(document_id):
     state_json = await client.get(f'crdt:{document_id}')
     title = await client.get(f'title:{document_id}')
     if state_json and title:
         return json.loads(state_json), title
     
-    #if document just became active, crdt is obtained from document and set in redis
     doc = await sync_to_async(DocumentService.get_document)(document_id)
     state = doc.state
     title = doc.title
@@ -104,6 +107,7 @@ async def redis_flush_to_db(document_id):
         )
     await client.delete(f'crdt:{document_id}')
     await client.delete(f'users:{document_id}')
+    await client.delete(f'colours:{document_id}')
 
 
     

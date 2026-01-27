@@ -60,7 +60,7 @@ class PermissionManager(models.Manager):
 class Permission(models.Model):
     PERMISSION_CHOICES = [('viewer', 'Viewer'), ('editor', 'Editor'), ('owner', 'Owner')]
     document = models.ForeignKey('documents.Document', on_delete=models.CASCADE, related_name='permissions')
-    user = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='user_access')
+    user = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='user_permission')
     level = models.CharField(max_length=10, choices=PERMISSION_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)

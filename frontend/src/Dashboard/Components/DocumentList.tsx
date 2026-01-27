@@ -30,7 +30,7 @@ function DocumentList(): JSX.Element {
             results,
             invalidateCache
         } = useInfiniteApi<Document>({
-            param: '/api/documents/',
+            param: `/api/documents/`,
             initialPageParam: '/api/documents/',
             queryKey: ["documents"]
         }
@@ -58,6 +58,8 @@ function DocumentList(): JSX.Element {
                 })
         
     };
+
+    console.log(results);
 
 
     const documentCard = (doc: Document) => {

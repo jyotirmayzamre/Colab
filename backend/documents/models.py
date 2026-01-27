@@ -1,15 +1,22 @@
 from django.db import models
 import uuid
-from django.db.models import Count
+from permissions.models import Permission
+from django.db.models import Count, OuterRef, Subquery
 
 
 class DocumentManager(models.Manager): 
     def for_user_with_metadata(self, user):
+        user_count = Permission.objects.filter(
+            document=OuterRef('pk')
+        ).values('document').annotate(
+            count=Count('id')
+        ).values('count')
+
         return (
             self.filter(permissions__user=user)
             .annotate(
                 permission=models.F("permissions__level"),
-                num_users=Count("permissions", distinct=True),
+                num_users=Subquery(user_count),
             )
             .order_by("-updated_at")
         )

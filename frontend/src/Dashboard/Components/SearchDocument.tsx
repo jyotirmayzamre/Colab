@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { Input } from "@/Components/input";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 
 interface Props {
@@ -11,18 +11,24 @@ interface Props {
 
 
 function SearchDocument({ query, setQuery }: Props){
+    const [localQuery, setLocalQuery] = useState<string>(query);
 
     const queryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const updateQuery = (newQuery: string) => {
+        setLocalQuery(newQuery);
         if(queryTimer.current){
             clearTimeout(queryTimer.current)
         }
 
         queryTimer.current = setTimeout(() => {
             setQuery(newQuery);
-        }, 250);
+        }, 150);
     }
+
+    useEffect(() => {
+        setLocalQuery(query)
+    }, [query]);
 
     return (
         <div className="mb-6 flex flex-col justify-center items-center">
@@ -31,7 +37,7 @@ function SearchDocument({ query, setQuery }: Props){
                 <Input
                     type="text"
                     placeholder="Search documents..."
-                    value={query}
+                    value={localQuery}
                     onChange={(e) => {
                         updateQuery(e.target.value)
                     }}

@@ -107,7 +107,7 @@ function ShareDoc(): JSX.Element {
             if(e.target.value == ''){
                 setSelectedUser('');
             }
-        }, 250)
+        }, 150)
         
     };
 

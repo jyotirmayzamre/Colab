@@ -1,10 +1,14 @@
-from .models import User
-from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
-from .utils import validate_email as check_valid_email
+
+from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .utils import validate_email as check_valid_email
+from .models import User
+from typing import cast
 
 '''
 Read-only serializer for returning user to frontend
@@ -78,23 +82,20 @@ class LoginSerializer(serializers.Serializer):
 
     
     def validate(self, data):
-        username = data.get('username', None)
-        password = data.get('password', None)
-
-        if username is None:
-            raise ValidationError('Username is required')
-    
-        if password is None:
-            raise ValidationError('Password is required')
-        
-        user = authenticate(username=username, password=password)
+        user = authenticate(
+            username=data['username'], 
+            password=data['password']
+            )
         
         if user is None:
             raise ValidationError('Incorrect credentials')
         
-        token_serializer = MyTokenObtainPairSerializer(data={'username': username, 'password': password})
-        token_serializer.is_valid(raise_exception=True)
-        return token_serializer.validated_data
+        token = cast(RefreshToken, MyTokenObtainPairSerializer.get_token(user))
+        return {
+            'access': str(token.access_token),
+            'refresh': str(token)
+        }
+        
         
         
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

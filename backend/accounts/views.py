@@ -1,20 +1,23 @@
-from rest_framework.views import APIView
+from django.http import JsonResponse
 
-from .services import UserService
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, MyTokenObtainPairSerializer, CookieJWTAuthentication, UserProfileSerializer
-from .serializers import UpdatePasswordSerializer, UpdateUsernameSerializer
+from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from .services import UserService
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, MyTokenObtainPairSerializer, CookieJWTAuthentication, UserProfileSerializer
+from .serializers import UpdatePasswordSerializer, UpdateUsernameSerializer
 from .models import User
-from typing import cast
-from django.http import JsonResponse
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.exceptions import ValidationError
+from typing import cast, TypedDict
+from uuid import UUID
 
 
 '''
@@ -33,6 +36,9 @@ class RegistrationAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
+class TokenPair(TypedDict):
+    access: str
+    refresh: str
 
 class LoginAPIView(APIView):
     serializer_class = LoginSerializer
@@ -45,13 +51,14 @@ class LoginAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         tokens = serializer.validated_data
-        tokens = cast(dict, serializer.validated_data)
+        tokens = cast(TokenPair, serializer.validated_data)
         access = tokens.get('access')
         refresh = tokens.get('refresh')
         response = Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
+
         response.set_cookie(
             key='access',
-            value=access, #type:ignore
+            value=access, 
             httponly=True,
             samesite="Lax",
             secure=False,
@@ -59,7 +66,7 @@ class LoginAPIView(APIView):
         )
         response.set_cookie(
             key='refresh',
-            value=refresh, #type:ignore
+            value=refresh,
             httponly=True,
             samesite='Lax',
             secure=False,
@@ -110,7 +117,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class RefreshTokenView(TokenRefreshView):
     permission_classes=(AllowAny,)
 
-    def post(self, request):
+    def post(self, request: Request):
         refresh_token = request.COOKIES.get('refresh')
         if not refresh_token:
             return JsonResponse({'message': 'No refresh token found'}, status=401)
@@ -150,13 +157,27 @@ class SearchUserAPIView(APIView):
     def get(self, request: Request):
         query = request.query_params['q']
         document_id = request.query_params['document_id']
+
+        if not document_id:
+            raise ValidationError('Document id not passed')
+
         if not query:
             return Response({'results': []})
-        users = User.objects.search_for_users(query, document_id, request.user.id) # type: ignore
+        
+
+        users = User.objects.search_for_users(
+            query=query, 
+            document_id=cast(UUID, document_id), 
+            exclude_user_id=request.user.id
+            )
+        
         serializer = UserSerializer(users, many=True)
 
         return Response({'results': serializer.data})
 
+class NewPassword(TypedDict):
+    new_password: str
+    confirm_password: str
 
 class UpdatePasswordAPIView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -165,11 +186,12 @@ class UpdatePasswordAPIView(APIView):
     def patch(self, request: Request) -> Response:
         serializer = UpdatePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = cast(NewPassword, serializer.validated_data)
         
         
         UserService.update_password(
             user=request.user,
-            new_password=serializer.validated_data['new_password'] #type: ignore
+            new_password=data['new_password']
         )
         
         

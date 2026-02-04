@@ -9,9 +9,9 @@ import {
   CarouselPrevious,
 } from "@/Components/carousel";
 import { Users, Lock, FileText } from "lucide-react";
-import heroImage from "@/assets/hero-collab.jpg";
-import realtimeImage from "@/assets/feature-realtime.jpg";
-import securityImage from "@/assets/feature-security.jpg";
+import heroImage from "@/assets/home.png";
+import realtimeImage from "@/assets/editor.png";
+import securityImage from "@/assets/share.png";
 
 const Landing = () => {
   const features = [
@@ -61,10 +61,10 @@ const Landing = () => {
                 <span className="block text-primary">Documents Together</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-xl">
-                Real-time collaboration built using
-                CRDT technology ensures conflict-free editing, always.
+                Real-time collaboration and conflict-free editing
+                supported by a custom CRDT
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap justify-center gap-4">
                 <Link to="/auth/register">
                   <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-lg px-8">
                     Start Writing

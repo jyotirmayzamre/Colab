@@ -50,13 +50,24 @@ def remoteInsert(row: int, inChar: Char, state: List[List[Char]]):
         state.append([])
 
     state[row] = state[row] or []
-    index = binarySearch(state[row], inChar['position'])
-    state[row].insert(index, inChar)
+    col = binarySearch(state[row], inChar['position'])
+    lineLength = len(state[row])
+    state[row].insert(col, inChar)
+
+    if inChar['value'] == '\n' and col < lineLength:
+        rest = state[row][col + 1:]
+        del state[row][col + 1:]
+        state.insert(row + 1, rest)
+        
     return state
 
 def remoteDelete(row: int, delChar: Char, state: List[List[Char]]):
-    index = binarySearch(state[row], delChar['position'])
-    del state[row][index]
+    col = binarySearch(state[row], delChar['position'])
+    del state[row][col]
+    if(delChar['value'] == '\n'):
+        state[row] = state[row] + state[row+1]
+        del state[row+1]
+        
     return state
 
 

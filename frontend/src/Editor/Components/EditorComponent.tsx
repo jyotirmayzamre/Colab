@@ -7,6 +7,8 @@ import { getCursorPos, getChangeObj } from "../Utils/EditorUtils";
 import { remoteCursorPlugin } from "./Cursors/CursorViewPlugin";
 import { useAuth } from "@/Auth/useAuth";
 import { CursorPosition, EditorChange } from "../types";
+import CRDT from "@/CRDT/crdt";
+import { Char } from "@/CRDT/utils";
 
 const editorPadding = EditorView.theme({
     ".cm-content": {
@@ -79,6 +81,21 @@ function EditorComponent(){
     }, [setCursorPos, throttledSendCursor]);
 
 
+    const processOperation = (change: EditorChange, crdtRef: React.MutableRefObject<CRDT>) => {
+
+        const char: Char = change.oper === 'Insert'
+            ? crdtRef.current.localInsert(change.text, change.row, change.col)
+            : crdtRef.current.localDelete(change.row, change.col);
+       
+        return {
+            'oper': change.oper,
+            'char': char,
+            'row': change.row,
+            'col': change.col
+        }
+    }
+
+
 
     const onChange = useCallback((val: string, viewUpdate: ViewUpdate): void => {
         setValue(val);
@@ -90,31 +107,12 @@ function EditorComponent(){
         if(changes.length == 0) return;
 
         const isRemote = viewUpdate.transactions[0].isUserEvent('remote');
-        const operArray = [];
-
+       
         if (!isRemote) {
+            const operArray = [];
             for(const change of changes){
-                if (change.oper === 'Insert') {
-                    const char = crdtRef.current.localInsert(change.text, change.row, change.col);
-                    const data = {
-                        'oper': 'Insert',
-                        'char': char,
-                        'row': change.row,
-                        'col': change.col
-                    }
-                    operArray.push(data);
-
-                } else {
-                    const char = crdtRef.current.localDelete(change.row, change.col);
-                    const data = {
-                        'oper': 'Delete',
-                        'char': char,
-                        'row': change.row,
-                        'col': change.col
-                    }
-                    operArray.push(data);
-
-                }   
+                const data = processOperation(change, crdtRef);
+                operArray.push(data);
             }
             wsRef.current.send(JSON.stringify({ type: 'char', data: operArray }));
         }

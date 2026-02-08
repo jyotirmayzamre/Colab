@@ -45,7 +45,7 @@ def binarySearch(arr: List[Char], item: List[Identifier], compare: Callable[[Lis
 
 
 
-def remoteInsert(row: int, inChar: Char, state: List[List[Char]]):
+def remoteInsert(row: int, inChar: Char, state: List[List[Char]]) -> List[List[Char]]:
     while len(state) <= row:
         state.append([])
 
@@ -61,15 +61,15 @@ def remoteInsert(row: int, inChar: Char, state: List[List[Char]]):
         
     return state
 
-def remoteDelete(row: int, delChar: Char, state: List[List[Char]]):
-    if row >= len(state) or row < 0: return
+def remoteDelete(row: int, delChar: Char, state: List[List[Char]]) -> List[List[Char]]:
+    if row >= len(state) or row < 0: return state
     col = binarySearch(state[row], delChar['position'])
     
-    if col >= len(state[row]): return
+    if col >= len(state[row]): return state
     else:
         foundChar = state[row][col]
         if comparePosition(foundChar['position'], delChar['position']) != 0:
-            return
+            return state
     
     del state[row][col]
     if(delChar['value'] == '\n'):

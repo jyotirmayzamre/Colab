@@ -1,7 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .redis_utils import *
 from urllib.parse import parse_qs
-import asyncio
 
 
 class DocumentConsumer(AsyncJsonWebsocketConsumer):
@@ -16,6 +15,10 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_add(
             self.group_name, self.channel_name
         )
+
+        self.syncing = True
+        self.buffer = []
+
         await redis_generate_colours(self.document_id)
         self.colour = await redis_assign_colour(self.document_id)
 
@@ -26,10 +29,21 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         current_count = await redis_get_user_count(self.document_id)
 
         state, title = await redis_load_crdt(self.document_id)
-        await self.send_json({'event': 'load.crdt', 'state': state, 'user_count': current_count, 'title': title})
+        await self.send_json({'event': 'load.crdt', 
+                              'state': state, 
+                              'user_count': current_count, 
+                              'title': title})
+
+        for op in self.buffer:
+            await self.send_json({'event': 'crdt.oper', 'content': op})
+
+        self.syncing = False
+        self.buffer.clear()
 
         await self.channel_layer.group_send(
-            self.group_name, {'type': 'userCount.updated', 'sender': self.channel_name, 'user_count': current_count}
+            self.group_name, {'type': 'userCount.updated', 
+                              'sender': self.channel_name, 
+                              'user_count': current_count}
         )
 
 
@@ -93,17 +107,25 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
     async def version_restore(self, event):
         await self.send_json({'event': 'version.restore', 'versionId': event['versionId'], 'state': event['state']})
 
-        
-    #Get remote operation (character or cursor) from another user
+
     async def crdt_oper(self, event):
-        if(self.channel_name != event['sender']):
-            await self.send_json({'event': 'crdt.oper', 'content': event['content']})
+        if self.channel_name == event['sender']:
+            return
+        
+        if self.syncing:
+            self.buffer.append(event['content'])
+        else:
+            await self.send_json({
+                'event': 'crdt.oper',
+                'content': event['content']
+            })
+       
     
     async def cursor_remove(self, event):
         if(self.channel_name != event['sender']):
             await self.send_json({'event': 'cursor.remove', 'username': event['username']})
 
-    #User joined or left so send correct count
+
     async def userCount_updated(self, event):
         if(self.channel_name != event['sender']):
             await self.send_json({'event': 'userCount.updated', 'user_count': event['user_count']})
@@ -111,6 +133,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
 
     async def document_rename(self, event):
         await self.send_json({'event': 'document.rename', 'newTitle': event['newTitle']})
+
 
     async def cursor_update(self, event):
         if(self.channel_name != event['sender']):

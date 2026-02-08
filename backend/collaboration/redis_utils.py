@@ -1,15 +1,16 @@
 import json
 import redis.asyncio as redis
+from redis.asyncio.client import Redis as AsyncRedis
 import asyncio
-from asgiref.sync import sync_to_async
 from documents.services import DocumentService
 from versions.services import VersionService
-from .crdt import remoteDelete, remoteInsert
+from .crdt import remoteDelete, remoteInsert, Char
 import colorsys
 from channels.db import database_sync_to_async
+from typing import List, cast
 
 # client: redis.Redis = redis.Redis(host='redis', port=6379, db=0)
-client: redis.Redis = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+client: AsyncRedis = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 '''
 Used for cursor labels
@@ -26,16 +27,16 @@ async def redis_generate_colours(document_id, n=200, saturation=0.65, value=0.95
         colours.add(f"#{int(r*255):02X}{int(g*255):02X}{int(b*255):02X}")
 
 
-    await client.sadd(f'colours:{document_id}', *colours) # type: ignore
+    await client.sadd(f'colours:{document_id}', *colours)  # type: ignore
 
     
 async def redis_assign_colour(document_id):
-    colour = await client.spop(f'colours:{document_id}') #type: ignore
+    colour = await client.spop(f'colours:{document_id}')  # type: ignore
     return colour
 
 
 async def redis_add_colour(document_id, colour):
-    await client.sadd(f'colours:{document_id}', colour) #type: ignore
+    client.sadd(f'colours:{document_id}', colour)
 
 
 @database_sync_to_async
@@ -61,7 +62,7 @@ async def redis_load_crdt(document_id):
     return doc.state, doc.title
     
 
-def _apply_crdt_ops(state, operations):
+def _apply_crdt_ops(state: List[List[Char]], operations) -> List[List[Char]]:
     for op in operations:
         if op["oper"] == "Insert":
             state = remoteInsert(op["row"], op["char"], state)
@@ -69,10 +70,10 @@ def _apply_crdt_ops(state, operations):
             state = remoteDelete(op["row"], op["char"], state)
     return state
 
+
 async def redis_update_crdt(document_id, content): 
     key = f'crdt:{document_id}'
 
-    
     while True:
         try:
             async with client.pipeline(transaction=True) as pipe:
@@ -84,7 +85,7 @@ async def redis_update_crdt(document_id, content):
                     await pipe.unwatch()
                     return
                 
-                state = json.loads(state_json)
+                state = cast(List[List[Char]], json.loads(state_json))
                 state = await asyncio.to_thread(
                     _apply_crdt_ops, state, content["data"]
                 )
@@ -108,13 +109,13 @@ async def redis_restore_version(version_id):
     return state
 
 async def redis_add_user(document_id, user_id):
-    await client.sadd(f'users:{document_id}', user_id) #type: ignore
+    client.sadd(f'users:{document_id}', user_id)
 
 async def redis_remove_user(document_id, user_id):
-    await client.srem(f'users:{document_id}', user_id) #type: ignore
+    client.srem(f'users:{document_id}', user_id) 
 
 async def redis_get_user_count(document_id):
-    count = await client.scard(f'users:{document_id}') #type: ignore
+    count = await client.scard(f'users:{document_id}')  # type: ignore
     return count
 
 

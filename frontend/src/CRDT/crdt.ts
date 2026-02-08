@@ -6,7 +6,7 @@ class CRDT {
 
     constructor(user: number){
         this.user = user;
-        this.state = [];
+        this.state = [[]];
     }
 
     
@@ -37,16 +37,19 @@ class CRDT {
     }
 
     private handleInsert(row: number, col: number, char: Char): void {
-        const lineLength = this.state[row].length;
-        this.state[row].splice(col, 0, char)
-        if(char.value == '\n' && col < lineLength){  
-            const rest = this.state[row].splice(col+1);
-            this.state.splice(row+1, 0, rest);  
+        this.state[row].splice(col, 0, char);
+        if (char.value === '\n') {
+            const rest = this.state[row].splice(col + 1);
+            if (rest.length > 0) {
+                this.state.splice(row + 1, 0, rest);
+            }
         }
     }
 
     localInsert(value: string, row: number, col: number): Char {
-        this.state[row] = this.state[row] ? this.state[row] : [];
+        while (this.state.length <= row) {
+            this.state.push([]);
+        }
         const newPosition = this.generateChar(row, col);
         const newChar: Char = {position: newPosition, value: value};
         this.handleInsert(row, col, newChar);
@@ -54,7 +57,9 @@ class CRDT {
     }
 
     remoteInsert(row: number, inChar: Char){
-        this.state[row] = this.state[row] ? this.state[row] : [];
+        while (this.state.length <= row) {
+            this.state.push([]);
+        }
         const col = binarySearch(this.state[row], inChar.position);
         this.handleInsert(row, col, inChar);
     }
@@ -72,8 +77,10 @@ class CRDT {
     
 
     remoteDelete(row: number, delChar: Char): void{
-        const index = binarySearch(this.state[row], delChar.position);
-        this.state[row].splice(index, 1);
+        if (row >= this.state.length || row < 0) return;
+        const col = binarySearch(this.state[row], delChar.position);
+        if (col >= this.state[row].length) return;
+        this.state[row].splice(col, 1);
         if(delChar.value === '\n'){
             this.state[row] = this.state[row].concat(this.state[row+1]);
             this.state.splice(row+1, 1);

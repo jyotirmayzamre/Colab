@@ -1,4 +1,4 @@
-import { type Char, type Identifier, generateCharPosition, binarySearch } from "./utils";
+import { type Char, type Identifier, comparePosition, generateCharPosition, binarySearch } from "./utils";
 
 class CRDT {
     user: number;
@@ -79,7 +79,15 @@ class CRDT {
     remoteDelete(row: number, delChar: Char): void{
         if (row >= this.state.length || row < 0) return;
         const col = binarySearch(this.state[row], delChar.position);
+
         if (col >= this.state[row].length) return;
+        else {
+            const foundChar = this.state[row][col];
+            if(comparePosition(foundChar.position, delChar.position) !== 0){
+                return;
+            }
+        }
+
         this.state[row].splice(col, 1);
         if(delChar.value === '\n'){
             this.state[row] = this.state[row].concat(this.state[row+1]);

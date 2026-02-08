@@ -17,7 +17,7 @@ function compareIdentifier(id1: Identifier, id2: Identifier): number {
 
 
 
-function comparePosition(p1: Identifier[], p2: Identifier[]): number {
+export function comparePosition(p1: Identifier[], p2: Identifier[]): number {
     const l1 = p1.length;
     const l2 = p2.length;
     for(let i = 0; i < Math.min(l1, l2); i++){

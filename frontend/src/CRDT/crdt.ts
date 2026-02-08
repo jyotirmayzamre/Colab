@@ -38,12 +38,10 @@ class CRDT {
 
     private handleInsert(row: number, col: number, char: Char): void {
         const lineLength = this.state[row].length;
-        if(char.value == '\n' && col < lineLength){
-            this.state[row].splice(col, 0, char)
+        this.state[row].splice(col, 0, char)
+        if(char.value == '\n' && col < lineLength){  
             const rest = this.state[row].splice(col+1);
             this.state.splice(row+1, 0, rest);  
-        } else {
-            this.state[row].splice(col, 0, char);
         }
     }
 

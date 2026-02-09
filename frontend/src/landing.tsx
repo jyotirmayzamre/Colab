@@ -1,17 +1,18 @@
 import { Link } from "react-router-dom";
-import { Button } from "@/Components/button";
-import { Card, CardContent } from "@/Components/card";
+import { Button } from "@/ui/button";
+import { Card, CardContent } from "@/ui/card";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/Components/carousel";
-import { Users, Lock, FileText } from "lucide-react";
-import heroImage from "@/assets/home.png";
-import realtimeImage from "@/assets/editor.png";
-import securityImage from "@/assets/share.png";
+} from "@/ui/carousel";
+import { Users, Lock, FileText, History } from "lucide-react";
+import heroImage from "@/assets/dashboard.png";
+import editorImage from "@/assets/editor.png";
+import permissionsImage from "@/assets/share.png";
+import versionImage from '@/assets/version.png';
 
 const Landing = () => {
   const features = [
@@ -19,14 +20,20 @@ const Landing = () => {
       icon: Users,
       title: "Real-time Collaboration",
       description: "Work together seamlessly with CRDT-based conflict-free editing. See changes instantly as your friends type.",
-      image: realtimeImage,
+      image: editorImage,
     },
     {
       icon: Lock,
-      title: "Secure & Private",
-      description: "Your documents are encrypted and secure. Control who has access with granular permissions.",
-      image: securityImage,
+      title: "Control your access",
+      description: "Your documents are completely your own. Control who has access with granular permissions.",
+      image: permissionsImage,
     },
+    {
+      icon: History,
+      title: 'Create different versions',
+      description: 'Manage different versions of your documents. Restore to previous versions as and when you like.',
+      image: versionImage
+    }
   ];
 
   return (
@@ -57,8 +64,8 @@ const Landing = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                Collaborate on
-                <span className="block text-primary">Documents Together</span>
+                Collaborate on 
+                <span className="block">Documents Together</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-xl">
                 Real-time collaboration and conflict-free editing
@@ -66,7 +73,7 @@ const Landing = () => {
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link to="/auth/register">
-                  <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-lg px-8">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8">
                     Start Writing
                   </Button>
                 </Link>
@@ -141,7 +148,7 @@ const Landing = () => {
               Join to collaborate seamlessly
             </p>
             <Link to="/auth/register">
-              <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-lg px-12">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-12">
                 Get Started
               </Button>
             </Link>
@@ -152,14 +159,10 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              <span className="font-semibold">Colab</span>
-            </div>
+          <div className="flex flex-col md:flex-row items-center justify-end">
             <p className="text-sm text-muted-foreground">
-              © 2025 Colab. 
-            </p>
+              Built by Jyotirmay Zamre
+            </p> 
           </div>
         </div>
       </footer>

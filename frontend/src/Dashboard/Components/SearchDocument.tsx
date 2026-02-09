@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { Input } from "@/Components/input";
+import { Input } from "@/ui/input";
 import { useEffect, useRef, useState } from "react";
 
 
@@ -31,7 +31,7 @@ function SearchDocument({ query, setQuery }: Props){
     }, [query]);
 
     return (
-        <div className="mb-6 flex flex-col justify-center items-center">
+        <div className="mb-8 flex flex-col justify-center items-center">
             <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input

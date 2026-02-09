@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import { forwardRef, useState } from "react";
 import api from "@/Auth/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { FileText, Users, Trash2, MoreVertical, ArrowUpRight } from "lucide-react";
 import {
   DropdownMenu,
@@ -10,8 +10,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/Components/dropdown";
-import { Button } from "@/Components/button";
+} from "@/ui/dropdown";
+import { Button } from "@/ui/button";
 import { VirtuosoGrid } from "react-virtuoso";
 import Swal from "sweetalert2";
 import SearchDocument from "./SearchDocument";
@@ -116,7 +116,7 @@ function DocumentList(): JSX.Element {
                         }).toString()
                     })}>
                 <div className="text-sm text-muted-foreground">
-                    Click to open and continue editing
+                    <span className="underline">Click</span> to open and continue editing
                 </div>
             </CardContent>
         </Card>)
@@ -139,18 +139,18 @@ function DocumentList(): JSX.Element {
                     variant={viewOwned ? "default" : "outline"}
                     size="sm"
                     onClick={() => setViewOwned(true)}
-                    className="gap-2"
+                    className="gap-2 h-10"
                 >
-                    <FileText className="h-4 w-4" />
+                    <FileText className="h-6 w-6" />
                     Owned
                 </Button>
                 <Button
                     variant={!viewOwned ? "default" : "outline"}
                     size="sm"
                     onClick={() => setViewOwned(false)}
-                    className="gap-2"
+                    className="gap-2 h-10"
                 >
-                    <Users className="h-4 w-4" />
+                    <Users className="h-6 w-6" />
                     Shared
                 </Button>
             </div>

@@ -2,7 +2,7 @@
 
 A real-time collaborative text editor built with React, Django, and CodeMirror, featuring shared editing, live cursors, comments, version control, and access management. The project uses a custom 2D array based CRDT (Conflict-Free Replicated Data Type).
 
-This project was initially built as a course project for CS-3810 (Design Practices in CS). However, I definitely did not do justice to the project at that time. This is my attempt in making a more complete, technically sound, and bug-free version of the project from scratch. Learnt a ton - WebSockets, good React design, abstraction complexity in DRF (did not enjoy the confusion this caused), comprehensive testing, pagination + virtualization, etc. Obviously this project is not perfect and I will try to improve it incrementally as my engineering and coding skills improve.
+This project was initially built as a course project for CS-3810 (Design Practices in CS). However, I definitely did not do justice to the project at that time. This is my attempt in making a more complete, technically sound, and bug-free version of the project from scratch. Learnt a ton - WebSockets, caching, state sync techniques, good React design, abstraction complexity in DRF (did not enjoy the confusion this caused), comprehensive testing, pagination + virtualization, etc. Obviously this project is not perfect and I will try to improve it incrementally as my engineering and coding skills improve.
 
 ## Features
 
@@ -22,7 +22,7 @@ This project was initially built as a course project for CS-3810 (Design Practic
 ## Screenshots
 
 ### LandingPage
-![LandingPage](./images/home.png)
+![LandingPage](./images/landing.png)
 
 ### Login
 ![Login](./images/login.png)

@@ -1,6 +1,6 @@
 import type { UseFormRegisterReturn, FieldError } from "react-hook-form";
-import { Input } from "@/Components/input";
-import { Label } from "@/Components/label";
+import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
 import { cn } from "@/lib/utils";
 
 interface InputProps {

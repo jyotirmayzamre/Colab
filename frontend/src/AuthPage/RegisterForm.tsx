@@ -4,8 +4,8 @@ import FormInput from "./FormInput";
 import axios from 'axios';
 import { Link, useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
-import { Button } from "@/Components/button";
-import { Card, CardContent, CardDescription, CardTitle, CardHeader } from "@/Components/card";
+import { Button } from "@/ui/button";
+import { Card, CardContent, CardDescription, CardTitle, CardHeader } from "@/ui/card";
 
 type FormFields = {
     username: string;
@@ -71,7 +71,7 @@ function RegisterForm(): JSX.Element {
             <CardHeader className="space-y-1">
               <CardTitle className="text-3xl font-bold">Create account</CardTitle>
               <CardDescription className="text-base">
-                Get started with your free account
+                Get started with your new account
               </CardDescription>
             </CardHeader>
             <p className="text-red-600 text-sm p-2 mb-3">{errors.root ? errors.root.message : ''}</p>
@@ -162,7 +162,7 @@ function RegisterForm(): JSX.Element {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-12 text-base bg-secondary hover:bg-secondary/90"
+                  className="w-full h-12 text-base bg-primary hover:bg-primary/90"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Creating account..." : "Create account"}
@@ -178,16 +178,6 @@ function RegisterForm(): JSX.Element {
             </CardContent>
           </Card>
 
-          <p className="text-center text-sm text-muted-foreground">
-            By creating an account, you agree to our{" "}
-            <Link to="/terms" className="text-primary hover:underline">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link to="/privacy" className="text-primary hover:underline">
-              Privacy Policy
-            </Link>
-          </p>
         </div>
       </div>
     )

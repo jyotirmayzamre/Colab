@@ -109,10 +109,10 @@ async def redis_restore_version(version_id):
     return state
 
 async def redis_add_user(document_id, user_id):
-    client.sadd(f'users:{document_id}', user_id)
+    await client.sadd(f'users:{document_id}', user_id) # type: ignore
 
 async def redis_remove_user(document_id, user_id):
-    client.srem(f'users:{document_id}', user_id) 
+    await client.srem(f'users:{document_id}', user_id)  # type: ignore
 
 async def redis_get_user_count(document_id):
     count = await client.scard(f'users:{document_id}')  # type: ignore

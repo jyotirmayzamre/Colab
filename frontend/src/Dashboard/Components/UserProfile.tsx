@@ -1,10 +1,10 @@
 import { useAuth } from "@/Auth/useAuth";
-import { Button } from "@/Components/button";
-import { Dialog, DialogContent, DialogDescription, DialogPortal, DialogTitle } from "@/Components/dialog";
-import { Input } from "@/Components/input";
-import { Separator } from "@/Components/separator"
+import { Button } from "@/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogPortal, DialogTitle } from "@/ui/dialog";
+import { Input } from "@/ui/input";
+import { Separator } from "@/ui/separator"
 import { Mail, Pencil, Check, X, Users, FileText, LogOut, Lock } from "lucide-react";
-import { Label } from "@/Components/label";
+import { Label } from "@/ui/label";
 import { useEffect, useState } from "react";
 import api from "@/Auth/api";
 import { sendNotification } from "@/lib/utils";

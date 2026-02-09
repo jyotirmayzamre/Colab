@@ -1,8 +1,8 @@
 import type { JSX } from 'react';
 import { Download, History, Plus } from "lucide-react";
-import { Dialog, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
+import { Dialog, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/ui/dialog";
 import { useState, memo } from 'react';
-import { Card, CardContent } from '@/Components/card';
+import { Card, CardContent } from '@/ui/card';
 import api from '@/Auth/api';
 import Swal from 'sweetalert2';
 import {
@@ -11,10 +11,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/Components/dropdown";
+} from "@/ui/dropdown";
 import { Trash2, MoreVertical, ArrowUpRight, X } from "lucide-react";
-import { Button } from "@/Components/button";
-import { Input } from '@/Components/input';
+import { Button } from "@/ui/button";
+import { Input } from '@/ui/input';
 import { crdtToString } from "@/CRDT/utils";
 import handleDownload from '../Utils/downloadUtil';
 import { useEditorMeta } from '../Provider/hooks';

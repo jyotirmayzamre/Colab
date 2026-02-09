@@ -4,8 +4,8 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../Auth/useAuth';
 import { FileText,  } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent,  } from '@/Components/card';
-import { Button } from '@/Components/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent,  } from '@/ui/card';
+import { Button } from '@/ui/button';
 
 
 type FormFields = {
@@ -92,16 +92,6 @@ function LoginForm(): JSX.Element {
             </CardContent>
           </Card>
 
-          <p className="text-center text-sm text-muted-foreground">
-            By signing in, you agree to our{" "}
-            <Link to="/terms" className="text-primary hover:underline">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link to="/privacy" className="text-primary hover:underline">
-              Privacy Policy
-            </Link>
-          </p>
         </div>
       </div>
     )

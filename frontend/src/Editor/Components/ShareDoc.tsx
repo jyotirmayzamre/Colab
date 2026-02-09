@@ -1,14 +1,14 @@
 import { ChangeEvent, useEffect, useState, useCallback, type JSX } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { Input } from "@/Components/input";
+import { Input } from "@/ui/input";
 import api from "../../Auth/api";
-import { Button } from "@/Components/button";
+import { Button } from "@/ui/button";
 import { Share2, User, Copy, Check } from "lucide-react";
-import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/Components/dialog";
+import { Dialog, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "@/ui/dialog";
 import { cn, sendNotification } from "@/lib/utils";
 import { useEditorMeta } from "../Provider/hooks";
 import { Virtuoso } from "react-virtuoso";
-import { Card, CardContent } from "@/Components/card";
+import { Card, CardContent } from "@/ui/card";
 import useInfiniteApi from "../../lib/reactQueryHook";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";

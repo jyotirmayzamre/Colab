@@ -67,10 +67,6 @@ function subtract(num1: number[], num2: number[]): number[] {
 }
 
 
-
-/*
-Works with the assumption that all results will be less than 1 (because adding diff)
-*/
 function add(num1: number[], num2: number[]): number[] {
     const len1 = num1.length;
     const len2 = num2.length;
@@ -106,28 +102,27 @@ function increment(num: number[], delta: number[]): number[] {
 
 
 function toPosition(n1: number[], before: Identifier[], after: Identifier[], site_id: number): Identifier[]{
-    const res: Identifier[] = [];
     const n1Len = n1.length;
     const beforeLen = before.length;
     const afterLen = after.length;
+    const res = new Array<Identifier>(n1Len);
 
     for(let i = 0; i < n1Len; i++){
         if(i < beforeLen && n1[i] == before[i].digit){
-            res.push({digit: n1[i], site_id: before[i].site_id});
+            res[i] = {digit: n1[i], site_id: before[i].site_id}
             continue;
         }
 
         if(i < afterLen && n1[i] == after[i].digit){
-            res.push({digit: n1[i], site_id: after[i].site_id});
+            res[i] = {digit: n1[i], site_id: after[i].site_id}
             continue;
         }
 
         if(i == n1Len - 1){
-            res.push({digit: n1[i], site_id: site_id});
+            res[i] = {digit: n1[i], site_id: site_id}
             continue;
         }
-
-        res.push({digit: n1[i], site_id: site_id});
+        res[i] = {digit: n1[i], site_id: site_id};
     }
 
     return res;

@@ -46,9 +46,7 @@ class CRDT {
 
         const tail = line.splice(col);
         line.push(char);
-        if(tail.length > 0){
-            this.state.splice(row+1, 0, tail);
-        }
+        this.state.splice(row+1, 0, tail);
         return;
     }
 

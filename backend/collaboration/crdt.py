@@ -41,31 +41,34 @@ def remoteInsert(row: int, inChar: Char, state: List[List[Char]]) -> List[List[C
     while len(state) <= row:
         state.append([])
 
-    state[row] = state[row] or []
     col = binarySearch(state[row], inChar['position'])
-    state[row].insert(col, inChar)
-
-    if inChar['value'] == '\n':
-        rest = state[row][col + 1:]
-        del state[row][col + 1:]
-        if(len(rest) > 0):
-            state.insert(row + 1, rest)
-        
+    line = state[row]
+    if inChar['value'] != '\n':
+        line.insert(col, inChar)
+        return state
+    
+    tail = line[col:]
+    del line[col:]
+    line.append(inChar)
+    state.insert(row+1, tail)
     return state
+    
 
 def remoteDelete(row: int, delChar: Char, state: List[List[Char]]) -> List[List[Char]]:
     if row >= len(state) or row < 0: return state
     col = binarySearch(state[row], delChar['position'])
     
     if col >= len(state[row]): return state
-    else:
-        foundChar = state[row][col]
-        if comparePosition(foundChar['position'], delChar['position']) != 0:
-            return state
-    
+   
+    foundChar = state[row][col]
+    if comparePosition(foundChar['position'], delChar['position']) != 0:
+        return state
+
     del state[row][col]
+
     if(delChar['value'] == '\n'):
-        state[row] = state[row] + state[row+1]
+        next_line = state[row+1]
+        state[row].extend(next_line)
         del state[row+1]
         
     return state

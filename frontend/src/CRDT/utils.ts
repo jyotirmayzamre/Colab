@@ -84,7 +84,7 @@ function add(num1: number[], num2: number[]): number[] {
         res[i] = sum % 65536;
         carry = Math.floor(sum / 65536);
     }
-    return res.reverse();
+    return res;
 }
 
 

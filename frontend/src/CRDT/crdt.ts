@@ -47,6 +47,7 @@ class CRDT {
         const tail = line.splice(col);
         line.push(char);
         this.state.splice(row+1, 0, tail);
+        
         return;
     }
 

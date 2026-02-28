@@ -12,38 +12,30 @@ class Char(TypedDict):
     lamport: int
     value: str
 
-def compareIdentifier(id1: Identifier, id2: Identifier) -> int:
-    if(id1['digit'] != id2['digit']):
-        return id1['digit'] - id2['digit']
-    return id1['site_id'] - id2['site_id']
 
 def comparePosition(p1: List[Identifier], p2: List[Identifier]) -> int:
     l1 = len(p1)
     l2 = len(p2)
     for i in range(min(l1, l2)):
-        res = compareIdentifier(p1[i], p2[i])
-        if(res != 0):
-            return res
-    
+        d = p1[i]['digit'] - p2[i]['digit']
+        if d != 0: return d
+        s = p1[i]['site_id'] - p2[i]['site_id']
+        if s != 0: return s
+       
     return l1-l2
     
 def binarySearch(arr: List[Char], item: List[Identifier], compare: Callable[[List[Identifier], List[Identifier]], int] = comparePosition):
-    def algo(L: int, R: int) -> int:
-        if L >= R:
-            return L
+    lo = 0
+    hi = len(arr)
+
+    while lo < hi:
+        mid = (lo + hi) >> 1
+        if compare(item, arr[mid]['position']) > 0:
+            lo = mid + 1
         else:
-            M = (L+R) // 2
-            res = compare(item, arr[M]['position'])
-            if res < 0:
-                return algo(L, M)
-            elif res > 0:
-                return algo(M+1, R)
-            else:
-                return M
-    return algo(0, len(arr))
-
-
-
+            hi = mid
+    return lo
+    
 
 def remoteInsert(row: int, inChar: Char, state: List[List[Char]]) -> List[List[Char]]:
     while len(state) <= row:

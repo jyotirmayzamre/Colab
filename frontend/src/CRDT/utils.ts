@@ -9,20 +9,14 @@ export type Char = {
 }
 
 
-
-function compareIdentifier(id1: Identifier, id2: Identifier): number {
-    if(id1.digit != id2.digit) return id1.digit - id2.digit;
-    return id1.site_id - id2.site_id;
-}
-
-
-
 export function comparePosition(p1: Identifier[], p2: Identifier[]): number {
     const l1 = p1.length;
     const l2 = p2.length;
     for(let i = 0; i < Math.min(l1, l2); i++){
-        const res = compareIdentifier(p1[i], p2[i]);
-        if (res !== 0) return res;
+        const d = p1[i].digit - p2[i].digit;
+        if (d !== 0) return d;
+        const s = p1[i].site_id - p2[i].site_id;
+        if (s !== 0) return s;
     }
 
     return l1 - l2;
@@ -33,12 +27,12 @@ export function comparePosition(p1: Identifier[], p2: Identifier[]): number {
 Returns number array of an identifier
 */
 function toNum(p: Identifier[]): number[] {
-    const res: number[] = []
     const length = p.length;
-
-    for (let i = 0; i < length; i++){
-        res.push(p[i].digit)
+    const res = new Array<number>(length);
+    for(let i = 0; i < length; i++){
+        res[i] = p[i].digit;
     }
+   
     return res
 }
 
@@ -47,32 +41,29 @@ function toNum(p: Identifier[]): number[] {
 Returns num2 - num1
 */
 function subtract(num1: number[], num2: number[]): number[] {
-     const len1 = num1.length;
+    const len1 = num1.length;
     const len2 = num2.length;
-    const res: number[] = [];
-
+    
     const maxLen = Math.max(len1, len2);
-
-    const num1Padded = num1.concat(Array(maxLen - len1).fill(0));
-    const num2Padded = num2.concat(Array(maxLen - len2).fill(0));
+    const res = new Array<number>(maxLen);
 
     let borrow = 0;
 
     for (let i = maxLen - 1; i >= 0; i--){
-        const dig1 = num1Padded[i];
-        const dig2 = num2Padded[i];
+        const dig1 = i < len1 ? num1[i] : 0;
+        const dig2 = i < len2 ? num2[i] : 0;
 
         let diff = dig2 - dig1 - borrow;
         if (diff < 0) {
-            diff += 10;
+            diff += 65536;
             borrow = 1;
         } else {
             borrow = 0;
         }
-        res.push(diff);
+        res[i] = diff;
     }
 
-    return res.reverse();
+    return res;
 }
 
 
@@ -83,22 +74,19 @@ Works with the assumption that all results will be less than 1 (because adding d
 function add(num1: number[], num2: number[]): number[] {
     const len1 = num1.length;
     const len2 = num2.length;
-    const res: number[] = [];
 
     const maxLen = Math.max(len1, len2);
-
-    const num1Padded = num1.concat(Array(maxLen - len1).fill(0));
-    const num2Padded = num2.concat(Array(maxLen - len2).fill(0));
+    const res = new Array<number>(maxLen);
 
     let carry = 0;
 
     for(let i = maxLen - 1; i >= 0; i--){
-        const dig1 = num1Padded[i];
-        const dig2 = num2Padded[i];
+        const dig1 = i < len1 ? num1[i] : 0;
+        const dig2 = i < len2 ? num2[i] : 0;
 
         const sum = dig1 + dig2 + carry;
-        res.push(sum % 10);
-        carry = Math.floor(sum / 10);
+        res[i] = sum % 65536;
+        carry = Math.floor(sum / 65536);
     }
     return res.reverse();
 }
@@ -106,7 +94,9 @@ function add(num1: number[], num2: number[]): number[] {
 
 function increment(num: number[], delta: number[]): number[] {
     const firstNonZeroDigit = delta.findIndex(x => x != 0);
-    const inc = delta.slice(0, firstNonZeroDigit).concat([0, 1]);
+    const incLen = firstNonZeroDigit + 2;
+    const inc = new Array<number>(incLen).fill(0);
+    inc[incLen - 1] = 1;
     const check1 = add(num, inc);
     const check2 = check1[check1.length - 1] === 0 ? add(check1, inc) : check1;
     return check2;
@@ -115,7 +105,7 @@ function increment(num: number[], delta: number[]): number[] {
 
 
 
-function toPosition(n1: number[], before: Identifier[], after: Identifier[], site_id_id: number): Identifier[]{
+function toPosition(n1: number[], before: Identifier[], after: Identifier[], site_id: number): Identifier[]{
     const res: Identifier[] = [];
     const n1Len = n1.length;
     const beforeLen = before.length;
@@ -133,11 +123,11 @@ function toPosition(n1: number[], before: Identifier[], after: Identifier[], sit
         }
 
         if(i == n1Len - 1){
-            res.push({digit: n1[i], site_id: site_id_id});
+            res.push({digit: n1[i], site_id: site_id});
             continue;
         }
 
-        res.push({digit: n1[i], site_id: site_id_id});
+        res.push({digit: n1[i], site_id: site_id});
     }
 
     return res;
@@ -147,7 +137,7 @@ function toPosition(n1: number[], before: Identifier[], after: Identifier[], sit
 
 export function generateCharPosition(before: Identifier[], after: Identifier[], site_id: number): Identifier[] {
     const head1: Identifier = before[0] || {digit: 0, site_id};
-    const head2: Identifier = after[0] || {digit: 1, site_id};
+    const head2: Identifier = after[0] || {digit: 65536, site_id};
 
     if(head1.digit !== head2.digit){
         const n1: number[] = toNum(before);
@@ -158,12 +148,10 @@ export function generateCharPosition(before: Identifier[], after: Identifier[], 
     } else {
         if (head1.site_id < head2.site_id){
             const middle = generateCharPosition(before.slice(1), [], site_id);
-            middle.splice(0, 0, head1);
-            return middle;
+            return [head1, ...middle];
         } else if (head1.site_id === head2.site_id){
             const middle = generateCharPosition(before.slice(1), after.slice(1), site_id);
-            middle.splice(0, 0, head1);
-            return middle;
+            return [head1, ...middle]
         } else{
             throw new Error("Invalid ordering");
         }
@@ -173,22 +161,17 @@ export function generateCharPosition(before: Identifier[], after: Identifier[], 
 
 
 export function binarySearch(arr: Char[], item: Identifier[], compare: (p1: Identifier[], p2: Identifier[]) => number = comparePosition){
-    function algo(L: number, R: number){
-        if (L >= R){
-            return L;
+    let lo = 0;
+    let hi = arr.length;
+    while (lo < hi){
+        const mid = (lo + hi) >>> 1;
+        if(compare(item, arr[mid].position) > 0){
+            lo = mid + 1;
         } else{
-            const M = Math.floor((L + R) / 2);
-            const res = compare(item, arr[M].position);
-            if (res < 0){
-                return algo(L, M)
-            } else if (res > 0){
-                return algo(M+1, R);
-            } else{
-                return M;
-            }
+            hi = mid;
         }
     }
-    return algo(0, arr.length);
+    return lo;
 }
 
 

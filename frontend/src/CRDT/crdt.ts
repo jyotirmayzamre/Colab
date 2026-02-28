@@ -37,16 +37,22 @@ class CRDT {
     }
 
     private handleInsert(row: number, col: number, char: Char): void {
-        this.state[row].splice(col, 0, char);
-        if (char.value === '\n') {
-            const rest = this.state[row].splice(col + 1);
-            if (rest.length > 0) {
-                this.state.splice(row + 1, 0, rest);
-            }
+        const line = this.state[row];
+
+        if(char.value !== '\n'){
+            line.splice(col, 0, char);
+            return;
         }
+
+        const tail = line.splice(col);
+        line.push(char);
+        if(tail.length > 0){
+            this.state.splice(row+1, 0, tail);
+        }
+        return;
     }
 
-    localInsert(value: string, row: number, col: number): Char {
+    public localInsert(value: string, row: number, col: number): Char {
         while (this.state.length <= row) {
             this.state.push([]);
         }
@@ -56,7 +62,7 @@ class CRDT {
         return newChar
     }
 
-    remoteInsert(row: number, inChar: Char){
+    public remoteInsert(row: number, inChar: Char){
         while (this.state.length <= row) {
             this.state.push([]);
         }
@@ -65,10 +71,14 @@ class CRDT {
     }
 
 
-    localDelete(row: number, col: number): Char {
+    public localDelete(row: number, col: number): Char {
         const deletedChar: Char = this.state[row].splice(col, 1)[0];
         if(deletedChar.value === '\n'){
-            this.state[row] = this.state[row].concat(this.state[row+1]);
+            const nextLine = this.state[row+1];
+            const length = nextLine.length;
+            for(let i = 0; i < length; i++){
+                this.state[row].push(nextLine[i])
+            }
             this.state.splice(row+1, 1);
         }
         return deletedChar;
@@ -76,7 +86,7 @@ class CRDT {
 
     
 
-    remoteDelete(row: number, delChar: Char): void{
+    public remoteDelete(row: number, delChar: Char): void{
         if (row >= this.state.length || row < 0) return;
         const col = binarySearch(this.state[row], delChar.position);
 
@@ -90,7 +100,11 @@ class CRDT {
 
         this.state[row].splice(col, 1);
         if(delChar.value === '\n'){
-            this.state[row] = this.state[row].concat(this.state[row+1]);
+            const nextLine = this.state[row+1];
+            const length = nextLine.length;
+            for(let i = 0; i < length; i++){
+                this.state[row].push(nextLine[i])
+            }
             this.state.splice(row+1, 1);
         }
     }

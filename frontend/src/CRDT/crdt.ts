@@ -8,8 +8,7 @@ class CRDT {
         this.user = user;
         this.state = [[]];
     }
-
-    
+ 
     private generateChar(row: number, col: number): Identifier[]{
         let prevIndex: Identifier[];
         let nextIndex: Identifier[];
@@ -51,6 +50,7 @@ class CRDT {
         return;
     }
 
+
     public localInsert(value: string, row: number, col: number): Char {
         while (this.state.length <= row) {
             this.state.push([]);
@@ -61,52 +61,91 @@ class CRDT {
         return newChar
     }
 
-    public remoteInsert(row: number, inChar: Char){
-        while (this.state.length <= row) {
-            this.state.push([]);
-        }
-        const col = binarySearch(this.state[row], inChar.position);
-        this.handleInsert(row, col, inChar);
+    public remoteInsert(inChar: Char): [number, number]{
+      const row = this.findRow(inChar);
+      if(row >= this.state.length) this.state.push([]);
+      const col = binarySearch(this.state[row], inChar.position);
+      this.handleInsert(row, col, inChar);
+      return [row, col];
+    }
+
+    
+    private mergeRows(row: number): void {
+      this.state[row].push(...this.state[row+1]);
+      this.state.splice(row+1, 1);
+    }
+
+    private removeEmptyLines(): void {
+      const length = this.state.length;
+      for(let i = length - 1; i > 0; i--){
+        if(this.state[i].length === 0) this.state.splice(i, 1);
+      }
+      if(this.state.length === 0) this.state.push([]);
     }
 
 
+    private findRow(char: Char): number {
+      let lo = 0;
+      let hi = this.state.length-1;
+
+      while(lo + 1 < hi){
+        let mid = lo + ((hi-lo) >>> 1);
+        let currRow = this.state[mid];
+        if(!currRow.length){
+          hi = mid;
+          continue;
+        }
+        let lastChar = currRow[currRow.length - 1];
+        let result = comparePosition(char.position, lastChar.position);
+        if(result === 0) return mid;
+        else if(result < 0) hi = mid;
+        else lo = mid; 
+      }
+
+      const minRow = this.state[lo];
+      if(!minRow.length) return hi;
+      if(comparePosition(char.position, minRow[minRow.length - 1].position) <= 0){
+        return lo;
+      } else{
+        return hi;
+      }
+    }
+
     public localDelete(row: number, col: number): Char {
         const deletedChar: Char = this.state[row].splice(col, 1)[0];
-        if(deletedChar.value === '\n'){
-            const nextLine = this.state[row+1];
-            const length = nextLine.length;
-            for(let i = 0; i < length; i++){
-                this.state[row].push(nextLine[i])
-            }
-            this.state.splice(row+1, 1);
+        if(deletedChar.value === '\n' && this.state[row+1]){
+          this.mergeRows(row);
         }
         return deletedChar;
     }
 
     
 
-    public remoteDelete(row: number, delChar: Char): void{
-        if (row >= this.state.length || row < 0) return;
-        const col = binarySearch(this.state[row], delChar.position);
+    public remoteDelete(delChar: Char): [number, number] | null{
+      const row = this.findRow(delChar);
+      if (row >= this.state.length || row < 0) return null;
+      const col = binarySearch(this.state[row], delChar.position);
 
-        if (col >= this.state[row].length) return;
-        else {
-            const foundChar = this.state[row][col];
-            if(comparePosition(foundChar.position, delChar.position) !== 0){
-                return;
-            }
+      //check for whether character actuallly exists
+      if (col >= this.state[row].length) return null;
+      else {
+        const foundChar = this.state[row][col];
+        if(comparePosition(foundChar.position, delChar.position) !== 0){
+          return null;
         }
+      }
 
-        this.state[row].splice(col, 1);
-        if(delChar.value === '\n'){
-            const nextLine = this.state[row+1];
-            const length = nextLine.length;
-            for(let i = 0; i < length; i++){
-                this.state[row].push(nextLine[i])
-            }
-            this.state.splice(row+1, 1);
-        }
-    }
+      //if deleted char is newline, merge next line with current line
+      this.state[row].splice(col, 1);
+      if(delChar.value === '\n' && this.state[row+1]){
+        this.mergeRows(row);
+        this.removeEmptyLines();
+      }
+
+      return [row, col];
+  }
+
+    
 }
 
 

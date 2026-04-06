@@ -65,9 +65,9 @@ async def redis_load_crdt(document_id):
 def _apply_crdt_ops(state: List[List[Char]], operations) -> List[List[Char]]:
     for op in operations:
         if op["oper"] == "Insert":
-            state = remoteInsert(op["row"], op["char"], state)
+            state = remoteInsert(op["char"], state)
         else:
-            state = remoteDelete(op["row"], op["char"], state)
+            state = remoteDelete(op["char"], state)
     return state
 
 

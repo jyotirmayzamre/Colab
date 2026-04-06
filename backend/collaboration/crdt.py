@@ -23,7 +23,34 @@ def comparePosition(p1: List[Identifier], p2: List[Identifier]) -> int:
         if s != 0: return s
        
     return l1-l2
-    
+
+def findRow(state: List[List[Char]], pos: List[Identifier], compare: Callable[[List[Identifier], List[Identifier]], int] = comparePosition):
+    lo = 0
+    hi = len(state)-1
+
+    while lo + 1 < hi:
+        mid = lo + ((hi - lo) >> 1)
+        currRow = state[mid]
+        if not currRow:
+            hi = mid
+            continue
+
+        lastChar = currRow[-1]
+        result = comparePosition(pos, lastChar["position"])
+        if result == 0: return mid
+        elif result < 0: hi = mid
+        else: lo = mid
+
+    minRow = state[lo]
+    if not minRow:
+        return hi
+
+    if comparePosition(pos, minRow[-1]["position"]) <= 0:
+        return lo
+    else:
+        return hi
+
+
 def binarySearch(arr: List[Char], item: List[Identifier], compare: Callable[[List[Identifier], List[Identifier]], int] = comparePosition):
     lo = 0
     hi = len(arr)
@@ -37,8 +64,9 @@ def binarySearch(arr: List[Char], item: List[Identifier], compare: Callable[[Lis
     return lo
     
 
-def remoteInsert(row: int, inChar: Char, state: List[List[Char]]) -> List[List[Char]]:
-    while len(state) <= row:
+def remoteInsert(inChar: Char, state: List[List[Char]]) -> List[List[Char]]:
+    row = findRow(state, inChar["position"])
+    if row >= len(state):
         state.append([])
 
     col = binarySearch(state[row], inChar['position'])
@@ -52,9 +80,18 @@ def remoteInsert(row: int, inChar: Char, state: List[List[Char]]) -> List[List[C
     line.append(inChar)
     state.insert(row+1, tail)
     return state
-    
 
-def remoteDelete(row: int, delChar: Char, state: List[List[Char]]) -> List[List[Char]]:
+def removeEmptyLines(state: List[List[Char]]) -> List[List[Char]]:
+    length = len(state)
+    for i in range(length-1, -1, -1):
+        if len(state[i]) == 0:
+            state.pop(i)
+    if len(state) == 0:
+        state.append([])
+    return state
+
+def remoteDelete(delChar: Char, state: List[List[Char]]) -> List[List[Char]]:
+    row = findRow(state, delChar["position"])
     if row >= len(state) or row < 0: return state
     col = binarySearch(state[row], delChar['position'])
     
@@ -70,6 +107,7 @@ def remoteDelete(row: int, delChar: Char, state: List[List[Char]]) -> List[List[
         next_line = state[row+1]
         state[row].extend(next_line)
         del state[row+1]
+        state = removeEmptyLines(state)
         
     return state
 

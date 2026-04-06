@@ -83,19 +83,29 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
                     const doc = editorRef.current.state.doc;
                     const changes = [];
                     for(const change of content.data){
-                        const line = doc.line(change.row + 1); 
-                        const pos = line.from + change.col;
-
-                        //handle remote changes
-                        if(change.oper === 'Insert'){
-                            crdtRef.current.remoteInsert(change.row, change.char);
-                            changes.push({from: pos, insert: change.char.value});
-                        } else{
-                            crdtRef.current.remoteDelete(change.row, change.char);
-                            changes.push({from: pos, to: pos+1});
-                        }
-                    }
-                    
+                      if(change.oper === 'Insert'){
+                        const [row, col] = crdtRef.current.remoteInsert(change.char);
+                        const line = doc.line(row + 1);
+                        const pos = line.from + col;
+                        changes.push({from: pos, insert: change.char.value});
+                      } else{
+                        const [row, col] = crdtRef.current.remoteDelete(change.char);
+                        const line = doc.line(row+1);
+                        const pos = line.from + col;
+                        changes.push({from: pos, to: pos+1});
+                      }
+                    //     const line = doc.line(change.row + 1); 
+                    //     const pos = line.from + change.col;
+                    //
+                    //     //handle remote changes
+                    //     if(change.oper === 'Insert'){
+                    //       crdtRef.current.remoteInsert(change.char);
+                    //       changes.push({from: pos, insert: change.char.value});
+                    //     } else{
+                    //       crdtRef.current.remoteDelete(change.char);
+                    //       changes.push({from: pos, to: pos+1});
+                    //     }
+                    } 
                     if(changes.length > 0){
                         editorRef.current.dispatch({
                             changes: changes,

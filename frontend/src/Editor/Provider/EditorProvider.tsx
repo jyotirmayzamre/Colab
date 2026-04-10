@@ -1,8 +1,8 @@
 import { useAuth } from "@/Auth/useAuth";
 import CRDT from "@/CRDT/crdt";
-import { type ReactNode, useEffect, useRef, useState, useMemo } from "react"
+import { type ReactNode, useEffect, useRef, useState, useMemo  } from "react"
 import type { EditorView } from "@uiw/react-codemirror";
-import { crdtToString } from "@/CRDT/utils";
+import { crdtToString } from "@/CRDT/crdt";
 import { EditorDataContext, EditorMetaContext } from "./hooks";
 import { RemoteCursor } from "../types";
 
@@ -41,6 +41,8 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
             switch(data.event){
                 case 'load.crdt':
                     crdtRef.current.state = data.state;
+                    crdtRef.current.version_vector = data.version_vector;
+                    crdtRef.current.deletion_buffer = data.deletion_buffer;
                     setValue(crdtToString(data.state));
                     setUserCount(data.user_count);
                     setDocTitle(data.title);
@@ -70,42 +72,58 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
                     setValue(crdtToString(data.state));
                     break;
 
-                case 'document.rename': 
+                case 'document.rename':
                     setDocTitle(data.newTitle);
                     break;
 
                 case 'userCount.updated':
                     setUserCount(data.user_count);
                     break;
-                
+
                 case 'crdt.oper': {
                     const content = data.content;
                     const doc = editorRef.current.state.doc;
                     const changes = [];
+
+                    const getPos = (row: number, col: number) => {
+                      const line = doc.line(row+1);
+                      return line.from + col;
+                    }
+
+                    const handleInsert = (change) => {
+                      const result = crdtRef.current.remoteInsert(change.char);
+                      if (!result) return;
+
+                      const [row, col] = result;
+                      const pos = getPos(row, col);
+                      changes.push({
+                        from: pos,
+                        insert: change.char.value
+                      })
+                    } 
+
+                    const handleDeleteBuffer = () => {
+                      const deletions = crdtRef.current.processDeletionBuffer();
+                      for(const [row, col] of deletions){
+                        const pos = getPos(row, col);
+
+                        changes.push({
+                          from: pos,
+                          to: pos+1
+                        });
+                      }
+                    }
+
+
                     for(const change of content.data){
                       if(change.oper === 'Insert'){
-                        const [row, col] = crdtRef.current.remoteInsert(change.char);
-                        const line = doc.line(row + 1);
-                        const pos = line.from + col;
-                        changes.push({from: pos, insert: change.char.value});
+                        handleInsert(change);
                       } else{
-                        const [row, col] = crdtRef.current.remoteDelete(change.char);
-                        const line = doc.line(row+1);
-                        const pos = line.from + col;
-                        changes.push({from: pos, to: pos+1});
+                        crdtRef.current.deletion_buffer.push(change.char);
                       }
-                    //     const line = doc.line(change.row + 1); 
-                    //     const pos = line.from + change.col;
-                    //
-                    //     //handle remote changes
-                    //     if(change.oper === 'Insert'){
-                    //       crdtRef.current.remoteInsert(change.char);
-                    //       changes.push({from: pos, insert: change.char.value});
-                    //     } else{
-                    //       crdtRef.current.remoteDelete(change.char);
-                    //       changes.push({from: pos, to: pos+1});
-                    //     }
-                    } 
+                      handleDeleteBuffer();
+                    }
+
                     if(changes.length > 0){
                         editorRef.current.dispatch({
                             changes: changes,
@@ -117,7 +135,7 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
                 }
 
                 default:
-                    console.log('Unexpected message') 
+                    console.log('Unexpected message')
             }
         }
         wsRef.current.onclose = () => console.log("WebSocket disconnected")

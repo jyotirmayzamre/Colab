@@ -1,151 +1,429 @@
-import { type Char, type Identifier, comparePosition, generateCharPosition, binarySearch } from "./utils";
+
+export type Char = {
+  position: number[];
+  value: string;
+  site_id: number;
+  counter: number;
+}
+
+export function crdtToString(state: Char[][]){
+  return state.map(row => row.map(char => char.value).join('')).join('');
+}
+
+
 
 class CRDT {
-    user: number;
+    site_id: number;
     state: Char[][];
+    counter: number;
+    version_vector: Record<number, number>;
+    deletion_buffer: Char[];
 
-    constructor(user: number){
-        this.user = user;
+    constructor(site_id: number){
+        this.site_id = site_id;
         this.state = [[]];
-    }
- 
-    private generateChar(row: number, col: number): Identifier[]{
-        let prevIndex: Identifier[];
-        let nextIndex: Identifier[];
-
-        if (col === 0 && row === 0) {
-            prevIndex = [];
-        } else if (col === 0 && row > 0) {
-            prevIndex = this.state[row - 1]?.at(-1)?.position ?? [];
-        } else {
-            prevIndex = this.state[row][col - 1]?.position ?? [];
-        }
-
-        
-        const lineLength = this.state[row]?.length ?? 0;
-
-        if (col === lineLength && row < this.state.length - 1) {
-            nextIndex = this.state[row + 1]?.at(0)?.position ?? [];
-        } else if (col === lineLength && row === this.state.length - 1) {
-            nextIndex = [];
-        } else {
-            nextIndex = this.state[row][col]?.position ?? [];
-        }
-        
-        return generateCharPosition(prevIndex, nextIndex, this.user);
+        this.counter = 0;
+        this.version_vector = {};
+        this.deletion_buffer = [];
     }
 
-    private handleInsert(row: number, col: number, char: Char): void {
-        const line = this.state[row];
 
-        if(char.value !== '\n'){
-            line.splice(col, 0, char);
-            return;
+    //Helper methods
+
+    private comparePosition(p1: number[], p2: number[]): number {
+      const l1 = p1.length;
+      const l2 = p2.length;
+      const loopLength = Math.min(l1, l2);
+      for(let i = 0; i < loopLength; i+= 2){
+        const d = p1[i] - p2[i];
+        if (d!==0) return d;
+        const s = p1[i+1] - p2[i+1];
+        if (s!==0) return s;
+      }
+      return l1 - l2;
+    }
+
+    /*
+     Current iterative implementation
+      - Using 2^16 as the base
+      - If the difference of the first digits is > 2, can insert in between
+      - If the difference of the first digits is = 1, go one level deeper with b's first digit
+      - If the b's site_id < a's site_id, go one level deeper with b's first digit
+      - If the site_id's are the same, go one level deeper in both position objects
+    */
+
+    private generateCharPosition(before: number[], after: number[]): number[] {
+      const result: number[] = [];
+      let i = 0;
+      const bLen = before.length;
+      let aLen = after.length;
+      const EMPTY: number[] = [];
+
+      while(true){
+        const bDigit = i < bLen ? before[i] : 0;
+        const bSite = i < bLen ? before[i+1] : this.site_id;
+
+        const aDigit = i < aLen ? after[i] : 65536;
+        const aSite = i < aLen ? after[i+1] : this.site_id;
+
+        if(aDigit - bDigit >= 2){
+          const boundary = Math.min(bDigit + 100, aDigit - 1);
+          const d = bDigit + 1 + Math.floor(Math.random() * (boundary - bDigit));
+          result.push(d, this.site_id);
+          return result;
         }
 
-        const tail = line.splice(col);
-        line.push(char);
+        if(aDigit - bDigit === 1 || bSite < aSite){
+          result.push(bDigit, bSite);
+          i += 1;
+          after = EMPTY;
+          aLen = 0;
+          continue;
+        }
+
+        if(bSite === aSite){
+          result.push(bDigit, bSite);
+          i += 1;
+          continue;
+        }
+
+        throw new Error('Invalid ordering');
+      }
+    }
+
+
+
+    private generateChar(row: number, col: number): number[]{
+        let prevPosition: number[];
+        let nextPosition: number[];
+
+        /*
+          prevPosition is either:
+            - Empty (inserting into first row, first col)
+            - Last row's last character, which will be a newline (inserting into non-first row, first col)
+            - Preceding character (inserting into non-first row, non-first col)
+
+          Assumptions:
+            - When inserting into a non-first row, the previous row will always exist, so no need to check existence
+            - When inserting into a non-first col, the previous col will always exist, so no need to check existence
+        */
+        if (col > 0){
+          prevPosition = this.state[row][col-1].position;
+        } else if (row > 0) {
+          prevPosition = this.state[row-1].at(-1).position;
+        } else {
+          prevPosition = [];
+        }
+
+
+        const numRows = this.state.length;
+        const numCols = this.state[row]?.length ?? 0;
+
+
+        if(col == numCols && row < numRows - 1){
+          nextPosition = this.state[row+1]?.at(0)?.position ?? [];
+        } else if (col == numCols && row === numRows-1){
+          nextPosition = []
+        } else if (col == 0 && row > numRows-1){
+          nextPosition = []
+        } else {
+          nextPosition = this.state[row][col]?.position ?? [];
+        }
+
+        return this.generateCharPosition(prevPosition, nextPosition);
+    }
+
+
+    /*
+      Used to handle deletion of newline characters
+    */
+    private mergeRows(row: number): void {
+      if(this.state[row+1]){
+        this.state[row] = this.state[row].concat(this.state[row+1]);
+        this.state.splice(row+1, 1);
+      }
+    }
+
+
+    /*
+      Used to handle insertion of newline characters
+      Split in *row* at *col*
+      Handles creation of new row using splice
+    */
+    private splitRows(row: number, col: number): void {
+      const tail = this.state[row].splice(col);
+      if(tail.length > 0){
         this.state.splice(row+1, 0, tail);
-        
-        return;
+      }
     }
+
+
+ 
+    /*
+    - Handle insert method: if inserting newlines, split the line
+    */
+    private handleInsert(row: number, col: number, char: Char): void {
+        if(row === this.state.length) this.state.push([]);
+
+        if(char.value === '\n'){
+          this.splitRows(row, col);
+          this.state[row].push(char);
+          return
+        }
+
+        this.state[row].splice(col, 0, char);
+        return
+    }
+
 
 
     public localInsert(value: string, row: number, col: number): Char {
-        while (this.state.length <= row) {
-            this.state.push([]);
+      this.counter += 1;
+      const newPosition = this.generateChar(row, col);
+
+      const newChar: Char = {
+        position: newPosition,
+        value: value,
+        site_id: this.site_id,
+        counter: this.counter
+      };
+
+      this.handleInsert(row, col, newChar);
+      return newChar
+    }
+
+    private removeEmptyLines(){
+      const numRows = this.state.length;
+      for(let row = numRows-1; row >= 0; row--){
+        if(this.state[row].length === 0){
+          this.state.splice(row, 1);
         }
-        const newPosition = this.generateChar(row, col);
-        const newChar: Char = {position: newPosition, value: value};
-        this.handleInsert(row, col, newChar);
-        return newChar
-    }
-
-    public remoteInsert(inChar: Char): [number, number]{
-      const row = this.findRow(inChar);
-      if(row >= this.state.length) this.state.push([]);
-      const col = binarySearch(this.state[row], inChar.position);
-      this.handleInsert(row, col, inChar);
-      return [row, col];
-    }
-
-    
-    private mergeRows(row: number): void {
-      this.state[row].push(...this.state[row+1]);
-      this.state.splice(row+1, 1);
-    }
-
-    private removeEmptyLines(): void {
-      const length = this.state.length;
-      for(let i = length - 1; i > 0; i--){
-        if(this.state[i].length === 0) this.state.splice(i, 1);
       }
-      if(this.state.length === 0) this.state.push([]);
+      if(this.state.length == 0){
+        this.state.push([]);
+      }
     }
 
 
-    private findRow(char: Char): number {
+
+    public localDelete(row: number, col: number): Char {
+      const deletedChar: Char = this.state[row].splice(col, 1)[0];
+      this.removeEmptyLines();
+      if(deletedChar.value === '\n'){
+        this.mergeRows(row);
+      }
+      return deletedChar;
+    }
+
+
+    private isEmpty(){
+      return this.state.length == 1 && this.state[0].length == 0;
+    }
+
+    /*
+    - performs binary search over rows of the CRDT to find which row to insert into/delete from
+    */ 
+
+    private findInsertRow(char: Char): [number, number] {
       let lo = 0;
-      let hi = this.state.length-1;
-
-      while(lo + 1 < hi){
-        let mid = lo + ((hi-lo) >>> 1);
-        let currRow = this.state[mid];
-        if(!currRow.length){
-          hi = mid;
-          continue;
-        }
-        let lastChar = currRow[currRow.length - 1];
-        let result = comparePosition(char.position, lastChar.position);
-        if(result === 0) return mid;
-        else if(result < 0) hi = mid;
-        else lo = mid; 
+      let numRows = this.state.length;
+      let hi = numRows-1;
+ 
+      //check first character
+      const firstChar = this.state[0][0]
+      if(this.isEmpty() || this.comparePosition(char.position, firstChar.position) < 0){
+        return [0, 0];
       }
 
-      const minRow = this.state[lo];
-      if(!minRow.length) return hi;
-      if(comparePosition(char.position, minRow[minRow.length - 1].position) <= 0){
+      //check last char
+      const lastChar = this.state[hi].at(-1);
+      if(this.comparePosition(char.position, lastChar.position) > 0){
+        return lastChar.value == '\n' ? [numRows, 0] : [numRows-1, this.state[hi].length];
+
+      }
+
+      //bs 
+      while(lo <= hi){
+        const mid = Math.floor(lo + (hi-lo)/2);
+        const currChar = this.state[mid].at(-1);
+        const cmp = this.comparePosition(char.position, currChar.position);
+
+        if(cmp == 0){
+          return [mid, this.state[mid].length - 1];
+        } else if (cmp < 0){
+          hi = mid;
+        } else{
+          lo = mid;
+        }
+      }
+
+      const minLastChar = this.state[lo].at(-1);
+      if(this.comparePosition(char.position, minLastChar.position) <= 0){
+        return [lo, this.findInsertCol(char, lo)];
+      }
+      return [hi, this.findInsertCol(char, hi)];
+    }
+    
+
+    private findDeleteRow(char: Char): [number, number] | false{
+      let lo = 0;
+      let numRows = this.state.length;
+      let hi = numRows-1;
+ 
+      //check first character
+      const firstChar = this.state[0][0]
+      if(this.isEmpty() || this.comparePosition(char.position, firstChar.position) < 0){
+        return false;
+      }
+
+      //check last char
+      const lastChar = this.state[hi].at(-1);
+      if(this.comparePosition(char.position, lastChar.position) > 0){
+        return false;
+
+      }
+
+      //bs
+      while(lo <= hi){
+        const mid = Math.floor(lo + (hi-lo)/2);
+        const currChar = this.state[mid].at(-1);
+        const cmp = this.comparePosition(char.position, currChar.position);
+
+        if(cmp == 0){
+          return [mid, this.state[mid].length-1];
+        } else if (cmp < 0){
+          hi = mid;
+        } else{
+          lo = mid;
+        }
+      }
+
+      const minLastChar = this.state[lo].at(-1);
+      if(this.comparePosition(char.position, minLastChar.position) <= 0){
+        return [lo, this.findDeleteCol(char, lo)];
+      }
+      return [hi, this.findDeleteCol(char, hi)];
+    }
+ 
+    private findInsertCol(char: Char, row: number): number {
+      let lo = 0;
+      const numCols = this.state[row].length;
+      let hi = numCols - 1;
+
+      //check against first and last
+      if(numCols == 0 || this.comparePosition(char.position, this.state[row][lo].position) < 0){
+        return lo
+      } else if (this.comparePosition(char.position, this.state[row][hi].position) > 0){
+        return numCols;
+      }
+
+      while(lo <= hi){
+        const mid = Math.floor(lo + (hi-lo)/2);
+        const cmp = this.comparePosition(char.position, this.state[row][mid].position);
+
+        if(cmp == 0){
+          return mid;
+        } else if (cmp > 0){
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+
+      if(this.comparePosition(char.position, this.state[row][lo].position) == 0){
         return lo;
-      } else{
+      } else {
         return hi;
       }
     }
 
-    public localDelete(row: number, col: number): Char {
-        const deletedChar: Char = this.state[row].splice(col, 1)[0];
-        if(deletedChar.value === '\n' && this.state[row+1]){
-          this.mergeRows(row);
+    private findDeleteCol(char: Char, row: number) {
+      let lo = 0;
+      const numCols = this.state[row].length;
+      let hi = numCols - 1;
+
+      //check against first and last
+      if(numCols == 0 || this.comparePosition(char.position, this.state[row][lo].position) < 0){
+        return lo
+      } else if (this.comparePosition(char.position, this.state[row][hi].position) > 0){
+        return numCols;
+      }
+
+      while(lo <= hi){
+        const mid = Math.floor(lo + (hi-lo)/2);
+        const cmp = this.comparePosition(char.position, this.state[row][mid].position);
+
+        if(cmp == 0){
+          return mid;
+        } else if (cmp > 0){
+          lo = mid;
+        } else {
+          hi = mid;
         }
-        return deletedChar;
+      }
+
+      if(this.comparePosition(char.position, this.state[row][lo].position) == 0){
+        return lo;
+      } else if (this.comparePosition(char.position, this.state[row][hi].position) == 0){
+        return hi;
+      } else{
+        return false;
+      }
     }
 
-    
 
-    public remoteDelete(delChar: Char): [number, number] | null{
-      const row = this.findRow(delChar);
-      if (row >= this.state.length || row < 0) return null;
-      const col = binarySearch(this.state[row], delChar.position);
 
-      //check for whether character actuallly exists
-      if (col >= this.state[row].length) return null;
-      else {
-        const foundChar = this.state[row][col];
-        if(comparePosition(foundChar.position, delChar.position) !== 0){
-          return null;
-        }
+    private isOperationAlreadyApplied(char: Char): boolean {
+      const current = this.version_vector[char.site_id] ?? -1;
+      return char.counter <= current;
+    }
+
+
+    /*
+    - Remote inserts use version vectors to keep track of operation number for each peer
+    */
+    public remoteInsert(inChar: Char): [number, number] | null {
+      if(this.isOperationAlreadyApplied(inChar)) return null;
+      const [row, col] = this.findInsertRow(inChar); 
+      this.handleInsert(row, col, inChar);
+      this.version_vector[inChar.site_id] = inChar.counter;
+      return [row, col];
+    } 
+
+
+    public remoteDelete(delChar: Char): [number, number] | null { 
+      const [row, col] = this.findDeleteRow(delChar);
+
+      const foundChar = this.state[row][col];
+      if(this.comparePosition(foundChar.position, delChar.position) !== 0){
+        return null;
       }
 
-      //if deleted char is newline, merge next line with current line
       this.state[row].splice(col, 1);
-      if(delChar.value === '\n' && this.state[row+1]){
+      if(delChar.value === '\n'){
         this.mergeRows(row);
-        this.removeEmptyLines();
       }
+      this.removeEmptyLines();
 
       return [row, col];
-  }
+    }
 
-    
+    public processDeletionBuffer(): [number, number][] {
+      const length = this.deletion_buffer.length;
+      const delChanges: [number, number][] = [];
+      for(let i = length-1; i >= 0; i--){
+        let char = this.deletion_buffer[i];
+        if(this.version_vector[char.site_id] >= char.counter){
+          const result = this.remoteDelete(char);
+          if(result !== null){
+            delChanges.push(result);
+          }
+          this.deletion_buffer.splice(i, 1);
+        }
+      }
+      return delChanges;
+    }
+
 }
 
 

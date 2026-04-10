@@ -28,11 +28,13 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         await redis_add_user(self.document_id, self.channel_name)
         current_count = await redis_get_user_count(self.document_id)
 
-        state, title = await redis_load_crdt(self.document_id)
+        result: CRDT_payload = await redis_load_crdt(self.document_id)
         await self.send_json({'event': 'load.crdt', 
-                              'state': state, 
-                              'user_count': current_count, 
-                              'title': title})
+                              'state': result["state"],
+                              'version_vector': result["version_vector"],
+                              'deletion_buffer': result["deletion_buffer"],
+                              'title': result["title"],
+                              'user_count': current_count})
 
         for op in self.buffer:
             await self.send_json({'event': 'crdt.oper', 'content': op})

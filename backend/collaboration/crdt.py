@@ -1,120 +1,231 @@
-'''
-Implementation for server side CRDT
-'''
-from typing import TypedDict, List, Callable
-
-class Identifier(TypedDict):
-    digit: int
-    site_id: int
+import math
+from typing import List, TypedDict, Dict, Union, Tuple, Optional
 
 class Char(TypedDict):
-    position: List[Identifier]
-    lamport: int
+    position: List[int]
     value: str
+    site_id: int
+    counter: int
+
+class CRDT:
+    def __init__(self, state: List[List[Char]], title: str):
+        self.doc_title = title
+        self.state: List[List[Char]] = state
+        self.version_vector: Dict[int, int] = {}
+        self.deletion_buffer: List[Char] = []
+
+    def crdt_to_string(self) -> str:
+        return "".join("".join(char['value'] for char in row) for row in self.state)
+
+    def _compare_position(self, p1: List[int], p2: List[int]) -> int:
+        l1, l2 = len(p1), len(p2)
+        loop_length = min(l1, l2)
+        for i in range(0, loop_length, 2):
+            d = p1[i] - p2[i]
+            if d != 0: return d
+            s = p1[i+1] - p2[i+1]
+            if s != 0: return s
+        return l1 - l2
 
 
-def comparePosition(p1: List[Identifier], p2: List[Identifier]) -> int:
-    l1 = len(p1)
-    l2 = len(p2)
-    for i in range(min(l1, l2)):
-        d = p1[i]['digit'] - p2[i]['digit']
-        if d != 0: return d
-        s = p1[i]['site_id'] - p2[i]['site_id']
-        if s != 0: return s
-       
-    return l1-l2
+    def _merge_rows(self, row: int) -> None:
+        if row + 1 < len(self.state):
+            self.state[row].extend(self.state[row+1])
+            self.state.pop(row+1)
 
-def findRow(state: List[List[Char]], pos: List[Identifier], compare: Callable[[List[Identifier], List[Identifier]], int] = comparePosition):
-    lo = 0
-    hi = len(state)-1
+    def _split_rows(self, row: int, col: int) -> None:
+        tail = self.state[row][col:]
+        self.state[row] = self.state[row][:col]
+        if len(tail) > 0:
+            self.state.insert(row + 1, tail)
 
-    while lo + 1 < hi:
-        mid = lo + ((hi - lo) >> 1)
-        currRow = state[mid]
-        if not currRow:
-            hi = mid
-            continue
+    def _handle_insert(self, row: int, col: int, char: Char) -> None:
+        if row == len(self.state):
+            self.state.append([])
 
-        lastChar = currRow[-1]
-        result = comparePosition(pos, lastChar["position"])
-        if result == 0: return mid
-        elif result < 0: hi = mid
-        else: lo = mid
+        if char['value'] == '\n':
+            self._split_rows(row, col)
+            self.state[row].append(char)
+            return
 
-    minRow = state[lo]
-    if not minRow:
-        return hi
-
-    if comparePosition(pos, minRow[-1]["position"]) <= 0:
-        return lo
-    else:
-        return hi
+        self.state[row].insert(col, char)
 
 
-def binarySearch(arr: List[Char], item: List[Identifier], compare: Callable[[List[Identifier], List[Identifier]], int] = comparePosition):
-    lo = 0
-    hi = len(arr)
+    def _remove_empty_lines(self) -> None:
+        for r in range(len(self.state) - 1, -1, -1):
+            if len(self.state[r]) == 0:
+                self.state.pop(r)
+        if len(self.state) == 0:
+            self.state.append([])
 
-    while lo < hi:
-        mid = (lo + hi) >> 1
-        if compare(item, arr[mid]['position']) > 0:
-            lo = mid + 1
+
+    def _is_empty(self) -> bool:
+        return len(self.state) == 1 and len(self.state[0]) == 0
+
+    def _find_insert_row(self, char: Char) -> Tuple[int, int]:
+        lo = 0
+        num_rows = len(self.state)
+        hi = num_rows - 1
+
+        # check first char
+        if self._is_empty() or self._compare_position(char['position'], self.state[0][0]['position']) < 0:
+            return (0, 0)
+
+        # check last char
+        last_char = self.state[hi][-1]
+        if self._compare_position(char['position'], last_char['position']) > 0:
+            if last_char['value'] == '\n':
+                return (num_rows, 0)
+            else:
+                return (num_rows - 1, len(self.state[hi]))
+
+        # binary search
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            curr_char = self.state[mid][-1]
+            cmp = self._compare_position(char['position'], curr_char['position'])
+
+            if cmp == 0:
+                return (mid, len(self.state[mid]) - 1)
+            elif cmp < 0:
+                hi = mid
+            else:
+                lo = mid
+
+        min_last_char = self.state[lo][-1]
+        if self._compare_position(char['position'], min_last_char['position']) <= 0:
+            return (lo, self._find_insert_col(char, lo))
         else:
-            hi = mid
-    return lo
-    
+            return (hi, self._find_insert_col(char, hi))
 
-def remoteInsert(inChar: Char, state: List[List[Char]]) -> List[List[Char]]:
-    row = findRow(state, inChar["position"])
-    if row >= len(state):
-        state.append([])
+    def _find_delete_row(self, char: Char):
+        lo = 0
+        num_rows = len(self.state)
+        hi = num_rows - 1
 
-    col = binarySearch(state[row], inChar['position'])
-    line = state[row]
-    if inChar['value'] != '\n':
-        line.insert(col, inChar)
-        return state
-    
-    tail = line[col:]
-    del line[col:]
-    line.append(inChar)
-    state.insert(row+1, tail)
-    return state
+        # check first char
+        if self._is_empty() or self._compare_position(char['position'], self.state[0][0]['position']) < 0:
+            return False
 
-def removeEmptyLines(state: List[List[Char]]) -> List[List[Char]]:
-    length = len(state)
-    for i in range(length-1, -1, -1):
-        if len(state[i]) == 0:
-            state.pop(i)
-    if len(state) == 0:
-        state.append([])
-    return state
+        # check last char
+        last_char = self.state[hi][-1]
+        if self._compare_position(char['position'], last_char['position']) > 0:
+            return False
 
-def remoteDelete(delChar: Char, state: List[List[Char]]) -> List[List[Char]]:
-    row = findRow(state, delChar["position"])
-    if row >= len(state) or row < 0: return state
-    col = binarySearch(state[row], delChar['position'])
-    
-    if col >= len(state[row]): return state
-   
-    foundChar = state[row][col]
-    if comparePosition(foundChar['position'], delChar['position']) != 0:
-        return state
+        # binary search
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            curr_char = self.state[mid][-1]
+            cmp = self._compare_position(char['position'], curr_char['position'])
 
-    del state[row][col]
+            if cmp == 0:
+                return (mid, len(self.state[mid]) - 1)
+            elif cmp < 0:
+                hi = mid
+            else:
+                lo = mid
 
-    if(delChar['value'] == '\n'):
-        next_line = state[row+1]
-        state[row].extend(next_line)
-        del state[row+1]
-        state = removeEmptyLines(state)
+        min_last_char = self.state[lo][-1]
+        if self._compare_position(char['position'], min_last_char['position']) <= 0:
+            return (lo, self._find_delete_col(char, lo))
+        else:
+            return (hi, self._find_delete_col(char, hi))
         
-    return state
+
+    def _find_insert_col(self, char: Char, row: int) -> int:
+        lo = 0
+        num_cols = len(self.state[row])
+        hi = num_cols - 1
+
+        if num_cols == 0 or self._compare_position(char['position'], self.state[row][lo]['position']) < 0:
+            return lo
+        elif self._compare_position(char['position'], self.state[row][hi]['position']) > 0:
+            return num_cols
+
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            cmp = self._compare_position(char['position'], self.state[row][mid]['position'])
+
+            if cmp == 0:
+                return mid
+            elif cmp > 0:
+                lo = mid
+            else:
+                hi = mid
+
+        if self._compare_position(char['position'], self.state[row][lo]['position']) == 0:
+            return lo
+        else:
+            return hi 
 
 
-def getText(state: List[List[Char]]):
-    return ''.join(
-        ''.join(char['value'] for char in row)
-            for row in state
-    )
+    def _find_delete_col(self, char: Char, row: int):
+        lo = 0
+        num_cols = len(self.state[row])
+        hi = num_cols - 1
 
+        if num_cols == 0 or self._compare_position(char['position'], self.state[row][lo]['position']) < 0:
+            return lo
+        elif self._compare_position(char['position'], self.state[row][hi]['position']) > 0:
+            return num_cols
+
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            cmp = self._compare_position(char['position'], self.state[row][mid]['position'])
+
+            if cmp == 0:
+                return mid
+            elif cmp > 0:
+                lo = mid
+            else:
+                hi = mid
+
+        if self._compare_position(char['position'], self.state[row][lo]['position']) == 0:
+            return lo
+        elif self._compare_position(char['position'], self.state[row][hi]['position']) == 0:
+            return hi
+        else:
+            return False
+
+    def _is_operation_already_applied(self, char: Char) -> bool:
+        current = self.version_vector.get(char['site_id'], -1)
+        return char['counter'] <= current
+
+    def remote_insert(self, in_char: Char) -> Optional[Tuple[int, int]]:
+        if self._is_operation_already_applied(in_char):
+            return None
+
+        row, col = self._find_insert_row(in_char)
+        self._handle_insert(row, col, in_char)
+        self.version_vector[in_char['site_id']] = in_char['counter']
+        return (row, col)
+    
+
+    def remote_delete(self, del_char: Char) -> Optional[Tuple[int, int]]:
+        result = self._find_delete_row(del_char)
+        if result is False:
+            return None
+
+        row, col = result
+
+        found_char = self.state[row][col]
+        if self._compare_position(found_char['position'], del_char['position']) != 0:
+            return None
+
+        self.state[row].pop(col)
+
+        if del_char['value'] == '\n':
+            self._merge_rows(row)
+
+        self._remove_empty_lines()
+        return (row, col)
+
+    def process_deletion_buffer(self) -> None:
+        del_changes = []
+        for i in range(len(self.deletion_buffer) - 1, -1, -1):
+            char = self.deletion_buffer[i]
+            if self.version_vector.get(char['site_id'], -1) >= char['counter']:
+                result = self.remote_delete(char)
+                if result:
+                    del_changes.append(result)
+                self.deletion_buffer.pop(i)

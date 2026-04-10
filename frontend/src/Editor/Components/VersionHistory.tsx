@@ -15,7 +15,7 @@ import {
 import { Trash2, MoreVertical, ArrowUpRight, X } from "lucide-react";
 import { Button } from "@/ui/button";
 import { Input } from '@/ui/input';
-import { crdtToString } from "@/CRDT/utils";
+import { crdtToString } from "@/CRDT/crdt";
 import handleDownload from '../Utils/downloadUtil';
 import { useEditorMeta } from '../Provider/hooks';
 import { Virtuoso } from 'react-virtuoso';

@@ -1,5 +1,5 @@
 import CRDT from "./crdt";
-import { type Char } from "./utils";
+import { type Char } from "./crdt";
 
 function benchmarkOp(durationMs: number, fn: () => boolean): number {
   let ops = 0;
@@ -70,7 +70,7 @@ function benchmarkAtSize(
     const row = Math.floor(Math.random() * remote.state.length);
     const col = Math.floor(Math.random() * (remote.state[row].length + 1));
     const char = remote.localInsert("b", row, col);
-    crdt3.remoteInsert(row, char);
+    crdt3.remoteInsert(char);
     return true;
   });
   console.log(`  remoteInsert: ${remoteInsertOps.toLocaleString()} ops`);
@@ -88,7 +88,7 @@ function benchmarkAtSize(
   const remoteDeleteOps = benchmarkOp(durationMs, () => {
     if (i >= snapshot.length) return false;
     const { row, char } = snapshot[i++];
-    crdt4.remoteDelete(row, char);
+    crdt4.remoteDelete(char);
     return true;
   });
   console.log(`  remoteDelete: ${remoteDeleteOps.toLocaleString()} ops`);

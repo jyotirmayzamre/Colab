@@ -90,9 +90,6 @@ function EditorComponent(){
         return {
             'oper': change.oper,
             'char': char
-            //
-            // 'row': change.row,
-            // 'col': change.col
         }
     }
 

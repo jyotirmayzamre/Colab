@@ -15,14 +15,12 @@ export function crdtToString(state: Char[][]){
 class CRDT {
     site_id: number;
     state: Char[][];
-    counter: number;
     version_vector: Record<number, number>;
     deletion_buffer: Char[];
 
     constructor(site_id: number){
         this.site_id = site_id;
         this.state = [[]];
-        this.counter = 0;
         this.version_vector = {};
         this.deletion_buffer = [];
     }
@@ -119,6 +117,13 @@ class CRDT {
         const numRows = this.state.length;
         const numCols = this.state[row]?.length ?? 0;
 
+        /*
+          nextPosition is either:
+          - if inserting at the end of the row, then next row's first character (or empty)
+          - if end of row and last active row, then empty
+          - if inserting after a newline in last active row, then empty
+          - otherwise, next character
+        */
 
         if(col == numCols && row < numRows - 1){
           nextPosition = this.state[row+1]?.at(0)?.position ?? [];
@@ -147,8 +152,6 @@ class CRDT {
 
     /*
       Used to handle insertion of newline characters
-      Split in *row* at *col*
-      Handles creation of new row using splice
     */
     private splitRows(row: number, col: number): void {
       const tail = this.state[row].splice(col);
@@ -178,19 +181,24 @@ class CRDT {
 
 
     public localInsert(value: string, row: number, col: number): Char {
-      this.counter += 1;
+      if (this.version_vector[this.site_id]) this.version_vector[this.site_id] += 1;
+      else this.version_vector[this.site_id] = 1;
       const newPosition = this.generateChar(row, col);
 
       const newChar: Char = {
         position: newPosition,
         value: value,
         site_id: this.site_id,
-        counter: this.counter
+        counter: this.version_vector[this.site_id]
       };
 
       this.handleInsert(row, col, newChar);
       return newChar
     }
+
+    /*
+    Used to remove empty lines created by delete operations
+    */
 
     private removeEmptyLines(){
       const numRows = this.state.length;
@@ -222,20 +230,21 @@ class CRDT {
 
     /*
     - performs binary search over rows of the CRDT to find which row to insert into/delete from
-    */ 
+    */
 
-    private findInsertRow(char: Char): [number, number] {
+    private findInsertPos(char: Char): [number, number] {
       let lo = 0;
       let numRows = this.state.length;
       let hi = numRows-1;
  
       //check first character
+      if(this.isEmpty()) return [0, 0];
       const firstChar = this.state[0][0]
-      if(this.isEmpty() || this.comparePosition(char.position, firstChar.position) <= 0){
+      if(this.comparePosition(char.position, firstChar.position) <= 0){
         return [0, 0];
       }
 
-      //check last char
+      //check last char - handles insert after newline 
       const lastChar = this.state[hi].at(-1);
       if(this.comparePosition(char.position, lastChar.position) > 0){
         return lastChar.value == '\n' ? [numRows, 0] : [numRows-1, this.state[hi].length];
@@ -258,29 +267,33 @@ class CRDT {
       }
 
       const minLastChar = this.state[lo].at(-1);
+      let correctRow: number;
       if(this.comparePosition(char.position, minLastChar.position) <= 0){
-        return [lo, this.findInsertCol(char, lo)];
+        correctRow = lo;
+      } else {
+        correctRow = hi;
       }
-      return [hi, this.findInsertCol(char, hi)];
-    }
-    
 
-    private findDeleteRow(char: Char): [number, number] | false{
+      return [correctRow, this.findInsertCol(char, correctRow)];
+    }
+
+
+    private findDeletePos(char: Char): [number, number] | null {
       let lo = 0;
       let numRows = this.state.length;
       let hi = numRows-1;
  
       //check first character
+      if(this.isEmpty()) return null;
       const firstChar = this.state[0][0]
-      if(this.isEmpty() || this.comparePosition(char.position, firstChar.position) < 0){
-        return false;
+      if(this.comparePosition(char.position, firstChar.position) < 0){
+        return null;
       }
 
       //check last char
       const lastChar = this.state[hi].at(-1);
       if(this.comparePosition(char.position, lastChar.position) > 0){
-        return false;
-
+        return null;
       }
 
       //bs
@@ -299,10 +312,16 @@ class CRDT {
       }
 
       const minLastChar = this.state[lo].at(-1);
+      let correctRow: number;
       if(this.comparePosition(char.position, minLastChar.position) <= 0){
-        return [lo, this.findDeleteCol(char, lo)];
+        correctRow = lo;
+      } else {
+        correctRow = hi;
       }
-      return [hi, this.findDeleteCol(char, hi)];
+
+      const col: number | null = this.findDeleteCol(char, correctRow);
+      if(col === null) return null;
+      return [correctRow, col];
     }
  
     private findInsertCol(char: Char, row: number): number {
@@ -337,7 +356,7 @@ class CRDT {
       }
     }
 
-    private findDeleteCol(char: Char, row: number) {
+    private findDeleteCol(char: Char, row: number): number | null {
       let lo = 0;
       const numCols = this.state[row].length;
       let hi = numCols - 1;
@@ -367,7 +386,7 @@ class CRDT {
       } else if (this.comparePosition(char.position, this.state[row][hi].position) == 0){
         return hi;
       } else{
-        return false;
+        return null;
       }
     }
 
@@ -384,20 +403,18 @@ class CRDT {
     */
     public remoteInsert(inChar: Char): [number, number] | null {
       if(this.isOperationAlreadyApplied(inChar)) return null;
-      const [row, col] = this.findInsertRow(inChar); 
+      const [row, col] = this.findInsertPos(inChar); 
       this.handleInsert(row, col, inChar);
       this.version_vector[inChar.site_id] = inChar.counter;
       return [row, col];
     } 
 
 
-    public remoteDelete(delChar: Char): [number, number] | null { 
-      const result = this.findDeleteRow(delChar);
-      if(result == false) return null;
+    private remoteDelete(delChar: Char): [number, number] | null { 
+      const result = this.findDeletePos(delChar);
+      if(result == null) return null;
 
       const [row, col] = result;
-      if(col == false || col == undefined) return null;
-
       const foundChar = this.state[row][col];
       if(this.comparePosition(foundChar.position, delChar.position) !== 0){
         return null;

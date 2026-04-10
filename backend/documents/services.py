@@ -28,9 +28,10 @@ class DocumentService:
         return Document.objects.get(id=document_id)
     
     @staticmethod
-    def update_state(document_id: UUID, state) -> int:
+    def update_state(document_id: UUID, state, version_vector) -> int:
         return Document.objects.filter(id=document_id).update(
-            state=state, 
+            state=state,
+            version_vector=version_vector,
             updated_at=timezone.now()
         )
     

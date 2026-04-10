@@ -1,5 +1,5 @@
 import math
-from typing import List, TypedDict, Dict, Union, Tuple, Optional
+from typing import List, TypedDict, Dict, Tuple 
 
 class Char(TypedDict):
     position: List[int]
@@ -8,10 +8,10 @@ class Char(TypedDict):
     counter: int
 
 class CRDT:
-    def __init__(self, state: List[List[Char]], title: str):
+    def __init__(self, state: List[List[Char]], version_vector: Dict[int, int], title: str):
         self.doc_title = title
         self.state: List[List[Char]] = state
-        self.version_vector: Dict[int, int] = {}
+        self.version_vector: Dict[int, int] = version_vector
         self.deletion_buffer: List[Char] = []
 
     def crdt_to_string(self) -> str:
@@ -62,13 +62,14 @@ class CRDT:
     def _is_empty(self) -> bool:
         return len(self.state) == 1 and len(self.state[0]) == 0
 
-    def _find_insert_row(self, char: Char) -> Tuple[int, int]:
+    def _find_insert_pos(self, char: Char) -> Tuple[int, int]:
         lo = 0
         num_rows = len(self.state)
         hi = num_rows - 1
 
         # check first char
-        if self._is_empty() or self._compare_position(char['position'], self.state[0][0]['position']) < 0:
+        if self._is_empty(): return(0, 0)
+        if self._compare_position(char['position'], self.state[0][0]['position']) < 0:
             return (0, 0)
 
         # check last char
@@ -94,23 +95,26 @@ class CRDT:
 
         min_last_char = self.state[lo][-1]
         if self._compare_position(char['position'], min_last_char['position']) <= 0:
-            return (lo, self._find_insert_col(char, lo))
+            correct_row = lo
         else:
-            return (hi, self._find_insert_col(char, hi))
+            correct_row = hi
 
-    def _find_delete_row(self, char: Char):
+        return (correct_row, self._find_insert_col(char, correct_row))
+
+    def _find_delete_pos(self, char: Char)-> Tuple[int, int] | None:
         lo = 0
         num_rows = len(self.state)
         hi = num_rows - 1
 
         # check first char
-        if self._is_empty() or self._compare_position(char['position'], self.state[0][0]['position']) < 0:
-            return False
+        if self._is_empty(): return None
+        if self._compare_position(char['position'], self.state[0][0]['position']) < 0:
+            return None
 
         # check last char
         last_char = self.state[hi][-1]
         if self._compare_position(char['position'], last_char['position']) > 0:
-            return False
+            return None
 
         # binary search
         while lo+1 < hi:
@@ -127,10 +131,14 @@ class CRDT:
 
         min_last_char = self.state[lo][-1]
         if self._compare_position(char['position'], min_last_char['position']) <= 0:
-            return (lo, self._find_delete_col(char, lo))
+            correct_row = lo
         else:
-            return (hi, self._find_delete_col(char, hi))
-        
+            correct_row = hi
+
+        col = self._find_delete_col(char, correct_row)
+        if col is None: return None 
+        return (correct_row, col)
+ 
 
     def _find_insert_col(self, char: Char, row: int) -> int:
         lo = 0
@@ -159,7 +167,7 @@ class CRDT:
             return hi 
 
 
-    def _find_delete_col(self, char: Char, row: int):
+    def _find_delete_col(self, char: Char, row: int) -> int | None:
         lo = 0
         num_cols = len(self.state[row])
         hi = num_cols - 1
@@ -185,35 +193,31 @@ class CRDT:
         elif self._compare_position(char['position'], self.state[row][hi]['position']) == 0:
             return hi
         else:
-            return False
+            return None
 
     def _is_operation_already_applied(self, char: Char) -> bool:
         current = self.version_vector.get(char['site_id'], -1)
         return char['counter'] <= current
 
-    def remote_insert(self, in_char: Char) -> Optional[Tuple[int, int]]:
+    def remote_insert(self, in_char: Char) -> Tuple[int, int] | None:
         if self._is_operation_already_applied(in_char):
             return None
 
-        row, col = self._find_insert_row(in_char)
+        row, col = self._find_insert_pos(in_char)
         self._handle_insert(row, col, in_char)
         self.version_vector[in_char['site_id']] = in_char['counter']
         return (row, col)
     
 
-    def remote_delete(self, del_char: Char) -> Optional[Tuple[int, int]]:
-        result = self._find_delete_row(del_char)
-        if result is False:
+    def remote_delete(self, del_char: Char) -> Tuple[int, int] | None:
+        result = self._find_delete_pos(del_char)
+        if result is None:
             return None
 
         row, col = result
-
-        if col == False or col == None: return None
-
         found_char = self.state[row][col]
         if self._compare_position(found_char['position'], del_char['position']) != 0:
             return None
-
         self.state[row].pop(col)
 
         if del_char['value'] == '\n':
@@ -223,11 +227,8 @@ class CRDT:
         return (row, col)
 
     def process_deletion_buffer(self) -> None:
-        del_changes = []
         for i in range(len(self.deletion_buffer) - 1, -1, -1):
             char = self.deletion_buffer[i]
-            if self.version_vector.get(char['site_id'], -1) >= char['counter']:
-                result = self.remote_delete(char)
-                if result:
-                    del_changes.append(result)
+            if self.version_vector[char['site_id']] >= char['counter']:
+                self.remote_delete(char)
                 self.deletion_buffer.pop(i)

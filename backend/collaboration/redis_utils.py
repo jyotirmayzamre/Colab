@@ -66,11 +66,12 @@ async def redis_load_crdt(document_id) -> CRDT_payload:
     doc = await _get_document(document_id)
     typed_state = cast(List[List[Char]], doc.state)
     typed_title = cast(str, doc.title)
-    new_crdt = CRDT(typed_state, typed_title)
+    typed_version_vector = cast(Dict[int, int], doc.version_vector)
+    new_crdt = CRDT(typed_state, typed_version_vector, typed_title)
     documents[document_id] = new_crdt
     return {
             "state": new_crdt.state,
-            "version_vector": {},
+            "version_vector": new_crdt.version_vector,
             "deletion_buffer": [],
             "title": new_crdt.doc_title
             }
@@ -111,8 +112,8 @@ async def redis_get_user_count(document_id):
 
 
 @database_sync_to_async
-def _flush_document_state(document_id, state):
-    DocumentService.update_state(document_id, state)
+def _flush_document_state(document_id, state, version_vector):
+    DocumentService.update_state(document_id, state, version_vector)
 
 async def redis_flush_to_db(document_id):
     crdt = documents.get(document_id)
@@ -120,7 +121,7 @@ async def redis_flush_to_db(document_id):
     if not crdt:
         raise Exception(f'Document: {document_id} does not have CRDT in memory')
     
-    await _flush_document_state(document_id, crdt.state)
+    await _flush_document_state(document_id, crdt.state, crdt.version_vector)
 
     documents.pop(document_id, None) 
     await client.delete(

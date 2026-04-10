@@ -41,6 +41,7 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
             switch(data.event){
                 case 'load.crdt':
                     crdtRef.current.state = data.state;
+                  console.log(data);
                     crdtRef.current.version_vector = data.version_vector;
                     crdtRef.current.deletion_buffer = data.deletion_buffer;
                     setValue(crdtToString(data.state));

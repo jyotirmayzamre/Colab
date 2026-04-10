@@ -1,3 +1,4 @@
+from typing import cast
 from django.db import models
 import uuid
 from permissions.models import Permission
@@ -25,19 +26,23 @@ class DocumentManager(models.Manager):
     
 
 def default_state():
-    return []
+    return [[]]
+
+def default_version_vector():
+    return {}
 
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     title = models.CharField(max_length=50)
     state = models.JSONField(default=default_state)
+    version_vector = models.JSONField(default=default_version_vector)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     objects: 'DocumentManager' = DocumentManager()
 
     def __str__(self) -> str:
-        return self.title
+        return cast(str, self.title)
 
 
 

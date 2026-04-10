@@ -54,11 +54,12 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
         try {
             if(!crdtRef.current){
                 throw new Error('Document state is not available')
-            }                
+            } 
             await api.post(`/api/versions/?document_id=${docId}`, { 
                 title: versionTitle,
                 document_id: docId,
-                state: crdtRef.current.state
+                state: crdtRef.current.state,
+                version_vector: crdtRef.current.version_vector
             });
             invalidateCache(['versions', docId]);
             setIsCreating(false);

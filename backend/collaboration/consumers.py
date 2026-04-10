@@ -82,9 +82,9 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
                 await redis_update_crdt(self.document_id, content)
                 
             case 'version_restore':
-                state = await redis_restore_version(content['versionId'])
+                state, version_vector = await redis_restore_version(content['versionId'])
                 await self.channel_layer.group_send(
-                    self.group_name, {'type': 'version.restore', 'versionId': content['versionId'], 'state': state}
+                        self.group_name, {'type': 'version.restore', 'versionId': content['versionId'], 'state': state, 'version_vector': version_vector}
                 )
 
             case 'document_rename':

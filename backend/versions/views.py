@@ -64,7 +64,8 @@ class VersionViewSet(viewsets.ModelViewSet):
         version = VersionService.create_version(
             title=data['title'], 
             document_id=data['document'].id, 
-            state=data['state'], 
+            state=data['state'],
+            version_vector=data['version_vector'],
             creator=request.user
         )
 

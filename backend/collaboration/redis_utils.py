@@ -48,7 +48,7 @@ def _get_document(document_id):
 
 class CRDT_payload(TypedDict):
     state: List[List[Char]]
-    version_vector: Dict[str, int]
+    version_vector: Dict[int, int]
     deletion_buffer: List[Char]
     title: str
 
@@ -66,7 +66,8 @@ async def redis_load_crdt(document_id) -> CRDT_payload:
     doc = await _get_document(document_id)
     typed_state = cast(List[List[Char]], doc.state)
     typed_title = cast(str, doc.title)
-    typed_version_vector = cast(Dict[int, int], doc.version_vector)
+    raw = cast(Dict[str, int], doc.version_vector)
+    typed_version_vector = {int(k): v for k, v in raw.items()}
     new_crdt = CRDT(typed_state, typed_version_vector, typed_title)
     documents[document_id] = new_crdt
     return {
@@ -96,9 +97,14 @@ def _get_version_state(version_id):
     return VersionService.get_version_state(version_id)
 
 async def redis_restore_version(version_id):
-    state, document_id = await _get_version_state(version_id)
-    await client.set(f'crdt:{document_id}',json.dumps(state))
-    return state
+    state, version_vector, document_id = await _get_version_state(version_id)
+    typed_id = str(document_id)
+    typed_state = cast(List[List[Char]], state)
+    raw = cast(Dict[str, int], version_vector)
+    typed_version_vector = {int(k): v for k, v in raw.items()}
+    documents[typed_id].state = typed_state
+    documents[typed_id].version_vector = typed_version_vector
+    return state, version_vector
 
 async def redis_add_user(document_id, user_id):
     await client.sadd(f'users:{document_id}', user_id) # type: ignore

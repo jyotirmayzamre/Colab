@@ -10,10 +10,11 @@ class VersionInputSerializer(serializers.ModelSerializer):
         source="document",
         queryset=Document.objects.all()
     )
+    version_vector = serializers.JSONField()
 
     class Meta:
         model = Version
-        fields = ['document_id', 'title', 'state']
+        fields = ['document_id', 'title', 'state', 'version_vector']
 
     
 

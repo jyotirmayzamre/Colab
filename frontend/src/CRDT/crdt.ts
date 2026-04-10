@@ -75,7 +75,7 @@ class CRDT {
 
         if(aDigit - bDigit === 1 || bSite < aSite){
           result.push(bDigit, bSite);
-          i += 1;
+          i += 2;
           after = EMPTY;
           aLen = 0;
           continue;
@@ -83,7 +83,7 @@ class CRDT {
 
         if(bSite === aSite){
           result.push(bDigit, bSite);
-          i += 1;
+          i += 2;
           continue;
         }
 
@@ -208,10 +208,10 @@ class CRDT {
 
     public localDelete(row: number, col: number): Char {
       const deletedChar: Char = this.state[row].splice(col, 1)[0];
-      this.removeEmptyLines();
       if(deletedChar.value === '\n'){
         this.mergeRows(row);
       }
+      this.removeEmptyLines();
       return deletedChar;
     }
 
@@ -231,7 +231,7 @@ class CRDT {
  
       //check first character
       const firstChar = this.state[0][0]
-      if(this.isEmpty() || this.comparePosition(char.position, firstChar.position) < 0){
+      if(this.isEmpty() || this.comparePosition(char.position, firstChar.position) <= 0){
         return [0, 0];
       }
 
@@ -243,7 +243,7 @@ class CRDT {
       }
 
       //bs 
-      while(lo <= hi){
+      while(lo+1< hi){
         const mid = Math.floor(lo + (hi-lo)/2);
         const currChar = this.state[mid].at(-1);
         const cmp = this.comparePosition(char.position, currChar.position);
@@ -284,7 +284,7 @@ class CRDT {
       }
 
       //bs
-      while(lo <= hi){
+      while(lo+1<hi){
         const mid = Math.floor(lo + (hi-lo)/2);
         const currChar = this.state[mid].at(-1);
         const cmp = this.comparePosition(char.position, currChar.position);
@@ -317,7 +317,7 @@ class CRDT {
         return numCols;
       }
 
-      while(lo <= hi){
+      while(lo+1< hi){
         const mid = Math.floor(lo + (hi-lo)/2);
         const cmp = this.comparePosition(char.position, this.state[row][mid].position);
 
@@ -349,7 +349,7 @@ class CRDT {
         return numCols;
       }
 
-      while(lo <= hi){
+      while(lo+1< hi){
         const mid = Math.floor(lo + (hi-lo)/2);
         const cmp = this.comparePosition(char.position, this.state[row][mid].position);
 
@@ -392,7 +392,11 @@ class CRDT {
 
 
     public remoteDelete(delChar: Char): [number, number] | null { 
-      const [row, col] = this.findDeleteRow(delChar);
+      const result = this.findDeleteRow(delChar);
+      if(result == false) return null;
+
+      const [row, col] = result;
+      if(col == false || col == undefined) return null;
 
       const foundChar = this.state[row][col];
       if(this.comparePosition(foundChar.position, delChar.position) !== 0){

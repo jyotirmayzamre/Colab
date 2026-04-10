@@ -80,8 +80,8 @@ class CRDT:
                 return (num_rows - 1, len(self.state[hi]))
 
         # binary search
-        while lo <= hi:
-            mid = (lo + hi) // 2
+        while lo+1 < hi:
+            mid = math.floor(lo + (hi-lo)//2)
             curr_char = self.state[mid][-1]
             cmp = self._compare_position(char['position'], curr_char['position'])
 
@@ -113,8 +113,8 @@ class CRDT:
             return False
 
         # binary search
-        while lo <= hi:
-            mid = (lo + hi) // 2
+        while lo+1 < hi:
+            mid = math.floor(lo+(hi-lo)//2)
             curr_char = self.state[mid][-1]
             cmp = self._compare_position(char['position'], curr_char['position'])
 
@@ -142,8 +142,8 @@ class CRDT:
         elif self._compare_position(char['position'], self.state[row][hi]['position']) > 0:
             return num_cols
 
-        while lo <= hi:
-            mid = (lo + hi) // 2
+        while lo+1 < hi:
+            mid = math.floor(lo+(hi-lo)//2)
             cmp = self._compare_position(char['position'], self.state[row][mid]['position'])
 
             if cmp == 0:
@@ -169,8 +169,8 @@ class CRDT:
         elif self._compare_position(char['position'], self.state[row][hi]['position']) > 0:
             return num_cols
 
-        while lo <= hi:
-            mid = (lo + hi) // 2
+        while lo+1 < hi:
+            mid = math.floor(lo+(hi-lo)//2)
             cmp = self._compare_position(char['position'], self.state[row][mid]['position'])
 
             if cmp == 0:
@@ -207,6 +207,8 @@ class CRDT:
             return None
 
         row, col = result
+
+        if col == False or col == None: return None
 
         found_char = self.state[row][col]
         if self._compare_position(found_char['position'], del_char['position']) != 0:

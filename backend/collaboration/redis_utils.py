@@ -66,8 +66,7 @@ async def redis_load_crdt(document_id) -> CRDT_payload:
     doc = await _get_document(document_id)
     typed_state = cast(List[List[Char]], doc.state)
     typed_title = cast(str, doc.title)
-    raw = cast(Dict[str, int], doc.version_vector)
-    typed_version_vector = {int(k): v for k, v in raw.items()}
+    typed_version_vector = cast(Dict[str, int], doc.version_vector)
     new_crdt = CRDT(typed_state, typed_version_vector, typed_title)
     documents[document_id] = new_crdt
     return {
@@ -100,11 +99,11 @@ async def redis_restore_version(version_id):
     state, version_vector, document_id = await _get_version_state(version_id)
     typed_id = str(document_id)
     typed_state = cast(List[List[Char]], state)
-    raw = cast(Dict[str, int], version_vector)
-    typed_version_vector = {int(k): v for k, v in raw.items()}
+    typed_version_vector = cast(Dict[str, int], version_vector)
     documents[typed_id].state = typed_state
     documents[typed_id].version_vector = typed_version_vector
-    return state, version_vector
+    return typed_state, typed_version_vector
+
 
 async def redis_add_user(document_id, user_id):
     await client.sadd(f'users:{document_id}', user_id) # type: ignore

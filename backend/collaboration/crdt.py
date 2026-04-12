@@ -8,10 +8,10 @@ class Char(TypedDict):
     counter: int
 
 class CRDT:
-    def __init__(self, state: List[List[Char]], version_vector: Dict[int, int], title: str):
+    def __init__(self, state: List[List[Char]], version_vector: Dict[str, int], title: str):
         self.doc_title = title
         self.state: List[List[Char]] = state
-        self.version_vector: Dict[int, int] = version_vector
+        self.version_vector: Dict[str, int] = version_vector
         self.deletion_buffer: List[Char] = []
 
     def crdt_to_string(self) -> str:
@@ -196,7 +196,7 @@ class CRDT:
             return None
 
     def _is_operation_already_applied(self, char: Char) -> bool:
-        current = self.version_vector.get(char['site_id'], -1)
+        current = self.version_vector.get(str(char['site_id']), -1)
         return char['counter'] <= current
 
     def remote_insert(self, in_char: Char) -> Tuple[int, int] | None:
@@ -205,7 +205,7 @@ class CRDT:
 
         row, col = self._find_insert_pos(in_char)
         self._handle_insert(row, col, in_char)
-        self.version_vector[in_char['site_id']] = in_char['counter']
+        self.version_vector[str(in_char['site_id'])] = in_char['counter']
         return (row, col)
     
 
@@ -229,6 +229,6 @@ class CRDT:
     def process_deletion_buffer(self) -> None:
         for i in range(len(self.deletion_buffer) - 1, -1, -1):
             char = self.deletion_buffer[i]
-            if self.version_vector[char['site_id']] >= char['counter']:
+            if self.version_vector[str(char['site_id'])] >= char['counter']:
                 self.remote_delete(char)
                 self.deletion_buffer.pop(i)

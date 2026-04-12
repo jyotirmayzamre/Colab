@@ -107,8 +107,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
 
 
     async def version_restore(self, event):
-        await self.send_json({'event': 'version.restore', 'versionId': event['versionId'], 'state': event['state']})
-
+        await self.send_json({'event': 'version.restore', 'versionId': event['versionId'], 'state': event['state'], 'version_vector': event['version_vector']})
 
     async def crdt_oper(self, event):
         if self.channel_name == event['sender']:

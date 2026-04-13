@@ -1,146 +1,143 @@
+import logging
+import redis.asyncio as redis
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from .redis_utils import *
-from urllib.parse import parse_qs
+
+from .models.connection_context import ConnectionContext
+from .repositories.crdt_repository import CRDTRepository
+from .repositories.colour_repository import ColourRepository
+from .repositories.presence_repository import PresenceRepository
+from .services.document_session_service import DocumentSessionService
+from .commands.registry import CommandRegistry, UnknownCommandError
+from .commands.document_commands import (
+    CharCommand,
+    VersionRestoreCommand,
+    DocumentRenameCommand,
+    CursorUpdateCommand,
+)
+from documents.services import DocumentService
+from versions.services import VersionService
+
+logger = logging.getLogger(__name__)
+
+
+_redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+_crdt_store: dict = {}
+
+_crdt_repo = CRDTRepository(_crdt_store, DocumentService, VersionService)
+_colour_repo = ColourRepository(_redis_client)
+_presence_repo = PresenceRepository(_redis_client)
+_session_service = DocumentSessionService(_crdt_repo, _colour_repo, _presence_repo)
+
+
+def _build_registry(channel_layer) -> CommandRegistry:
+    registry = CommandRegistry()
+    registry.register("char", CharCommand(_session_service, channel_layer))
+    registry.register("version_restore", VersionRestoreCommand(_session_service, channel_layer))
+    registry.register("document_rename", DocumentRenameCommand(_session_service, channel_layer))
+    registry.register("cursor_update", CursorUpdateCommand(channel_layer))
+    return registry
 
 
 class DocumentConsumer(AsyncJsonWebsocketConsumer):
+
     async def connect(self):
-        self.document_id = self.scope.get("url_route", {}).get("kwargs", {}).get("document_id")
-        self.group_name = f"document_{self.document_id}"
+        self.ctx = ConnectionContext.from_scope(self.scope, self.channel_name)
+        self.registry = _build_registry(self.channel_layer)
 
-        query_string = self.scope["query_string"].decode()
-        params = parse_qs(query_string)
-        self.username = params.get("username", [None])[0]
+        await self.channel_layer.group_add(self.ctx.group_name, self.channel_name)
 
-        await self.channel_layer.group_add(
-            self.group_name, self.channel_name
-        )
-
-        self.syncing = True
-        self.buffer = []
-
-        await redis_generate_colours(self.document_id)
-        self.colour = await redis_assign_colour(self.document_id)
-
-        
+        self.ctx.syncing = True
         await self.accept()
 
-        await redis_add_user(self.document_id, self.channel_name)
-        current_count = await redis_get_user_count(self.document_id)
+        join_result = await _session_service.join_session(self.ctx)
+        await self.send_json(join_result.to_load_payload())
 
-        result: CRDT_payload = await redis_load_crdt(self.document_id)
-        await self.send_json({'event': 'load.crdt', 
-                              'state': result["state"],
-                              'version_vector': result["version_vector"],
-                              'deletion_buffer': result["deletion_buffer"],
-                              'title': result["title"],
-                              'user_count': current_count})
+        for buffered_op in self.ctx.buffer:
+            await self.send_json({"event": "crdt.oper", "content": buffered_op})
 
-        for op in self.buffer:
-            await self.send_json({'event': 'crdt.oper', 'content': op})
-
-        self.syncing = False
-        self.buffer.clear()
+        self.ctx.syncing = False
+        self.ctx.buffer.clear()
 
         await self.channel_layer.group_send(
-            self.group_name, {'type': 'userCount.updated', 
-                              'sender': self.channel_name, 
-                              'user_count': current_count}
+            self.ctx.group_name,
+            {
+                "type": "userCount.updated",
+                "sender": self.channel_name,
+                "user_count": join_result.user_count,
+            },
         )
-
 
     async def disconnect(self, code):
-        await self.channel_layer.group_discard(
-            self.group_name, self.channel_name
-        )
+        await self.channel_layer.group_discard(self.ctx.group_name, self.channel_name)
 
-        await redis_add_colour(self.document_id, self.colour)
+        leave_result = await _session_service.leave_session(self.ctx)
 
-        await redis_remove_user(self.document_id, self.channel_name)
-        remaining_count = await redis_get_user_count(self.document_id)
-         
-        if(remaining_count > 0):
-            
+        if not leave_result.should_flush:
             await self.channel_layer.group_send(
-                self.group_name, {'type': 'userCount.updated', 'sender': self.channel_name, 'user_count': remaining_count}
+                self.ctx.group_name,
+                {
+                    "type": "userCount.updated",
+                    "sender": self.channel_name,
+                    "user_count": leave_result.remaining_count,
+                },
             )
-
             await self.channel_layer.group_send(
-                self.group_name, {'type': 'cursor.remove', 'username': self.username, 'sender': self.channel_name}
+                self.ctx.group_name,
+                {
+                    "type": "cursor.remove",
+                    "username": leave_result.username,
+                    "sender": self.channel_name,
+                },
             )
-        else:
-            await redis_flush_to_db(self.document_id)
-
-
 
     async def receive_json(self, content):
-        match content['type']:
-            case 'char':
-                await self.channel_layer.group_send(
-                    self.group_name, {'type': 'crdt.oper', 'content': content, 'sender': self.channel_name}
-                )
-                await redis_update_crdt(self.document_id, content)
-                
-            case 'version_restore':
-                state, version_vector = await redis_restore_version(content['versionId'])
-                await self.channel_layer.group_send(
-                        self.group_name, {'type': 'version.restore', 'versionId': content['versionId'], 'state': state, 'version_vector': version_vector}
-                )
-
-            case 'document_rename':
-                await redis_set_title(content['newTitle'], self.document_id)
-                await self.channel_layer.group_send(
-                    self.group_name, {'type': 'document.rename', 'newTitle': content['newTitle']}
-                )
-
-            case 'cursor_update':
-                await self.channel_layer.group_send(
-                self.group_name, {
-                    'type': 'cursor.update', 'sender': self.channel_name, 
-                    'username': self.username, 'col': content['col'], 'row': content['row'],
-                    'colour': self.colour
-                    })
-                
-            case _:
-                pass
-                
-
-
-    async def version_restore(self, event):
-        await self.send_json({'event': 'version.restore', 'versionId': event['versionId'], 'state': event['state'], 'version_vector': event['version_vector']})
+        try:
+            await self.registry.dispatch(content["type"], content, self.ctx)
+        except UnknownCommandError:
+            logger.warning(
+                "Unknown message type %r from channel %s",
+                content.get("type"),
+                self.channel_name,
+            )
 
     async def crdt_oper(self, event):
-        if self.channel_name == event['sender']:
+        if event["sender"] == self.channel_name:
             return
-        
-        if self.syncing:
-            self.buffer.append(event['content'])
+
+        if self.ctx.syncing:
+            self.ctx.buffer.append(event["content"])
         else:
-            await self.send_json({
-                'event': 'crdt.oper',
-                'content': event['content']
-            })
-       
-    
-    async def cursor_remove(self, event):
-        if(self.channel_name != event['sender']):
-            await self.send_json({'event': 'cursor.remove', 'username': event['username']})
+            await self.send_json({"event": "crdt.oper", "content": event["content"]})
 
-
-    async def userCount_updated(self, event):
-        if(self.channel_name != event['sender']):
-            await self.send_json({'event': 'userCount.updated', 'user_count': event['user_count']})
-
-
-    async def document_rename(self, event):
-        await self.send_json({'event': 'document.rename', 'newTitle': event['newTitle']})
-
+    async def version_restore(self, event):
+        await self.send_json(
+            {
+                "event": "version.restore",
+                "versionId": event["versionId"],
+                "state": event["state"],
+                "version_vector": event["version_vector"],
+            }
+        )
 
     async def cursor_update(self, event):
-        if(self.channel_name != event['sender']):
-            await self.send_json({'event': 'cursor.update', 
-                                'username': event['username'], 
-                                'col': event['col'],
-                                'row': event['row'],
-                                'colour': event['colour']
-                                  })
+        if event["sender"] != self.channel_name:
+            await self.send_json(
+                {
+                    "event": "cursor.update",
+                    "username": event["username"],
+                    "col": event["col"],
+                    "row": event["row"],
+                    "colour": event["colour"],
+                }
+            )
+
+    async def cursor_remove(self, event):
+        if event["sender"] != self.channel_name:
+            await self.send_json({"event": "cursor.remove", "username": event["username"]})
+
+    async def userCount_updated(self, event):
+        if event["sender"] != self.channel_name:
+            await self.send_json({"event": "userCount.updated", "user_count": event["user_count"]})
+
+    async def document_rename(self, event):
+        await self.send_json({"event": "document.rename", "newTitle": event["newTitle"]})

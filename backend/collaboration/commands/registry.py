@@ -1,5 +1,5 @@
 from typing import Protocol, Dict
-from ..models.connection_context import ConnectionContext
+from ..domain.connection_context import ConnectionContext
 
 
 class Command(Protocol):

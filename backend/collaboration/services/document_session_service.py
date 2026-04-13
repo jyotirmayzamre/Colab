@@ -1,8 +1,8 @@
-from ..models.connection_context import ConnectionContext
-from ..models.results import JoinResult, LeaveResult
-from ..repositories.crdt_repository import CRDTRepository
-from ..repositories.colour_repository import ColourRepository
-from ..repositories.presence_repository import PresenceRepository
+from ..domain.connection_context import ConnectionContext
+from ..domain.results import JoinResult, LeaveResult
+from ..repositories.crdt_repo import CRDTRepository
+from ..repositories.colour_repo import ColourRepository
+from ..repositories.presence_repo import PresenceRepository
 
 
 class DocumentSessionService:
@@ -27,10 +27,10 @@ class DocumentSessionService:
         user_count = await self._presence.count(ctx.document_id)
 
         return JoinResult(
-            crdt_state=snapshot["state"],
-            version_vector=snapshot["version_vector"],
-            deletion_buffer=snapshot["deletion_buffer"],
-            title=snapshot["title"],
+            state=snapshot.state,
+            version_vector=snapshot.version_vector,
+            deletion_buffer=snapshot.deletion_buffer,
+            title=snapshot.doc_title,
             user_count=user_count,
             colour=colour,
         )

@@ -3,9 +3,9 @@ import redis.asyncio as redis
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from .domain.connection_context import ConnectionContext
-from .repositories.crdt_repository import CRDTRepository
-from .repositories.colour_repository import ColourRepository
-from .repositories.presence_repository import PresenceRepository
+from .repositories.crdt_repo import CRDTRepository
+from .repositories.colour_repo import ColourRepository
+from .repositories.presence_repo import PresenceRepository
 from .services.document_session_service import DocumentSessionService
 from .commands.registry import CommandRegistry, UnknownCommandError
 from .commands.document_commands import (
@@ -50,7 +50,7 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
         await self.accept()
 
         join_result = await _session_service.join_session(self.ctx)
-        await self.send_json(join_result.to_load_payload())
+        await self.send_json(join_result.to_payload())
 
         for buffered_op in self.ctx.buffer:
             await self.send_json({"event": "crdt.oper", "content": buffered_op})

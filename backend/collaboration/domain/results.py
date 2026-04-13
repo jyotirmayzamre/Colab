@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from crdt import Char
+from ..crdt import Char
 from typing import List, Dict
 
 @dataclass

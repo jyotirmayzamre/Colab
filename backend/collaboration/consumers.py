@@ -2,7 +2,7 @@ import logging
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-from .models.connection_context import ConnectionContext
+from .domain.connection_context import ConnectionContext
 from .repositories.crdt_repository import CRDTRepository
 from .repositories.colour_repository import ColourRepository
 from .repositories.presence_repository import PresenceRepository

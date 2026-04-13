@@ -1,5 +1,5 @@
-from ..models.connection_context import ConnectionContext
-from ..services.document_session_service import DocumentSessionService
+from .domain.connection_context import ConnectionContext
+from .services.document_session_service import DocumentSessionService
 
 
 class CharCommand:

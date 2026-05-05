@@ -4,7 +4,13 @@ from redis.asyncio.client import Redis as AsyncRedis
 
 class ColourRepository:
 
-    def __init__(self, client: AsyncRedis, n: int = 200, saturation: float = 0.65, value: float = 0.95):
+    def __init__(
+        self,
+        client: AsyncRedis,
+        n: int = 200,
+        saturation: float = 0.65,
+        value: float = 0.95,
+    ):
         self._client = client
         self._n = n
         self._saturation = saturation

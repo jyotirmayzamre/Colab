@@ -45,8 +45,8 @@ function ShareDoc(): JSX.Element {
             hasNextPage,
             results
         } = useInfiniteApi<User>({
-            param: `/api/accounts/searchUsers/?q=${query}&document_id=${docId}`,
-            initialPageParam: `/api/accounts/searchUsers/?q=${query}&document_id=${docId}`,
+            param: `/api/accounts/search/?q=${query}&document_id=${docId}`,
+            initialPageParam: `/api/accounts/search/?q=${query}&document_id=${docId}`,
             queryKey: ["users", query]
         }
         )
@@ -66,7 +66,7 @@ function ShareDoc(): JSX.Element {
     const onSubmit: SubmitHandler<FormFields> = useCallback(async (data) => {
         const userId = data.user_id;
         const permission = data.permission;
-        const payload = { document_id: docId, user_id: userId, level: permission}
+        const payload = { document_id: docId, user_id: userId, role: permission}
 
         try{
             await api.post('/api/permissions/share/', payload);

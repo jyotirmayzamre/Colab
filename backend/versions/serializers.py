@@ -3,33 +3,35 @@ from .models import Version
 from documents.models import Document
 
 
-class VersionInputSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=50)
-    state = serializers.JSONField()
+class VersionSerializer(serializers.ModelSerializer):
     document_id = serializers.PrimaryKeyRelatedField(
         source="document",
-        queryset=Document.objects.all()
+        queryset=Document.objects.all(),
+        write_only=True,
     )
-    version_vector = serializers.JSONField()
+    creator_username = serializers.CharField(read_only=True)
+    created_at = serializers.DateTimeField(format="%d %b %Y", read_only=True)
+    state = serializers.JSONField()
+    version_vector = serializers.JSONField(write_only=True)
 
     class Meta:
         model = Version
-        fields = ['document_id', 'title', 'state', 'version_vector']
-
-    
-
-class VersionOutputSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    title = serializers.CharField()
-    created_at = serializers.DateTimeField(format="%d %b %Y")  # type: ignore
-    creator_username = serializers.CharField()
-
-    class Meta:
-        model = Version
-        fields = ['id', 'title', 'created_at', 'creator_username']
+        fields = [
+            "id",
+            "document_id",
+            "title",
+            "state",
+            "version_vector",
+            "created_at",
+            "creator_username",
+        ]
+        read_only_fields = ["id", "created_at", "creator_username"]
+        extra_kwargs = {
+            "title": {"max_length": 50},
+        }
 
 
 class VersionStateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
-        fields = ['state']
+        fields = ["state"]

@@ -1,221 +1,163 @@
-from django.http import JsonResponse
+from .serializers import (
+    RegisterSerializer,
+    UserSerializer,
+    CustomTokenObtainPairSerializer,
+    UserProfileSerializer,
+    PasswordChangeSerializer,
+    UsernameChangeSerializer,
+)
 
+from .models import User
+
+from rest_framework.generics import (
+    CreateAPIView,
+    RetrieveAPIView,
+    UpdateAPIView,
+    ListAPIView,
+)
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .services import UserService
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, MyTokenObtainPairSerializer, CookieJWTAuthentication, UserProfileSerializer
-from .serializers import UpdatePasswordSerializer, UpdateUsernameSerializer
-from .models import User
-from typing import cast, TypedDict
-from uuid import UUID
+from rest_framework.response import Response
+
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import LimitOffsetPagination
 
 
-'''
-Endpoint for registration of users
-'''
-class RegistrationAPIView(APIView):
+class RegistrationView(CreateAPIView):
+    permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
+
+
+class LoginView(TokenObtainPairView):
     permission_classes = (AllowAny,)
+    serializer_class = CustomTokenObtainPairSerializer
 
-    def post(self, request: Request) -> Response:
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            data = serializer.save()
-            return Response(data, status=status.HTTP_201_CREATED) 
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            response.set_cookie(
+                key="access",
+                value=response.data["access"],
+                httponly=True,
+                samesite="Lax",
+                secure=False,
+                max_age=10 * 60,
+            )
 
-class TokenPair(TypedDict):
-    access: str
-    refresh: str
+            response.set_cookie(
+                key="refresh",
+                value=response.data["refresh"],
+                httponly=True,
+                samesite="Lax",
+                secure=False,
+                max_age=30 * 60,
+            )
 
-class LoginAPIView(APIView):
-    serializer_class = LoginSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request: Request) -> Response:
-        serializer = self.serializer_class(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        tokens = serializer.validated_data
-        tokens = cast(TokenPair, serializer.validated_data)
-        access = tokens.get('access')
-        refresh = tokens.get('refresh')
-        response = Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
-
-        response.set_cookie(
-            key='access',
-            value=access, 
-            httponly=True,
-            samesite="Lax",
-            secure=False,
-            max_age=10 * 60
-        )
-        response.set_cookie(
-            key='refresh',
-            value=refresh,
-            httponly=True,
-            samesite='Lax',
-            secure=False,
-            max_age=7 * 24 * 60 * 60
-        )
+            response.data = {"detail": "Login successful"}
         return response
-    
 
-class LogoutAPIView(APIView):
-    permission_classes=(AllowAny,)
+
+class LogoutView(APIView):
     def post(self, request):
-        try:
-            refreshToken = request.COOKIES.get('refresh')
-            token = RefreshToken(refreshToken)
-            token.blacklist()
-            response = Response({'message': 'Logout successful'}, status=status.HTTP_205_RESET_CONTENT)
-            response.delete_cookie('access')
-            response.delete_cookie('refresh')
-            return response
-        except TokenError:
-            return Response({"message": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = request.COOKIES.get("refresh")
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception:
+                pass
+
+        response = Response({"detail": "Logged out."}, status=204)
+        response.delete_cookie("access")
+        response.delete_cookie("refresh")
+        return response
 
 
-class MeAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes=[CookieJWTAuthentication]
+class MeView(RetrieveAPIView):
+    serializer_class = UserSerializer
 
-    def get(self, request: Request) -> Response:
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_object(self):
+        return self.request.user
 
 
-class UserProfileAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes=[CookieJWTAuthentication]
+class ProfileView(RetrieveAPIView):
+    serializer_class = UserProfileSerializer
 
-    def get(self, request: Request) -> Response:
-        user = User.objects.get_user_profile(request.user.id)
-
-        serializer = UserProfileSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_object(self):
+        return User.objects.get_user_profile(self.request.user.id)
 
 
-class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
+class CustomTokenRefreshView(TokenRefreshView):
+    permission_classes = (AllowAny,)
 
+    def post(self, request):
+        refresh_token = request.COOKIES.get("refresh")
 
-class RefreshTokenView(TokenRefreshView):
-    permission_classes=(AllowAny,)
-
-    def post(self, request: Request):
-        refresh_token = request.COOKIES.get('refresh')
         if not refresh_token:
-            return JsonResponse({'message': 'No refresh token found'}, status=401)
+            return Response({"detail": "Refresh token missing."}, status=400)
 
+        serializer = self.get_serializer(data={"refresh": refresh_token})
+        serializer.is_valid(raise_exception=True)
 
-        serializer = self.get_serializer(data={'refresh': refresh_token})
-        try:
-            serializer.is_valid(raise_exception=True)
-        except TokenError as e:
-            return JsonResponse({"message": str(e)}, status=401)
-        
-        data = serializer.validated_data
-        new_access = data.get('access')
-
-        response = JsonResponse({'message': 'Token refreshed'})
-
+        response = Response({"detail": "Token refreshed."})
         response.set_cookie(
-            key='access',
-            value=new_access,
+            key="access",
+            value=serializer.validated_data["access"],
             httponly=True,
             samesite="Lax",
-            max_age=10 * 60
+            max_age=10 * 60,
+            secure=False,
         )
-
         return response
+
 
 class UserPagination(LimitOffsetPagination):
     default_limit = 10
     max_limit = 10
 
-class SearchUserAPIView(APIView):
-    authentication_classes = [CookieJWTAuthentication] 
-    permission_classes = [IsAuthenticated]
+
+class SearchUserView(ListAPIView):
+    serializer_class = UserSerializer
     pagination_class = UserPagination
 
-
-    def get(self, request: Request):
-        query = request.query_params['q']
-        document_id = request.query_params['document_id']
+    def get_queryset(self):
+        query = self.request.query_params.get("q", "")
+        document_id = self.request.query_params.get("document_id")
 
         if not document_id:
-            raise ValidationError('Document id not passed')
-
+            raise ValidationError("Document id not passed.")
         if not query:
-            return Response({'results': []})
-        
+            return User.objects.none()
 
-        users = User.objects.search_for_users(
-            query=query, 
-            document_id=cast(UUID, document_id), 
-            exclude_user_id=request.user.id
-            )
-        
-        serializer = UserSerializer(users, many=True)
-
-        return Response({'results': serializer.data})
-
-class NewPassword(TypedDict):
-    new_password: str
-    confirm_password: str
-
-class UpdatePasswordAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = [CookieJWTAuthentication]
-    
-    def patch(self, request: Request) -> Response:
-        serializer = UpdatePasswordSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = cast(NewPassword, serializer.validated_data)
-        
-        
-        UserService.update_password(
-            user=request.user,
-            new_password=data['new_password']
-        )
-        
-        
-        return Response(
-            {'message': 'Password updated successfully'},
-            status=status.HTTP_200_OK
+        return User.objects.search_for_users(
+            query=query,
+            user_id=self.request.user.id,
         )
 
 
-class UpdateUsernameAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = [CookieJWTAuthentication]
-    
-    def patch(self, request: Request) -> Response:
-        serializer = UpdateUsernameSerializer(
-            data=request.data,
-            context={'user': request.user}
-        )
-        serializer.is_valid(raise_exception=True)
-        
-        user = UserService.update_username(
-            user=request.user,
-            new_username=serializer.validated_data['username'] #type: ignore
-        )
-        
-        user_data = UserSerializer(user).data
-        return Response(user_data, status=status.HTTP_200_OK)
+class PasswordChangeView(UpdateAPIView):
+    serializer_class = PasswordChangeSerializer
+    http_method_names = ["patch"]  # or patch if you prefer
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return Response({"detail": "Password updated."})
+
+
+class UsernameChangeView(UpdateAPIView):
+    serializer_class = UsernameChangeSerializer
+    http_method_names = ["patch"]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return Response({"detail": "Username updated."})

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from ..crdt import Char
 from typing import List, Dict
 
+
 @dataclass
 class JoinResult:
     state: List[List[Char]]
@@ -20,8 +21,7 @@ class JoinResult:
             "deletion_buffer": self.deletion_buffer,
             "title": self.title,
             "user_count": self.user_count,
-    }
-
+        }
 
 
 @dataclass
@@ -29,8 +29,8 @@ class LeaveResult:
     remaining_count: int
     username: str
     should_flush: bool  # True when this was the last user
- 
- 
+
+
 @dataclass
 class VersionRestoreResult:
     version_id: str

@@ -32,8 +32,12 @@ _session_service = DocumentSessionService(_crdt_repo, _colour_repo, _presence_re
 def _build_registry(channel_layer) -> CommandRegistry:
     registry = CommandRegistry()
     registry.register("char", CharCommand(_session_service, channel_layer))
-    registry.register("version_restore", VersionRestoreCommand(_session_service, channel_layer))
-    registry.register("document_rename", DocumentRenameCommand(_session_service, channel_layer))
+    registry.register(
+        "version_restore", VersionRestoreCommand(_session_service, channel_layer)
+    )
+    registry.register(
+        "document_rename", DocumentRenameCommand(_session_service, channel_layer)
+    )
     registry.register("cursor_update", CursorUpdateCommand(channel_layer))
     return registry
 
@@ -133,11 +137,18 @@ class DocumentConsumer(AsyncJsonWebsocketConsumer):
 
     async def cursor_remove(self, event):
         if event["sender"] != self.channel_name:
-            await self.send_json({"event": "cursor.remove", "username": event["username"]})
+            await self.send_json(
+                {"event": "cursor.remove", "username": event["username"]}
+            )
 
     async def userCount_updated(self, event):
         if event["sender"] != self.channel_name:
-            await self.send_json({"event": "userCount.updated", "user_count": event["user_count"]})
+            await self.send_json(
+                {"event": "userCount.updated", "user_count": event["user_count"]}
+            )
 
     async def document_rename(self, event):
-        await self.send_json({"event": "document.rename", "newTitle": event["newTitle"]})
+        await self.send_json(
+            {"event": "document.rename", "newTitle": event["newTitle"]}
+        )
+

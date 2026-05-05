@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardTitle, CardHeader } from "@/ui/
 type FormFields = {
     username: string;
     password: string;
-    confirm_password: string;
+    password2: string;
     email: string;
     first_name: string;
     last_name: string;
@@ -30,11 +30,10 @@ function RegisterForm(): JSX.Element {
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { confirm_password, ...payload } = data; 
         const apiUrl = import.meta.env.VITE_BACKEND_URL
         try {
-            await axios.post(`${apiUrl}/api/accounts/signup/`, 
-                payload,
+            await axios.post(`${apiUrl}/api/accounts/register/`, 
+                data,
                 {
                     headers: {
                         'Content-Type': 'application/json'
@@ -145,10 +144,10 @@ function RegisterForm(): JSX.Element {
                 </div>
                 <div className="space-y-0.5">
                     <FormInput
-                        label='Confirm password'
-                        id='confirm_password'
+                        label='Confirm Password'
+                        id='password2'
                         type="password"
-                        register={register('confirm_password', {
+                        register={register('password2', {
                             required: "Please confirm your password",
                             validate: (val) => {
                                 if(val !== getValues('password')){
@@ -157,7 +156,7 @@ function RegisterForm(): JSX.Element {
                                 return true;
                             }
                         })}
-                        error={errors.confirm_password}
+                        error={errors.password2}
                     />
                 </div>
                 <Button

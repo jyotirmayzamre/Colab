@@ -62,7 +62,7 @@ api.interceptors.response.use(
     
             try {
                
-                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/accounts/token/refresh/`, {}, {withCredentials: true});
+                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/accounts/refresh/`, {}, {withCredentials: true});
                 processQueue(null);
                 isRefreshing = false;
                 return api(originalRequest);

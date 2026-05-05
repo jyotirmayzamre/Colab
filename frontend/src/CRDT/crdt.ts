@@ -15,7 +15,7 @@ export function crdtToString(state: Char[][]){
 class CRDT {
     site_id: number;
     state: Char[][];
-    version_vector: Record<string, number>;
+    version_vector: Record<number, number>;
     deletion_buffer: Char[];
 
     constructor(site_id: number){
@@ -181,9 +181,8 @@ class CRDT {
 
 
     public localInsert(value: string, row: number, col: number): Char {
-      const cast_site_id = this.site_id.toString()
-      if (this.version_vector[cast_site_id]) this.version_vector[cast_site_id] += 1;
-      else this.version_vector[cast_site_id] = 1;
+      if (this.version_vector[this.site_id]) this.version_vector[this.site_id] += 1;
+      else this.version_vector[this.site_id] = 1;
       const newPosition = this.generateChar(row, col);
 
       const newChar: Char = {
@@ -394,7 +393,7 @@ class CRDT {
 
 
     private isOperationAlreadyApplied(char: Char): boolean {
-      const current = this.version_vector[char.site_id.toString()] ?? -1;
+      const current = this.version_vector[char.site_id] ?? -1;
       return char.counter <= current;
     }
 
@@ -406,7 +405,7 @@ class CRDT {
       if(this.isOperationAlreadyApplied(inChar)) return null;
       const [row, col] = this.findInsertPos(inChar); 
       this.handleInsert(row, col, inChar);
-      this.version_vector[inChar.site_id.toString()] = inChar.counter;
+      this.version_vector[inChar.site_id] = inChar.counter;
       return [row, col];
     } 
 
@@ -435,7 +434,7 @@ class CRDT {
       const delChanges: [number, number][] = [];
       for(let i = length-1; i >= 0; i--){
         let char = this.deletion_buffer[i];
-        if(this.version_vector[char.site_id.toString()] >= char.counter){
+        if(this.version_vector[char.site_id] >= char.counter){
           const result = this.remoteDelete(char);
           if(result !== null){
             delChanges.push(result);

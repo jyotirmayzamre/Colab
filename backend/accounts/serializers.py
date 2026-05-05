@@ -1,145 +1,107 @@
-from django.core.exceptions import ValidationError
-from django.contrib.auth import authenticate
-
-from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken
-
 from .utils import validate_email as check_valid_email
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.serializers import ModelSerializer, Serializer
+from rest_framework.serializers import CharField, IntegerField, SerializerMethodField
+from rest_framework.serializers import ValidationError
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User
-from typing import cast
-
-'''
-Read-only serializer for returning user to frontend
-'''
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'site_id', 'first_name', 'last_name', 'username', 'email'] 
 
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    documents_owned = serializers.IntegerField()
-    documents_shared = serializers.IntegerField()
-    name = serializers.SerializerMethodField()
+class RegisterSerializer(ModelSerializer):
+    password = CharField(write_only=True, validators=[validate_password])
+    password2 = CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'username', 'email', 'documents_owned', 'documents_shared']
-        read_only_fields = ['id', 'email']
+        fields = [
+            "first_name",
+            "last_name",
+            "username",
+            "password",
+            "password2",
+            "email",
+        ]
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["password2"]:
+            raise ValidationError({"password": "Passwords do not match"})
+
+        # email
+        value = attrs["email"]
+        valid, message = check_valid_email(value)
+
+        if not valid:
+            raise ValidationError(message)
+        try:
+            name, domain = value.strip().rsplit("@", 1)
+        except ValueError:
+            pass
+        else:
+            value = "@".join([name, domain.lower()])
+            attrs["email"] = value
+
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop("password2")
+        return User.objects.create_user(**validated_data)
+
+
+class UserSerializer(ModelSerializer):
+    name = SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "name", "username", "email"]
+        read_only_fields = fields
 
     def get_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip()
 
-'''
-Serializer for registering a user
-'''
-class RegisterSerializer(serializers.ModelSerializer[User]):
-    password = serializers.CharField(min_length=8, write_only=True)
-    class Meta:
-        model = User
-        fields = [
-            'first_name',
-            'last_name',
-            'username',
-            'password',
-            'email'
-        ]
-    
-    def validate_email(self, value: str):
-        valid, message = check_valid_email(value)
 
-        if not valid:
-            raise serializers.ValidationError(message)
-        try:
-            name, domain = value.strip().rsplit('@', 1)
-        except ValueError:
-            pass
-        else:
-            value = '@'.join([name, domain.lower()])
+class UserProfileSerializer(UserSerializer):
+    documents_owned = IntegerField(read_only=True)
+    documents_shared = IntegerField(read_only=True)
 
-        return value
-    
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
-        return UserSerializer(user).data
-    
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ["documents_shared", "documents_owned"]
 
-'''
-Serializer for logging a user in
-'''
 
-class LoginSerializer(serializers.Serializer):
-    password = serializers.CharField(min_length=8, write_only=True)
-    username = serializers.CharField()
-
-    
-    def validate(self, data):
-        user = authenticate(
-            username=data['username'], 
-            password=data['password']
-            )
-        
-        if user is None:
-            raise ValidationError('Incorrect credentials')
-        
-        token = cast(RefreshToken, MyTokenObtainPairSerializer.get_token(user))
-        return {
-            'access': str(token.access_token),
-            'refresh': str(token)
-        }
-        
-        
-        
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token['username'] = user.username
-        token['site_id'] = user.site_id
+        token["username"] = user.username
         return token
-    
-
-class CookieJWTAuthentication(JWTAuthentication):
-    def authenticate(self, request):
-        token = request.COOKIES.get('access')
-        if token is None:
-            return None
-        
-        validated_token = self.get_validated_token(token)
-        return self.get_user(validated_token), validated_token
-    
 
 
-class UpdatePasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(min_length=8, write_only=True)
-    confirm_password = serializers.CharField(min_length=8, write_only=True)
-    
-    def validate(self, data):
-        if data['new_password'] != data['confirm_password']:
-            raise serializers.ValidationError({
-                'confirm_password': "New passwords do not match."
-            })
-        return data
+class PasswordChangeSerializer(Serializer):
+    new_password = CharField(write_only=True)
+    confirm_password = CharField(write_only=True, validators=[validate_password])
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise ValidationError('Passwords don"t match')
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data["new_password"])
+        instance.save()
+        return instance
 
 
-class UpdateUsernameSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=50)
-    
-    def validate_username(self, value: str):
-        user = self.context.get('user')
-        
-        if user and user.username == value:
-            raise serializers.ValidationError("This is already your username.")
-        
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
-        
+class UsernameChangeSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("username",)
+
+    def validate_username(self, value):
+        if User.objects.exclude(id=self.instance.id).filter(username=value).exists():
+            raise ValidationError("Username already taken.")
         return value
+
+    def update(self, instance, validated_data):
+        instance.username = validated_data["username"]
+        instance.save()
+        return instance

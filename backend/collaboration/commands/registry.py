@@ -4,8 +4,7 @@ from ..domain.connection_context import ConnectionContext
 
 class Command(Protocol):
 
-    async def execute(self, payload: dict, ctx: ConnectionContext) -> None:
-        ...
+    async def execute(self, payload: dict, ctx: ConnectionContext) -> None: ...
 
 
 class UnknownCommandError(Exception):
@@ -19,7 +18,9 @@ class CommandRegistry:
     def register(self, event_type: str, command: Command) -> None:
         self._commands[event_type] = command
 
-    async def dispatch(self, event_type: str, payload: dict, ctx: ConnectionContext) -> None:
+    async def dispatch(
+        self, event_type: str, payload: dict, ctx: ConnectionContext
+    ) -> None:
         command = self._commands.get(event_type)
         if command is None:
             raise UnknownCommandError(

@@ -4,14 +4,12 @@ from ..crdt import CRDT, Char
 from ..domain.results import VersionRestoreResult
 
 
-
 class CRDTRepository:
 
     def __init__(self, store: dict, document_service, version_service):
         self._store = store
         self._document_service = document_service
         self._version_service = version_service
-
 
     async def get_or_load(self, document_id: str) -> CRDT:
         crdt = self._store.get(document_id)
@@ -27,7 +25,6 @@ class CRDTRepository:
         self._store[document_id] = new_crdt
         return new_crdt
 
-
     def apply_operations(self, document_id: str, operations: list) -> None:
         crdt = self._store.get(document_id)
         if not crdt:
@@ -42,7 +39,6 @@ class CRDTRepository:
 
         crdt.process_deletion_buffer()
 
-
     async def restore_version(self, version_id: str) -> VersionRestoreResult:
         state, version_vector, document_id = await self._fetch_version(version_id)
         typed_id = str(document_id)
@@ -51,7 +47,9 @@ class CRDTRepository:
 
         crdt = self._store.get(typed_id)
         if not crdt:
-            raise RuntimeError(f"Cannot restore version for unloaded document {typed_id!r}.")
+            raise RuntimeError(
+                f"Cannot restore version for unloaded document {typed_id!r}."
+            )
 
         crdt.state = typed_state
         crdt.version_vector = typed_version_vector
@@ -62,13 +60,11 @@ class CRDTRepository:
             version_vector=typed_version_vector,
         )
 
-
     def set_title(self, document_id: str, title: str) -> None:
         crdt = self._store.get(document_id)
         if not crdt:
             raise RuntimeError(f"CRDT for document {document_id!r} is not loaded.")
         crdt.doc_title = title
-
 
     async def flush_to_db(self, document_id: str) -> None:
         crdt = self._store.get(document_id)
@@ -77,8 +73,6 @@ class CRDTRepository:
 
         await self._persist_document(document_id, crdt.state, crdt.version_vector)
         self._store.pop(document_id, None)
-
-
 
     @database_sync_to_async
     def _fetch_document(self, document_id: str):

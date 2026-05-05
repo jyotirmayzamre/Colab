@@ -73,7 +73,7 @@ function DocumentList(): JSX.Element {
                         <div className="flex-1 min-w-0">
                             <CardTitle className="text-lg mb-1 truncate">{doc.title}</CardTitle>
                             <CardDescription className="flex items-center gap-4 text-sm">
-                                <span>{doc.updated_at}</span>
+                                <span>{doc.last_updated}</span>
                                 <span className="flex items-center gap-1">
                                     <Users className="h-3 w-3" />
                                     {doc.num_users}

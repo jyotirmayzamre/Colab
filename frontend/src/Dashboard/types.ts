@@ -2,7 +2,7 @@ export interface Document {
     permission: string;
     id: string;
     title: string;
-    updated_at: string;
+    last_updated: string;
     num_users: number;
 }
 

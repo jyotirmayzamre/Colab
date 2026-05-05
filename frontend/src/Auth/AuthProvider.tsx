@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: Props) => {
         try {
             const response = await api.get('/api/accounts/me/');
             const data = response.data;
-            const user: User = { username: data.username, site_id: data.site_id, user_id: data.id }
+            const user: User = { username: data.username, user_id: data.id }
             dispatch({ type: 'SET_USER', payload: user})
             return response.data;
         } catch(e) {

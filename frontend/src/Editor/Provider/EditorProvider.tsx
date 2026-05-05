@@ -23,7 +23,7 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
     const [remoteCursors, setRemoteCursors] = useState<Record<string, RemoteCursor>>({});
 
     //Refs
-    const crdtRef = useRef<CRDT>(new CRDT(user.site_id));
+    const crdtRef = useRef<CRDT>(new CRDT(user.user_id));
     const editorRef = useRef<EditorView | undefined>(undefined);
     const wsRef = useRef<WebSocket | undefined>(undefined);
 
@@ -70,7 +70,6 @@ export const EditorProvider = ({ children, docId, isEditable }: Props) => {
                 case 'version.restore':
                     crdtRef.current.state = data.state;
                     crdtRef.current.version_vector = data.version_vector;
-                    console.log(crdtRef.current.version_vector);
                     setValue(crdtToString(data.state));
                     break;
 

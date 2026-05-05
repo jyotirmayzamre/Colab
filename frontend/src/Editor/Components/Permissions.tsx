@@ -30,7 +30,8 @@ function Permissions({ open, onClose }: PermissionsProps): JSX.Element {
         } = useInfiniteApi<Permission>({
             param: `/api/permissions/share/?document_id=${docId}`,
             initialPageParam: `/api/permissions/share/?document_id=${docId}`,
-            queryKey: ["permissions", docId]
+            queryKey: ["permissions", docId],
+            enabled: open
         }
     )
     

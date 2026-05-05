@@ -39,14 +39,15 @@ function VersionHistory({ open, onClose}: VersionHistoryProps): JSX.Element {
     //useProfiler('Version History');
 
     const {
-        fetchNextPage,
+        fetchNextPage, 
         hasNextPage,
         results,
         invalidateCache
     } = useInfiniteApi<Version>({
         param: `/api/versions?document_id=${docId}`,
         initialPageParam: `/api/versions?document_id=${docId}`,
-        queryKey: ["versions", docId]
+        queryKey: ["versions", docId],
+        enabled: open
     }
     )
 

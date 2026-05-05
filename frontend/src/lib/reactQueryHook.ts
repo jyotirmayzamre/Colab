@@ -7,6 +7,7 @@ interface InfiniteApiProps {
     param: string
     initialPageParam: string
     queryKey: readonly unknown[]
+    enabled?: boolean
 
 }
 
@@ -27,7 +28,7 @@ interface InfiniteApiReturnType<T> {
 
 
 //Custom hook for using react query's infinite query in my projects
-export default function useInfiniteApi<T>({ param, initialPageParam, queryKey }: InfiniteApiProps)
+export default function useInfiniteApi<T>({ param, initialPageParam, queryKey, enabled }: InfiniteApiProps)
 : InfiniteApiReturnType<T>{
     const queryClient = useQueryClient();
     const { data, 
@@ -40,9 +41,10 @@ export default function useInfiniteApi<T>({ param, initialPageParam, queryKey }:
             },
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
         initialPageParam: initialPageParam,
-        staleTime: 5 * 60 * 1000,          
+        staleTime: 5 * 60 * 1000, 
         refetchOnWindowFocus: false,
-        refetchOnMount: false
+        refetchOnMount: true,
+        enabled: enabled
         })
 
     const results = useMemo(

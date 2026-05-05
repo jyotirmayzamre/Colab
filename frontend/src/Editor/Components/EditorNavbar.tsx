@@ -25,6 +25,7 @@ function EditorNavbar(): JSX.Element {
     const [localTitle, setLocalTitle] = useState<string>(docTitle);
     const [showVersionHistory, setShowVersionHistory] = useState<boolean>(false);
     const [showPermissions, setShowPermissions] = useState<boolean>(false);
+    const [showShare, setShowShare] = useState<boolean>(false);
     const navigate = useNavigate();
 
     //useProfiler('Editor Navbar');
@@ -108,7 +109,10 @@ function EditorNavbar(): JSX.Element {
                 <span className="text-sm font-medium">Active: {userCount}</span>
               </div>
               {isEditable && (
-                <ShareDoc />
+                <ShareDoc 
+                  open={showShare}
+                  onClose={setShowShare}
+                />
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -141,11 +145,12 @@ function EditorNavbar(): JSX.Element {
             </div>
           </div>
         </div>
+        
         <VersionHistory
           open={showVersionHistory}
           onClose={handleCloseVersionHistory}
         />
-        {isEditable && (
+        {(isEditable) && (
           <Permissions
             open={showPermissions}
             onClose={handleClosePermissions}

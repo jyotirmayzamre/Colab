@@ -28,11 +28,15 @@ interface User {
     email: string
 }
 
+interface ShareDocProps {
+  open: boolean;
+  onClose: () => void;
+}
 
 
 const wait = () => new Promise((resolve) => setTimeout(resolve, 1000));
 
-function ShareDoc(): JSX.Element {
+function ShareDoc({ open, onClose }: ShareDocProps): JSX.Element {
     const [query, setQuery] = useState<string>('');
     const [shareLink, setShareLink] = useState<string>('');
     const [selectedUser, setSelectedUser] = useState<string>('');
@@ -47,7 +51,8 @@ function ShareDoc(): JSX.Element {
         } = useInfiniteApi<User>({
             param: `/api/accounts/search/?q=${query}&document_id=${docId}`,
             initialPageParam: `/api/accounts/search/?q=${query}&document_id=${docId}`,
-            queryKey: ["users", query]
+            queryKey: ["users", query],
+            enabled: open && query.length > 0
         }
         )
 
@@ -94,8 +99,9 @@ function ShareDoc(): JSX.Element {
     
 
     useEffect(() => {
-        fetchShare();
-    }, [fetchShare])
+      if(!open) return;
+      fetchShare();
+    }, [fetchShare, open])
 
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -133,7 +139,7 @@ function ShareDoc(): JSX.Element {
 
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={onClose}>
             <DialogTrigger asChild>
                 <Share2 className="h-4 w-4  hover:cursor-pointer" />
             </DialogTrigger>

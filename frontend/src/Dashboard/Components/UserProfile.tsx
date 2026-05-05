@@ -25,7 +25,7 @@ function UserProfile({ open, onClose }: UserProfileProps){
     const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
     const [newPassword, setNewPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
-
+ 
     const { logout } = useAuth();
 
     const getUserInfo = async (): Promise<void> => {
@@ -73,8 +73,9 @@ function UserProfile({ open, onClose }: UserProfileProps){
 
 
     useEffect(() => {
-        getUserInfo();
-    }, [])
+      if(!open) return;
+      getUserInfo();
+    }, [open])
 
     return(
         <Dialog open={open} onOpenChange={onClose}>
